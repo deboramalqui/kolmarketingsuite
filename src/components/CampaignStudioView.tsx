@@ -40,6 +40,7 @@ export const CampaignStudioView: React.FC<CampaignStudioViewProps> = ({
   const [isGenerating, setIsGenerating] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [publishedIds, setPublishedIds] = useState<string[]>([]);
+  const [copiedNotice, setCopiedNotice] = useState(false);
   const [selectedCampaignIdx, setSelectedCampaignIdx] = useState(0);
 
   const inversionTotalUsd = formatoLocal === "isla" ? 23000 : 35300;
@@ -214,33 +215,14 @@ export const CampaignStudioView: React.FC<CampaignStudioViewProps> = ({
 
             <div>
               <label className="block text-[14px] font-semibold text-[#161418] mb-1.5">
-                Evento de conversión específico (Meta Pixel / CAPI o GA4)
+                Evento de conversión (Protocolo único KOL Franquicias)
               </label>
-              <div className="flex flex-wrap items-center gap-[2px]">
-                {(
-                  [
-                    "lead_franquicia",
-                    "Lead",
-                    "Contact",
-                    "Schedule",
-                  ] as const
-                ).map((ev) => (
-                  <button
-                    key={ev}
-                    type="button"
-                    onClick={() => setTargetEventName(ev)}
-                    className={`kol-btn-normal px-3.5 border flex items-center gap-1.5 ${
-                      targetEventName === ev
-                        ? "bg-[#E7E3DF] text-[#161418] border-[#161418]"
-                        : "bg-[#FFFFFF] text-[#46413F] border-[#8C8580] hover:bg-[#F3F0ED]"
-                    }`}
-                  >
-                    {targetEventName === ev && (
-                      <Check className="w-3.5 h-3.5 shrink-0" />
-                    )}
-                    <span>{ev}</span>
-                  </button>
-                ))}
+              <div className="flex items-center gap-2 p-3 bg-[#FAF8F6] border border-[#8C8580] rounded-[10px]">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-600 inline-block" />
+                <span className="font-bold text-[#161418] text-[14px]">lead_franquicia</span>
+                <span className="text-[13px] text-[#46413F]">
+                  · Evento único verificado. Se descarta generate_lead (retail/WhatsApp) y purchase.
+                </span>
               </div>
             </div>
 
@@ -448,33 +430,58 @@ export const CampaignStudioView: React.FC<CampaignStudioViewProps> = ({
       {/* Piezas publicitarias generadas en acción: Sobre fondo oscuro (Hoja 28/8 con ámbar) y Sobre fondo claro (Rectángulo 12 con magenta) */}
       {activePackage && (
         <div className="space-y-6">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[#FFFFFF] border border-[#C9C3BE] kol-card-12 p-6">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[#FFFFFF] border-2 border-[#161418] kol-card-12 p-6">
             <div>
-              <div className="text-[14px] text-[#46413F]">
-                {activePackage.platform} · Presupuesto diario US$ {activePackage.dailyBudget.toLocaleString("es-AR")} · {activePackage.createdAt}
+              <div className="flex items-center gap-2">
+                <span className="px-2.5 py-0.5 rounded-[6px] bg-[#161418] text-[#FAF8F6] text-[12px] font-bold uppercase tracking-wider">
+                  Etapa 1: Borrador listo
+                </span>
+                <span className="text-[13px] text-[#46413F] font-semibold">
+                  Regla fija: ninguna campaña se publica sin aprobación humana
+                </span>
               </div>
-              <h3 className="font-kol-display font-bold text-[22px] leading-[28px] text-[#161418] mt-1">
+              <h3 className="font-kol-display font-bold text-[22px] leading-[28px] text-[#161418] mt-2">
                 {activePackage.campaignName}
               </h3>
               <p className="text-[14px] text-[#46413F] mt-1">
-                {activePackage.clarityUxAdaptation}
+                {activePackage.platform} · Presupuesto diario US$ {activePackage.dailyBudget.toLocaleString("es-AR")} · UTM completos según convención · Objetivo: lead_franquicia
               </p>
             </div>
 
-            <div className="shrink-0">
+            <div className="flex flex-wrap items-center gap-3 shrink-0">
+              <button
+                type="button"
+                onClick={() => {
+                  const clipText = `Campaña: ${activePackage.campaignName}\nPlataforma: ${activePackage.platform}\nObjetivo: lead_franquicia\nPresupuesto diario: US$ ${activePackage.dailyBudget}\nTitular: ${activePackage.creatives[0]?.headline || ""}\nTexto: ${activePackage.creatives[0]?.bodyCopy || ""}\nCTA: ${activePackage.creatives[0]?.ctaLabel || ""}`;
+                  navigator.clipboard.writeText(clipText);
+                  setCopiedNotice(true);
+                  setTimeout(() => setCopiedNotice(false), 3000);
+                }}
+                className="kol-btn-normal px-4 bg-[#E7E3DF] text-[#161418] border border-[#8C8580] hover:bg-[#C9C3BE] flex items-center gap-2 whitespace-nowrap kol-focus text-[13px] font-bold"
+              >
+                {copiedNotice ? (
+                  <>
+                    <Check className="w-4 h-4 text-[#C51172]" />
+                    <span className="text-[#C51172]">¡Copiado al portapapeles!</span>
+                  </>
+                ) : (
+                  <span>Copiar textos y UTMs</span>
+                )}
+              </button>
+
               {publishedIds.includes(activePackage.id) ? (
                 <div className="kol-btn-normal px-4 bg-[#E7E3DF] text-[#2A2629] border border-[#8C8580] flex items-center gap-2">
                   <Check className="w-4 h-4 text-[#161418]" />
-                  <span>Publicada en {activePackage.platform}</span>
+                  <span>Aprobada por equipo</span>
                 </div>
               ) : (
                 <button
                   type="button"
                   onClick={() => handlePublishCampaign(activePackage)}
-                  className="kol-btn-normal px-5 bg-[#C51172] hover:bg-[#A40F5F] text-[#FFFFFF] flex items-center gap-2 whitespace-nowrap kol-focus"
+                  className="kol-btn-normal px-5 bg-[#C51172] hover:bg-[#A40F5F] text-[#FFFFFF] flex items-center gap-2 whitespace-nowrap kol-focus font-bold"
                 >
-                  <span>Publicar campaña en {activePackage.platform}</span>
-                  <ArrowUpRight className="w-4 h-4" />
+                  <Check className="w-4 h-4" />
+                  <span>Aprobar borrador</span>
                 </button>
               )}
             </div>

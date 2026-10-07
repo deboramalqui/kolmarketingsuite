@@ -26,11 +26,12 @@ interface DataAssistantViewProps {
 }
 
 const SUGGESTED_PROMPTS = [
-  "¿Cómo rinden hoy las campañas del formato isla (US$ 23.000) y qué pasa en Clarity con el campo 'Tu ciudad'?",
-  "Creá un reporte llamado 'Embudo de 4 etapas GA4 vs Clarity en Córdoba y Rosario' con ROAS, CPA y Rage Clicks",
-  "Eliminá el reporte rep-103 de auditoría de mapas de calor",
-  "Automatizá una campaña en DV360 con US$ 900 por día destacando el derecho inicial de US$ 3.000 y 0 % de regalías",
-  "Programá un informe semanal en PDF Ejecutivo para socios@kolaccesorios.com.ar con ROAS, CPA y lead_franquicia",
+  "¿Qué canal trae más consultas?",
+  "¿Dónde se cae la gente en el formulario?",
+  "¿Qué buscan en Google antes de entrar?",
+  "¿Qué página tiene más fricción? Mostrame las grabaciones",
+  "¿Cuánto llevamos invertido por consulta?",
+  "Explicame este número como si no supiera de marketing",
 ];
 
 export const DataAssistantView: React.FC<DataAssistantViewProps> = ({

@@ -25,17 +25,15 @@ interface ReportsAndScheduleViewProps {
 }
 
 const AVAILABLE_REPORT_METRICS = [
-  "ROAS",
-  "CPA",
-  "lead_franquicia",
-  "Meta Lead / Contact",
-  "CTR %",
-  "Inversión 30d",
+  "Costo por consulta (Inversión ÷ Consultas)",
+  "Consultas recibidas (lead_franquicia)",
+  "De visita a consulta (% embudo)",
+  "Inversión total",
   "click_cta_formulario",
-  "click_whatsapp",
-  "Rage Clicks %",
-  "Dead Clicks %",
-  "Scroll Depth %",
+  "inicio_formulario",
+  "Rage Clicks % (Clarity)",
+  "Dead Clicks % (Clarity)",
+  "Scroll Depth % (Clarity)",
 ];
 
 export const ReportsAndScheduleView: React.FC<ReportsAndScheduleViewProps> = ({
@@ -58,10 +56,10 @@ export const ReportsAndScheduleView: React.FC<ReportsAndScheduleViewProps> = ({
   const [newReportDateRange, setNewReportDateRange] =
     useState("Últimos 30 días");
   const [newReportMetrics, setNewReportMetrics] = useState<string[]>([
-    "ROAS",
-    "CPA",
-    "lead_franquicia",
-    "Rage Clicks %",
+    "Costo por consulta (Inversión ÷ Consultas)",
+    "Consultas recibidas (lead_franquicia)",
+    "De visita a consulta (% embudo)",
+    "Rage Clicks % (Clarity)",
   ]);
 
   const [scheduleName, setScheduleName] = useState(
@@ -262,6 +260,46 @@ export const ReportsAndScheduleView: React.FC<ReportsAndScheduleViewProps> = ({
 
   return (
     <div className="space-y-8">
+      {/* Resumen semanal oficial de 5 líneas en español claro (Directriz del brief) */}
+      <div className="p-6 bg-[#FFFFFF] border-2 border-[#161418] kol-card-12 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#C9C3BE] pb-3">
+          <div className="flex items-center gap-2.5">
+            <span className="px-2.5 py-0.5 rounded-[6px] bg-[#161418] text-[#FAF8F6] text-[12px] font-bold uppercase tracking-wider">
+              Informe ejecutivo
+            </span>
+            <h2 className="font-kol-display font-bold text-[20px] text-[#161418]">
+              Resumen semanal de franquicias (5 líneas en español claro)
+            </h2>
+          </div>
+          <span className="text-[13px] font-semibold text-[#8C8580]">
+            Sin PDF extenso innecesario · Período 28 días
+          </span>
+        </div>
+
+        <div className="space-y-2.5 text-[15px] text-[#161418] leading-relaxed">
+          <div className="flex items-start gap-2.5">
+            <strong className="text-[#C51172] shrink-0 font-bold">1. Qué pasó:</strong>
+            <span>75 personas visitaron el hub de franquicias en los últimos 28 días y se generaron 2 consultas completas de interesados (<code className="bg-[#E7E3DF] px-1 rounded text-[13px]">lead_franquicia</code>).</span>
+          </div>
+          <div className="flex items-start gap-2.5">
+            <strong className="text-[#C51172] shrink-0 font-bold">2. Qué cambió:</strong>
+            <span>Instagram consolidó el 53 % de las visitas totales (40 visitas) y las búsquedas en Google Search aportaron 16 visitas con 1 consulta orgánica verificada.</span>
+          </div>
+          <div className="flex items-start gap-2.5">
+            <strong className="text-[#C51172] shrink-0 font-bold">3. Dónde se traba:</strong>
+            <span>El 94.7 % de los visitantes abandona entre entrar al hub y tocar el botón del formulario (de 75 personas solo 4 tocan el llamado a la acción).</span>
+          </div>
+          <div className="flex items-start gap-2.5">
+            <strong className="text-[#C51172] shrink-0 font-bold">4. Qué mirar en Clarity:</strong>
+            <span>En la página principal <span className="font-mono font-semibold">/franquicias</span> se detectó un 3.1 % de clics con rabia en el acordeón de requisitos y desglose del derecho inicial de US$ 3.000.</span>
+          </div>
+          <div className="flex items-start gap-2.5">
+            <strong className="text-[#C51172] shrink-0 font-bold">5. Próximo paso:</strong>
+            <span>Hacer más visible el botón del formulario en la cabecera antes de lanzar las campañas pagas en Google y Meta durante noviembre.</span>
+          </div>
+        </div>
+      </div>
+
       {/* Bloque 1: Creación y eliminación programática de reportes personalizados */}
       <div className="bg-[#FFFFFF] border border-[#C9C3BE] kol-card-12 p-6 space-y-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#C9C3BE] pb-4">

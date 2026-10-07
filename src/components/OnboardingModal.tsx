@@ -516,22 +516,22 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
               {
                 num: 1,
                 title: "Google Analytics y Search",
-                sub: "Métricas y keywords orgánicas",
+                sub: "GA4 (372010641) y Search Console",
               },
               {
                 num: 2,
-                title: "Meta Ads selectivo",
-                sub: "Campañas y eventos",
+                title: "Meta Ads (Inactivo)",
+                sub: "Se activa con campañas de nov.",
               },
               {
                 num: 3,
                 title: "Microsoft Clarity",
-                sub: "Token de exportación",
+                sub: "Proyecto y mapas de calor",
               },
               {
                 num: 4,
                 title: "Envío de informes",
-                sub: "Destinatario por correo",
+                sub: "Destinatario de reportes",
               },
             ] as const
           ).map((item) => {
@@ -683,16 +683,20 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
             </div>
           )}
 
-          {/* PASO 2: META ADS SELECTIVO (SOLO CAMPAÑAS Y EVENTOS ESPECÍFICOS) */}
+          {/* PASO 2: META ADS (OCULTO/INACTIVO HASTA NOVIEMBRE) */}
           {step === 2 && (
             <div className="space-y-5">
-              <div className="p-4 bg-[#FFD9E4] border border-[#C9C3BE] kol-card-12 space-y-1">
-                <div className="font-kol-display font-bold text-[15px] text-[#161418] flex items-center gap-2">
-                  <Filter className="w-4 h-4 text-[#161418]" />
-                  <span>Sincronización selectiva de Meta Ads (no trae toda la cuenta)</span>
+              <div className="p-4 bg-[#F3F0ED] border-2 border-[#161418] kol-card-12 space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="px-2.5 py-0.5 rounded-[6px] bg-[#161418] text-[#FAF8F6] text-[12px] font-bold uppercase tracking-wider">
+                    Decisión del 5/10/2026
+                  </span>
+                  <span className="font-kol-display font-bold text-[15px] text-[#161418]">
+                    Meta Ads inactivo por ahora
+                  </span>
                 </div>
-                <p className="text-[14px] text-[#161418]">
-                  Elegí exactamente qué campañas y qué eventos del Pixel / Conversions API querés medir. El resto de las campañas de tu cuenta publicitaria queda excluido.
+                <p className="text-[14px] text-[#161418] leading-relaxed">
+                  No se mide Meta por ahora. <strong>Se activa con las campañas de noviembre.</strong> Podés dejar precargado tu Ad Account o token, pero el tablero no mezclará datos publicitarios hasta que comience la inversión de franquicia.
                 </p>
               </div>
 

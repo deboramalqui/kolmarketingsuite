@@ -1,5 +1,6 @@
 import express from "express";
 import path from "path";
+import fs from "fs";
 import { fileURLToPath } from "url";
 import dotenv from "dotenv";
 import { GoogleGenAI, Type, type FunctionDeclaration } from "@google/genai";
@@ -191,6 +192,31 @@ async function startServer() {
   const PORT = Number(process.env.PORT) || 3000;
 
   app.use(express.json({ limit: "10mb" }));
+
+  const CONFIG_STORE_PATH = path.join(__dirname, ".kol_accounts_config.json");
+
+  // Endpoint de persistencia de credenciales en el servidor (para uso compartido de equipo)
+  app.get("/api/accounts/config", (_req, res) => {
+    try {
+      if (fs.existsSync(CONFIG_STORE_PATH)) {
+        const raw = fs.readFileSync(CONFIG_STORE_PATH, "utf-8");
+        return res.json(JSON.parse(raw));
+      }
+    } catch (e) {
+      console.warn("No se pudo leer la configuración del servidor:", e);
+    }
+    res.json(null);
+  });
+
+  app.post("/api/accounts/config", (req, res) => {
+    try {
+      fs.writeFileSync(CONFIG_STORE_PATH, JSON.stringify(req.body, null, 2), "utf-8");
+      res.json({ ok: true, savedAt: new Date().toISOString() });
+    } catch (e) {
+      console.error("Error guardando la configuración del servidor:", e);
+      res.status(500).json({ error: "Error al persistir configuración en servidor" });
+    }
+  });
 
   // 0. Real Google Marketing Platform (GA4 Data API v1beta), Selective Meta Ads Graph API & Microsoft Clarity Export API Sync
   app.post("/api/gmp/sync", async (req, res) => {
@@ -637,20 +663,40 @@ async function startServer() {
       }
 
       const ai = getGenAIClient();
-      const systemInstruction = `Sos el motor analítico y de automatización de Marketing KOL Suite para Google Marketing Platform (Google Analytics 4, Display & Video 360, Search Ads 360, Campaign Manager 360) y Microsoft Clarity, configurado exclusivamente bajo la Guía de marca, versión 3 de KOL Franquicias.
+      const systemInstruction = `Sos el motor analítico de KOL Marketing Suite para el tablero de franquicia de KOL, configurado exclusivamente bajo el protocolo de medición y la Guía de marca versión 3 de KOL Franquicias.
 
-Reglas obligatorias de voz, tono y datos de KOL Franquicias (Guía v3):
-- Hablá siempre de "vos" (español rioplatense: consultá, abrí, elegí, mirá, creá, eliminá), nunca de "tú" ni de "usted".
-- Usá sentence case; solo el lockup KOL FRANQUICIAS va en mayúsculas.
-- Poné siempre el número primero, sin urgencia falsa y sin emojis.
-- Datos oficiales verificados de KOL Franquicias: Derecho inicial US$ 3.000 exactos (pago único); 0 % de regalías y 0 % de canon de publicidad; inversión total desde US$ 23.000 en formato Isla (10 m²: 13 % derecho inicial, 22 % mobiliario y obra, 65 % mercadería) y US$ 35.300 en formato Estándar (25 m²); 10 locales en Argentina (5 propios y 5 en franquicia, desde 2006); recupero de 18 a 24 meses con casos en 12; 56 enlaces (25 destinos del hub en vivo, 7 páginas hijas y 3 videos); embudo de 4 etapas en GA4 (1 Descubrimiento, 2 Consideración, 3 Conversión con evento lead_franquicia, 4 Calidad y cierre).
-- Cuando la persona pida crear un reporte, eliminar un reporte, crear una campaña publicitaria, programar un informe por email o aplicar una optimización, DEBÉS invocar la herramienta (Function Call) correspondiente además de responder con claridad.
+Reglas operativas y analíticas obligatorias del brief:
+1. Sin ROAS: Un lead de franquicia no tiene ingreso inmediato asociado, el ROAS confunde. Hablá siempre de "Costo por consulta" (Inversión ÷ Consultas). Si no hay inversión publicitaria activa todavía (campañas activas en noviembre), decí claramente: "Sin inversión publicitaria registrada todavía; las campañas pagas se activan en noviembre".
+2. Un solo evento de conversión: ÚNICAMENTE medimos "lead_franquicia". Nunca menciones ni mezcles generate_lead (es el WhatsApp general de retail de todo el sitio) ni purchase.
+3. El embudo de 4 pasos tal cual el protocolo verificado:
+   Paso 1: Entra al hub (page_view en franquicias, ~75 visitas en los últimos 28 días)
+   Paso 2: Toca el botón del formulario (click_cta_formulario, 4 personas)
+   Paso 3: Empieza el formulario (inicio_formulario, 3 personas)
+   Paso 4: Envía consulta (lead_franquicia, 2 consultas recibidas)
+4. Orígenes de tráfico reales del hub:
+   - Instagram es el principal canal (40 de 75 visitas)
+   - Google Orgánico (Search Console) segundo (16 visitas)
+   - Canales con IA (ChatGPT, Perplexity, Gemini): 7 visitas, 0 consultas
+   - Directo: 9 visitas
+   - Otros: 3 visitas
+5. Microsoft Clarity y grabaciones de sesión:
+   - El proyecto de Clarity es "ytmpieugg9" y está vinculado a GA4 (propiedad 372010641).
+   - Cuando te pregunten por grabaciones de sesión o fricción, explicá qué pasa y ofrecé el link directo filtrado a Clarity (ejemplo: https://clarity.microsoft.com/projects/view/ytmpieugg9/recordings?filter=url%3D... o filtrado por evento lead_franquicia).
+   - Etiquetas útiles cargadas: "seccion", "pagina_franquicia", y eventos "lead_franquicia" y "inicio_formulario".
+6. Datos oficiales inmutables de KOL Franquicias:
+   - Derecho inicial: US$ 3.000 exactos (pago único, nunca "desde").
+   - Regalías: 0 %. Canon de publicidad: 0 %.
+   - Formatos: Isla (US$ 23.000 de inversión total estimada, 10 m²) y Estándar (US$ 35.300, 25 m²).
+   - Red: 10 locales en Argentina (5 propios y 5 franquiciados).
+   - Plazo de recupero: 18 a 24 meses (casos en 12).
+7. Tono y respuestas:
+   - Español rioplatense (voseo: consultá, mirá, abrí).
+   - Respuestas cortas, sin jerga de marketing, con el porqué y qué hacer.
+   - Citá siempre la fuente del dato (GA4, Search Console o Clarity) y el período (últimos 28 días).
+   - Si no hay datos de algo, decí honestamente "Sin datos todavía" y la razón exacta (ej. Meta inactivo hasta noviembre, volumen bajo menor a 100 visitas donde la muestra es chica).
 
-Contexto actual de campañas GMP, reportes y telemetría de Clarity:
-${JSON.stringify(contextData || {}, null, 2)}
-
-Sistema de diseño activo (KOL Franquicias Guía v3):
-${JSON.stringify(brandGuidelines || {}, null, 2)}`;
+Contexto actual de datos reales:
+${JSON.stringify(contextData || {}, null, 2)}`;
 
       const contents: Array<{ role: string; parts: Array<{ text: string }> }> = [];
       if (Array.isArray(history)) {

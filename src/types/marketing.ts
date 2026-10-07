@@ -10,6 +10,27 @@ export type GMPPlatform =
   | "GMP + Clarity"
   | "Clarity UX";
 
+export interface FranchiseFunnelStep {
+  stepNumber: number;
+  id: "visita_hub" | "click_cta_formulario" | "inicio_formulario" | "lead_franquicia";
+  name: string;
+  eventName: string;
+  source: "GA4";
+  count: number;
+  conversionRateFromStartPct: number;
+  dropoffRateFromPreviousPct: number;
+  plainLanguageExplanation: string;
+}
+
+export interface AcquisitionChannel {
+  channelGroup: "Instagram" | "Google Orgánico" | "Canales con IA" | "Directo" | "Otros";
+  detail: string;
+  visitors: number;
+  leadsFranquicia: number;
+  conversionPct: number;
+  isAiChannel?: boolean;
+}
+
 export interface GoogleSearchKeyword {
   id: string;
   keyword: string;
@@ -19,6 +40,8 @@ export interface GoogleSearchKeyword {
   avgPosition: number;
   conversions: number;
   intent: "Inversor" | "Franquicia" | "Marca" | "Informativa";
+  landingPage?: string;
+  date?: string;
 }
 
 export interface CampaignMetric {
@@ -66,9 +89,9 @@ export interface ClarityPageTelemetry {
   deadClicksPct: number;
   avgScrollDepthPct: number;
   quickbacksPct: number;
-  avgEngagementSec: number;
+  avgEngagementSec?: number;
   dominantFrictionIssue: string;
-  linkedGmpCampaign: string;
+  linkedGmpCampaign?: string;
 }
 
 export interface CustomReport {
@@ -187,6 +210,7 @@ export interface ConnectedAccountsConfig {
   // Configuración de Microsoft Clarity y correo
   clarityProjectId: string;
   clarityConnected: boolean;
+  clarityApiToken?: string;
   defaultReportRecipientEmail: string;
   realtimeSyncActive: boolean;
 }
