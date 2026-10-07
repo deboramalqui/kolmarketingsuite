@@ -1,0 +1,8 @@
+{
+  "name": "Marketing KOL suite",
+  "description": "Plataforma inteligente de análisis avanzado, predicción de rendimiento, automatización de campañas publicitarias con guías de diseño y generación programada de reportes para Google Marketing Platform, Microsoft Clarity y Meta.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
