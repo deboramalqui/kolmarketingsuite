@@ -13,6 +13,7 @@ import {
   GoogleSearchKeyword,
   FranchiseFunnelStep,
   AcquisitionChannel,
+  FranchiseCampaignItem,
 } from "./types/marketing";
 import {
   INITIAL_CONNECTED_ACCOUNTS,
@@ -26,6 +27,7 @@ import {
   INITIAL_SEARCH_KEYWORDS,
   INITIAL_FRANCHISE_FUNNEL,
   INITIAL_ACQUISITION_CHANNELS,
+  INITIAL_FRANCHISE_CAMPAIGNS,
 } from "./data/initialMarketingData";
 import { OnboardingModal } from "./components/OnboardingModal";
 import { DeleteConfirmationModal } from "./components/DeleteConfirmationModal";
@@ -187,6 +189,37 @@ export default function App() {
   const [generatedCampaigns, setGeneratedCampaigns] = useState<
     GeneratedCampaignPackage[]
   >(INITIAL_GENERATED_CAMPAIGNS);
+
+  const [franchiseCampaigns, setFranchiseCampaigns] = useState<FranchiseCampaignItem[]>(() => {
+    try {
+      const saved = localStorage.getItem("kol_marketing_franchise_campaigns");
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return INITIAL_FRANCHISE_CAMPAIGNS;
+  });
+
+  const handleSaveFranchiseCampaign = (updatedCamp: FranchiseCampaignItem) => {
+    setFranchiseCampaigns((prev) => {
+      const exists = prev.some((c) => c.id === updatedCamp.id);
+      const next = exists
+        ? prev.map((c) => (c.id === updatedCamp.id ? updatedCamp : c))
+        : [updatedCamp, ...prev];
+      try {
+        localStorage.setItem("kol_marketing_franchise_campaigns", JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  };
+
+  const handleDeleteFranchiseCampaign = (campId: string) => {
+    setFranchiseCampaigns((prev) => {
+      const next = prev.filter((c) => c.id !== campId);
+      try {
+        localStorage.setItem("kol_marketing_franchise_campaigns", JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  };
 
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncNotice, setSyncNotice] = useState<string | null>(null);
@@ -719,20 +752,13 @@ export default function App() {
           />
         )}
 
-        {/* PESTAÑA 4: CAMPAÑAS */}
+        {/* PESTAÑA 3: CAMPAÑAS */}
         {activeTab === "campaigns" && (
           <CampaignStudioView
             brandGuidelines={KOL_V3_BRAND_GUIDELINES}
-            generatedCampaigns={generatedCampaigns}
-            onAddGeneratedCampaign={(pkg) =>
-              setGeneratedCampaigns((prev) => [pkg, ...prev])
-            }
-            onDeleteGeneratedCampaign={(pkgId) =>
-              setGeneratedCampaigns((prev) => prev.filter((p) => p.id !== pkgId))
-            }
-            onPublishToGmp={(newCamp) =>
-              setCampaigns((prev) => [newCamp, ...prev])
-            }
+            franchiseCampaigns={franchiseCampaigns}
+            onSaveCampaign={handleSaveFranchiseCampaign}
+            onDeleteCampaign={handleDeleteFranchiseCampaign}
             clarityPages={clarityPages}
           />
         )}

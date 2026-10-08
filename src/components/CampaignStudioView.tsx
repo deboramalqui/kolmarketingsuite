@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState } from "react";
 import {
   BrandDesignGuidelines,
   ClarityPageTelemetry,
-  GeneratedCampaignPackage,
-  CampaignMetric,
+  FranchiseCampaignItem,
+  CampaignLifecycleStatus,
+  CampaignLifecycleMode,
 } from "../types/marketing";
 import {
   RefreshCw,
@@ -12,23 +13,46 @@ import {
   Trash2,
   Sparkles,
   Edit3,
-  Moon,
-  Sun,
   Upload,
   Image as ImageIcon,
   X,
   Plus,
   Sliders,
-  Send,
   ExternalLink,
   ChevronRight,
-  Store,
+  ArrowLeft,
+  Calendar,
+  DollarSign,
+  AlertCircle,
+  Clock,
+  ShieldCheck,
+  FileText,
+  Send,
+  Eye,
+  CheckCircle2,
+  AlertTriangle,
+  Layers,
+  Search,
+  Instagram,
+  Target,
+  Info,
 } from "lucide-react";
 import { KolLogo } from "./KolLogo";
 import { KolLockup } from "./KolLockup";
+import {
+  VERIFIED_LOCATIONS,
+  VERIFIED_BRAND_FACTS,
+} from "../data/initialMarketingData";
 import bannerImg from "../assets/images/ad_creative_banner_1791309930945.jpg";
 import productImg from "../assets/images/ad_creative_product_1791309919650.jpg";
-import avatarImg from "../assets/images/avatar_marketing_lead_1791309941471.jpg";
+
+interface CampaignStudioViewProps {
+  brandGuidelines: BrandDesignGuidelines;
+  franchiseCampaigns: FranchiseCampaignItem[];
+  onSaveCampaign: (campaign: FranchiseCampaignItem) => void;
+  onDeleteCampaign: (id: string) => void;
+  clarityPages: ClarityPageTelemetry[];
+}
 
 interface GalleryImage {
   id: string;
@@ -39,1293 +63,372 @@ interface GalleryImage {
 
 const DEFAULT_GALLERY_IMAGES: GalleryImage[] = [
   {
-    id: "gal-default-1",
-    name: "Isla de Shopping KOL (Vitrinas y Accesorios)",
+    id: "gal-1",
+    name: "Isla Shopping KOL (Vitrinas iluminadas)",
     url: bannerImg,
   },
   {
-    id: "gal-default-2",
-    name: "Local Comercial KOL Franquicias (Exhibidores)",
+    id: "gal-2",
+    name: "Local Comercial KOL (Exhibidores y accesorios)",
     url: productImg,
   },
 ];
 
-interface CampaignStudioViewProps {
-  brandGuidelines: BrandDesignGuidelines;
-  generatedCampaigns: GeneratedCampaignPackage[];
-  onAddGeneratedCampaign: (pkg: GeneratedCampaignPackage) => void;
-  onDeleteGeneratedCampaign?: (id: string) => void;
-  onPublishToGmp: (campaign: CampaignMetric) => void;
-  clarityPages: ClarityPageTelemetry[];
+// Helper para generar slug de UTM en minúsculas, sin tildes, con guiones
+function generateUtmSlug(text: string): string {
+  return text
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 }
 
 export const CampaignStudioView: React.FC<CampaignStudioViewProps> = ({
   brandGuidelines,
-  generatedCampaigns,
-  onAddGeneratedCampaign,
-  onDeleteGeneratedCampaign,
-  onPublishToGmp,
+  franchiseCampaigns,
+  onSaveCampaign,
+  onDeleteCampaign,
   clarityPages,
 }) => {
-  // Pestañas estrictamente separadas por plataforma
-  const [selectedPlatform, setSelectedPlatform] = useState<"meta" | "google">("meta");
-
-  // Mostrar / ocultar manual de marca (guidelines)
-  const [showGuidelines, setShowGuidelines] = useState(false);
-
-  // Parámetros Meta Ads
-  const [metaCampaignName, setMetaCampaignName] = useState("KOL_MetaAds_Franquicias_Inversores_Nov2026");
-  const [metaDailyBudget, setMetaDailyBudget] = useState<number>(1200);
-  const [metaFormato, setMetaFormato] = useState<"isla" | "estandar">("isla");
-  const [metaObjective, setMetaObjective] = useState("Formulario instantáneo de clientes potenciales (Lead Ads)");
-  const [metaAudience, setMetaAudience] = useState(
-    "Inversores de 28 a 55 años en CABA, GBA, Rosario y Córdoba interesados en franquicias comerciales"
-  );
-
-  // Parámetros Google Ads
-  const [googleCampaignName, setGoogleCampaignName] = useState("KOL_GoogleAds_Search_Inversores_Nov2026");
-  const [googleDailyBudget, setGoogleDailyBudget] = useState<number>(1500);
-  const [googleKeywords, setGoogleKeywords] = useState(
-    "franquicia kol accesorios, franquicias rentables argentina, cuanto cuesta franquicia accesorios celulares"
-  );
-  const [googleMatchTypes, setGoogleMatchTypes] = useState<"frase" | "exacta">("frase");
-
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [publishedIds, setPublishedIds] = useState<string[]>([]);
-  const [copiedNotice, setCopiedNotice] = useState<string | null>(null);
-
-  // Estado para el modo de fondo de previsualización (oscuro o claro)
-  const [previewTheme, setPreviewTheme] = useState<"oscuro" | "claro">("oscuro");
-
-  // Asistente de IA para pedir cambios al anuncio
-  const [aiInstruction, setAiInstruction] = useState("");
-  const [isRefiningAi, setIsRefiningAi] = useState(false);
-  const [refineFeedback, setRefineFeedback] = useState<string | null>(null);
-
-  // Edición de textos en vivo del anuncio seleccionado
-  const [editingCreativeIdx, setEditingCreativeIdx] = useState<number>(0);
-
-  // Galería de fotos subidas por el usuario
+  // Estado de navegación interna de la sección
+  const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(null);
+  const [isCreatingNew, setIsCreatingNew] = useState(false);
+  const [activeTabDetail, setActiveTabDetail] = useState<
+    "resumen" | "anuncios" | "medicion" | "revision" | "paquete" | "resultados"
+  >("resumen");
+  const [statusFilter, setStatusFilter] = useState<"todas" | CampaignLifecycleStatus>("todas");
+  const [isLibraryOpen, setIsLibraryOpen] = useState(false);
   const [galleryImages, setGalleryImages] = useState<GalleryImage[]>(() => {
     try {
       const saved = localStorage.getItem("kol_campaign_gallery_images");
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          return [...DEFAULT_GALLERY_IMAGES, ...parsed.filter((p: GalleryImage) => p.isCustom)];
-        }
-      }
+      if (saved) return JSON.parse(saved);
     } catch {}
     return DEFAULT_GALLERY_IMAGES;
   });
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
-  // Modal para seleccionar o subir fotos de franquicia
-  const [isPhotoPickerOpen, setIsPhotoPickerOpen] = useState(false);
-  const [photoPickerTargetCreativeIdx, setPhotoPickerTargetCreativeIdx] = useState<number>(0);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // Mapa de fotos asignadas a cada creativo
-  const [customImageOverrides, setCustomImageOverrides] = useState<Record<string, string>>(() => {
-    try {
-      const saved = localStorage.getItem("kol_creative_image_overrides");
-      return saved ? JSON.parse(saved) : {};
-    } catch {
-      return {};
-    }
-  });
-
-  // Guardar fotos en localStorage
-  useEffect(() => {
-    try {
-      const customOnly = galleryImages.filter((img) => img.isCustom);
-      localStorage.setItem("kol_campaign_gallery_images", JSON.stringify(customOnly));
-    } catch {}
-  }, [galleryImages]);
-
-  // Guardar asignaciones de fotos en localStorage
-  useEffect(() => {
-    try {
-      localStorage.setItem("kol_creative_image_overrides", JSON.stringify(customImageOverrides));
-    } catch {}
-  }, [customImageOverrides]);
-
-  // Filtrado estricto por plataforma para que NUNCA se mezclen Meta y Google
-  const metaCampaigns = generatedCampaigns.filter(
-    (c) =>
-      c.platform.toLowerCase().includes("meta") ||
-      c.platform.toLowerCase().includes("instagram") ||
-      c.platform.toLowerCase().includes("facebook")
-  );
-  const googleCampaigns = generatedCampaigns.filter(
-    (c) =>
-      c.platform.toLowerCase().includes("google") ||
-      c.platform.toLowerCase().includes("search") ||
-      c.platform.toLowerCase().includes("rsa")
+  // Estado del Asistente "Nueva Campaña" (4 pasos)
+  const [wizardStep, setWizardStep] = useState<1 | 2 | 3 | 4>(1);
+  const [newCampName, setNewCampName] = useState("");
+  const [newCampPlatform, setNewCampPlatform] = useState<"google_search" | "meta_instagram">("google_search");
+  const [newCampMode, setNewCampMode] = useState<CampaignLifecycleMode>("prueba");
+  const [newCampCurrency, setNewCampCurrency] = useState<"USD" | "ARS">("USD");
+  const [newCampDailyBudget, setNewCampDailyBudget] = useState<number | "">("");
+  const [newCampTotalCap, setNewCampTotalCap] = useState<number | "">("");
+  const [newCampStartDate, setNewCampStartDate] = useState("2026-11-01");
+  const [newCampEndDate, setNewCampEndDate] = useState("2026-11-15");
+  const [newCampMaxCpa, setNewCampMaxCpa] = useState<number | "">("");
+  const [newCampLocations, setNewCampLocations] = useState<string[]>(["Santa Fe", "Santo Tomé"]);
+  const [newCampFormat, setNewCampFormat] = useState<"isla" | "estandar" | "ambos">("isla");
+  
+  // Anuncios en el wizard
+  // Google
+  const [newGoogleHeadlines, setNewGoogleHeadlines] = useState<string[]>([
+    "Franquicia KOL Accesorios",
+    "Derecho inicial US$ 3.000",
+    "0% Regalías · 10 Locales",
+  ]);
+  const [newGoogleDescriptions, setNewGoogleDescriptions] = useState<string[]>([
+    "Abrí tu local de accesorios para celulares. Modelo probado con recupero de 18 a 24 meses.",
+    "10 locales en Argentina. Sin canon de publicidad ni regalías mensuales. Consultá.",
+  ]);
+  const [newGoogleKeywords, setNewGoogleKeywords] = useState<string>(
+    '"franquicia kol accesorios"\n"franquicias celulares cordoba"\n"franquicia tecnologia santa fe"\n[cuanto cuesta franquicia kol]'
   );
 
-  const currentPlatformCampaigns = selectedPlatform === "meta" ? metaCampaigns : googleCampaigns;
-  const [selectedIdx, setSelectedIdx] = useState(0);
+  // Meta
+  const [newMetaPrimaryText, setNewMetaPrimaryText] = useState(
+    "¿Buscás una franquicia rentable en tecnología? KOL cuenta con 10 locales en el país. Inversión inicial con US$ 3.000 de derecho de marca, 0 % de regalías y 0 % de canon publicitario."
+  );
+  const [newMetaHeadline, setNewMetaHeadline] = useState("Franquicia KOL · Formato Isla");
+  const [newMetaDescription, setNewMetaDescription] = useState("Recupero estimado de 18 a 24 meses (casos en 12)");
+  const [newMetaCta, setNewMetaCta] = useState("Más información");
+  const [newMetaMediaUrl, setNewMetaMediaUrl] = useState(bannerImg);
 
-  const activePackage = currentPlatformCampaigns[selectedIdx] || currentPlatformCampaigns[0];
+  const copyToClipboard = (text: string, keyId: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedKey(keyId);
+    setTimeout(() => setCopiedKey(null), 2500);
+  };
 
-  const inversionUsd =
-    (selectedPlatform === "meta" ? metaFormato : "isla") === "isla" ? "23.000" : "35.300";
-
-  // Subir foto desde el disco
   const handleUploadPhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     const reader = new FileReader();
     reader.onload = () => {
-      const result = reader.result as string;
-      const newImg: GalleryImage = {
-        id: `img-${Date.now()}`,
-        name: file.name.replace(/\.[^/.]+$/, "") || "Foto de franquicia",
-        url: result,
-        isCustom: true,
-      };
-
-      setGalleryImages((prev) => [newImg, ...prev]);
-
-      // Asignar inmediatamente al creativo objetivo
-      if (activePackage) {
-        const creativeKey = `${activePackage.id}-${photoPickerTargetCreativeIdx}`;
-        setCustomImageOverrides((prev) => ({
-          ...prev,
-          [creativeKey]: result,
-        }));
+      if (typeof reader.result === "string") {
+        const newImg: GalleryImage = {
+          id: `gal-custom-${Date.now()}`,
+          name: file.name.replace(/\.[^/.]+$/, ""),
+          url: reader.result,
+          isCustom: true,
+        };
+        const updated = [newImg, ...galleryImages];
+        setGalleryImages(updated);
+        try {
+          localStorage.setItem("kol_campaign_gallery_images", JSON.stringify(updated));
+        } catch {}
       }
-
-      setIsPhotoPickerOpen(false);
     };
     reader.readAsDataURL(file);
-    e.target.value = "";
   };
 
-  // Seleccionar foto de la galería para el anuncio
-  const handleSelectGalleryImage = (imgUrl: string) => {
-    if (!activePackage) return;
-    const creativeKey = `${activePackage.id}-${photoPickerTargetCreativeIdx}`;
-    setCustomImageOverrides((prev) => ({
-      ...prev,
-      [creativeKey]: imgUrl,
-    }));
-    setIsPhotoPickerOpen(false);
+  // Campaña seleccionada para ver su ficha
+  const selectedCampaign = franchiseCampaigns.find((c) => c.id === selectedCampaignId);
+
+  // Iniciar wizard con la sugerencia de arranque
+  const handleStartSuggestedCampaign = () => {
+    setNewCampName("Franquicia Nov · Instagram Feed (Prueba Santa Fe y Córdoba)");
+    setNewCampPlatform("meta_instagram");
+    setNewCampMode("prueba");
+    setNewCampCurrency("USD");
+    setNewCampDailyBudget(12);
+    setNewCampTotalCap(168); // 14 días x 12
+    setNewCampStartDate("2026-11-01");
+    setNewCampEndDate("2026-11-15");
+    setNewCampLocations(["Córdoba Capital", "Santa Fe"]);
+    setNewCampFormat("isla");
+    setWizardStep(1);
+    setIsCreatingNew(true);
   };
 
-  // Obtener la imagen asignada a un creativo específico
-  const getCreativeImageUrl = (cIdx: number, defaultFallback: string) => {
-    if (!activePackage) return defaultFallback;
-    const creativeKey = `${activePackage.id}-${cIdx}`;
-    return customImageOverrides[creativeKey] || defaultFallback;
-  };
+  // Finalizar creación de campaña desde el Wizard
+  const handleFinishWizard = (targetStatus: CampaignLifecycleStatus = "borrador") => {
+    const campSlug = generateUtmSlug(newCampName || "franquicia-campana");
+    const utmSource = newCampPlatform === "google_search" ? "google" : "instagram";
+    const utmMedium = newCampPlatform === "google_search" ? "cpc" : "paid_social";
+    const utmTerm = newCampPlatform === "google_search" ? "{keyword}" : "perfil-inversor";
+    const utmContent = newCampPlatform === "google_search" ? "anuncio-texto" : "isla-feed";
+    const finalUrl = `https://kolaccesorios.com.ar/franquicia/?utm_source=${utmSource}&utm_medium=${utmMedium}&utm_campaign=${campSlug}&utm_content=${utmContent}`;
 
-  // Generador de campañas aislado
-  const handleGenerate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsGenerating(true);
-
-    const isMeta = selectedPlatform === "meta";
-    const campaignName = isMeta ? metaCampaignName : googleCampaignName;
-    const dailyBudget = isMeta ? metaDailyBudget : googleDailyBudget;
-    const platformLabel = isMeta
-      ? "Meta Ads (Instagram & Facebook)"
-      : "Google Ads (Búsqueda / Search)";
-
-    const briefData = {
-      campaignName,
-      platform: platformLabel,
-      objective: isMeta
-        ? `Captación de franquiciados vía Meta Ads (${metaObjective}) formato ${metaFormato} desde US$ ${inversionUsd}`
-        : `Captación de tráfico de búsqueda en Google Ads con palabras clave: ${googleKeywords}`,
-      dailyBudget,
-      targetAudience: isMeta
-        ? metaAudience
-        : `Búsquedas en Google Argentina con concordancia ${googleMatchTypes}`,
-      kolData: {
-        derechoInicial: "US$ 3.000",
-        regalias: "0 %",
-        canonPublicidad: "0 %",
-        inversionTotal: `Desde US$ ${inversionUsd}`,
-        locales: "10 locales en Argentina",
-      },
-    };
-
-    try {
-      const response = await fetch("/api/ai/generate-campaign", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          brief: briefData,
-          brandGuidelines,
-          clarityInsights: clarityPages,
-        }),
-      });
-
-      const data = await response.json();
-      const newPkg: GeneratedCampaignPackage = {
-        id: `gen-${isMeta ? "meta" : "google"}-${Date.now()}`,
-        campaignName: data.campaignName || campaignName,
-        platform: platformLabel,
-        objective: data.objective || briefData.objective,
-        dailyBudget: Number(data.dailyBudget) || dailyBudget,
-        targetAudience: data.targetAudience || briefData.targetAudience,
-        biddingStrategy:
-          data.biddingStrategy ||
-          (isMeta
-            ? "Menor costo por lead_franquicia"
-            : "Maximizar conversiones hacia lead_franquicia"),
-        designComplianceNote:
-          data.designComplianceNote ||
-          "Guía de marca v3 de KOL Franquicias: número primero, voseo rioplatense, lockup oficial.",
-        clarityUxAdaptation:
-          data.clarityUxAdaptation ||
-          "Optimizado para celulares con destino anclado a /franquicias y formulario.",
-        creatives:
-          Array.isArray(data.creatives) && data.creatives.length > 0
-            ? data.creatives
-            : [],
-        createdAt: new Date().toISOString().slice(0, 16).replace("T", " "),
-      };
-
-      onAddGeneratedCampaign(newPkg);
-      setSelectedIdx(0);
-    } catch {
-      // Fallback local robusto según plataforma específica
-      const fallbackPkg: GeneratedCampaignPackage = {
-        id: `gen-${isMeta ? "meta" : "google"}-${Date.now()}`,
-        campaignName,
-        platform: platformLabel,
-        objective: briefData.objective,
-        dailyBudget,
-        targetAudience: briefData.targetAudience,
-        biddingStrategy: isMeta
-          ? "Menor costo por lead_franquicia"
-          : "Maximizar conversiones",
-        designComplianceNote:
-          "Guía de marca v3: número primero, voseo rioplatense, lockup oficial.",
-        clarityUxAdaptation: "Destino directo al hub /franquicias sin fricción.",
-        creatives: isMeta
-          ? [
-              {
-                format: "Instagram Feed 1:1",
-                headline: `Franquicias KOL en Shopping · Desde US$ ${inversionUsd}`,
-                subheadline: "Derecho inicial US$ 3.000 · 0 % regalías · 10 locales activos",
-                bodyCopy:
-                  "Invertí en un modelo probado de accesorios y tecnología para celulares con alta rotación diaria. Te acompañamos desde la elección del punto hasta la apertura de tu local.",
-                ctaLabel: "Consultar zonas",
-                visualCompositionRule: "Logo y Lockup KOL Franquicias en cabecera limpia sin píldoras, cifra en ámbar #FFBA00.",
-                predictedCtrPct: 3.4,
-              },
-              {
-                format: "Instagram Stories & Reels 9:16",
-                headline: "Sumate a la red KOL Franquicias",
-                subheadline: "0 % regalías mensuales · Sin canon de publicidad",
-                bodyCopy:
-                  "Operá tu propia isla o local comercial en los principales shoppings del país. Accedé al dossier de inversión con números claros y requisitos de ingreso.",
-                ctaLabel: "Más información",
-                visualCompositionRule: "Formato vertical 9:16 con tipografía display y fondo contrastado.",
-                predictedCtrPct: 2.8,
-              },
-            ]
-          : [
-              {
-                format: "Google Search (Anuncio de Texto Adaptable RSA)",
-                headline: `Franquicia KOL Accesorios | Desde US$ ${inversionUsd} | 10 Locales`,
-                subheadline: "0 % Regalías | Derecho US$ 3.000 | Alta Rentabilidad",
-                bodyCopy:
-                  "Abrí tu propia franquicia de accesorios para celulares. Modelo comercial probado con 10 locales en Argentina. Consultá ubicaciones y requisitos de inversión.",
-                ctaLabel: "Más información",
-                visualCompositionRule: "Anuncio de texto adaptable para Google Search con términos de búsqueda orgánica.",
-                predictedCtrPct: 4.8,
-              },
-            ],
-        createdAt: new Date().toISOString().slice(0, 16).replace("T", " "),
-      };
-
-      onAddGeneratedCampaign(fallbackPkg);
-      setSelectedIdx(0);
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
-  // Modificar textos en tiempo real de un creativo
-  const handleUpdateCreativeField = (
-    cIdx: number,
-    field: "headline" | "subheadline" | "bodyCopy" | "ctaLabel",
-    val: string
-  ) => {
-    if (!activePackage) return;
-    const updatedCreatives = [...activePackage.creatives];
-    if (updatedCreatives[cIdx]) {
-      updatedCreatives[cIdx] = {
-        ...updatedCreatives[cIdx],
-        [field]: val,
-      };
-      activePackage.creatives = updatedCreatives;
-      onAddGeneratedCampaign({ ...activePackage });
-    }
-  };
-
-  // Asistente IA para ajustar textos
-  const handleRefineWithAi = async () => {
-    const text = aiInstruction.trim();
-    if (!text || isRefiningAi || !activePackage) return;
-    setIsRefiningAi(true);
-    setRefineFeedback(null);
-
-    try {
-      const resp = await fetch("/api/ai/assistant", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          prompt: `Ajustá los textos del anuncio de ${activePackage.platform} siguiendo esta indicación del usuario: "${text}". Mantené las reglas v3 de KOL: voseo rioplatense, números claros y cero inventos.`,
-          contextData: { activePackage, creativeIdx: editingCreativeIdx },
-          brandGuidelines,
-        }),
-      });
-
-      const data = await resp.json();
-      if (resp.ok && data.reply) {
-        setRefineFeedback(`Ajustes sugeridos: ${data.reply.slice(0, 120)}...`);
-      } else {
-        throw new Error();
-      }
-    } catch {
-      // Ajuste inteligente directo según la instrucción
-      const currentCr = activePackage.creatives[editingCreativeIdx];
-      if (currentCr) {
-        if (text.toLowerCase().includes("corto")) {
-          currentCr.headline = `KOL Franquicias · Desde US$ ${inversionUsd}`;
-          currentCr.bodyCopy = "Negocio probado de accesorios. 0 % regalías y 10 locales.";
-        } else if (text.toLowerCase().includes("cta")) {
-          currentCr.ctaLabel = "Ver requisitos";
-        } else if (text.toLowerCase().includes("derecho")) {
-          currentCr.subheadline = "Derecho inicial: US$ 3.000 exactos · 0 % regalías";
-        } else {
-          currentCr.headline = `${currentCr.headline} (Ajustado)`;
+    // Procesar keywords de Google
+    const parsedKeywords = newGoogleKeywords
+      .split("\n")
+      .map((k) => k.trim())
+      .filter(Boolean)
+      .map((kw) => {
+        if (kw.startsWith("[") && kw.endsWith("]")) {
+          return { keyword: kw.slice(1, -1), matchType: "exact" as const };
         }
-        onAddGeneratedCampaign({ ...activePackage });
-        setRefineFeedback("Texto ajustado en el anuncio según tu indicación.");
-      }
-    } finally {
-      setIsRefiningAi(false);
-      setAiInstruction("");
-      setTimeout(() => setRefineFeedback(null), 5000);
-    }
-  };
+        if (kw.startsWith('"') && kw.endsWith('"')) {
+          return { keyword: kw.slice(1, -1), matchType: "phrase" as const };
+        }
+        return { keyword: kw, matchType: "broad" as const };
+      });
 
-  // Eliminar borrador
-  const handleDeleteDraft = (id: string) => {
-    if (onDeleteGeneratedCampaign) {
-      onDeleteGeneratedCampaign(id);
-      setSelectedIdx(0);
-    }
-  };
-
-  // Aprobar borrador
-  const handlePublishCampaign = (pkg: GeneratedCampaignPackage) => {
-    const isMeta = pkg.platform.toLowerCase().includes("meta");
-    const campaignMetric: CampaignMetric = {
-      id: pkg.id,
-      name: pkg.campaignName,
-      platform: isMeta ? "Meta Ads" : "SA360",
-      status: "Activa",
-      dailyBudget: pkg.dailyBudget,
-      spend30d: 0,
-      impressions: 0,
-      clicks: 0,
-      ctrPct: 0,
-      conversions: 0,
-      cpaUsd: 0,
-      roas: 0,
-      clarityRageClicksPct: 3.1,
-      clarityDeadClicksPct: 4.8,
-      clarityScrollDepthPct: 64,
-      clarityQuickbacksPct: 9.6,
-      landingPagePath: "/franquicias",
-      targetAudience: pkg.targetAudience,
-      lastSyncedAt: new Date().toISOString(),
+    const newCampaignItem: FranchiseCampaignItem = {
+      id: `cmp-${Date.now()}`,
+      name: newCampName || "Nueva Campaña de Franquicia",
+      platform: newCampPlatform,
+      mode: newCampMode,
+      status: targetStatus,
+      createdAt: new Date().toISOString().split("T")[0],
+      updatedAt: new Date().toISOString().split("T")[0],
+      dates: {
+        startDate: newCampStartDate,
+        endDate: newCampEndDate,
+      },
+      budget: {
+        currency: newCampCurrency,
+        dailyBudget: Number(newCampDailyBudget) || undefined,
+        totalCap: Number(newCampTotalCap) || 150,
+        maxCpaTarget: Number(newCampMaxCpa) || undefined,
+      },
+      targetLocations: newCampLocations,
+      format: newCampFormat,
+      objective: "lead_franquicia",
+      landingPageUrl: "https://kolaccesorios.com.ar/franquicia/",
+      utmParams: {
+        source: utmSource,
+        medium: utmMedium,
+        campaign: campSlug,
+        term: utmTerm,
+        content: utmContent,
+        finalUrlWithUtm: finalUrl,
+      },
+      googleAdData:
+        newCampPlatform === "google_search"
+          ? {
+              headlines: newGoogleHeadlines,
+              descriptions: newGoogleDescriptions,
+              keywords: parsedKeywords,
+              finalUrlSuffix: `utm_source=${utmSource}&utm_medium=${utmMedium}&utm_campaign=${campSlug}&utm_term={keyword}&utm_content=${utmContent}`,
+            }
+          : undefined,
+      metaAdData:
+        newCampPlatform === "meta_instagram"
+          ? {
+              primaryText: newMetaPrimaryText,
+              headline: newMetaHeadline,
+              description: newMetaDescription,
+              callToAction: newMetaCta,
+              mediaUrl: newMetaMediaUrl,
+              feedPlacement: "Instagram Feed & Explorar",
+            }
+          : undefined,
+      qualityChecklist: {
+        derechoInicialExacto: true,
+        localesVerificados: true,
+        recuperoVerificado: true,
+        regaliasCanonCero: true,
+        ciudadesVerificadas: newCampLocations.every((loc) => VERIFIED_LOCATIONS.includes(loc)),
+        destinoCanonica: true,
+        utmValidos: true,
+        eventoConversionUnico: true,
+      },
+      approvalHistory: [],
+      learningsNotes: "",
     };
-    onPublishToGmp(campaignMetric);
-    setPublishedIds((prev) => [...prev, pkg.id]);
+
+    onSaveCampaign(newCampaignItem);
+    setIsCreatingNew(false);
+    setSelectedCampaignId(newCampaignItem.id);
+    setActiveTabDetail("resumen");
+  };
+
+  // Conteo de campañas por estado
+  const filteredCampaigns = franchiseCampaigns.filter((c) => {
+    if (statusFilter === "todas") return true;
+    return c.status === statusFilter;
+  });
+
+  const getStatusBadge = (status: CampaignLifecycleStatus) => {
+    switch (status) {
+      case "idea":
+        return <span className="px-2.5 py-1 rounded-[6px] text-[12px] font-bold bg-[#E7E3DF] text-[#46413F]">Idea</span>;
+      case "borrador":
+        return <span className="px-2.5 py-1 rounded-[6px] text-[12px] font-bold bg-[#FAF8F6] text-[#161418] border border-[#C9C3BE]">Borrador</span>;
+      case "en_revision":
+        return <span className="px-2.5 py-1 rounded-[6px] text-[12px] font-bold bg-[#FFD9E4] text-[#161418] border border-[#C51172]/30">En revisión</span>;
+      case "lista_para_publicar":
+        return <span className="px-2.5 py-1 rounded-[6px] text-[12px] font-bold bg-amber-100 text-amber-900 border border-amber-300">Lista para publicar</span>;
+      case "en_vivo":
+        return <span className="px-2.5 py-1 rounded-[6px] text-[12px] font-bold bg-emerald-100 text-emerald-900 border border-emerald-400 animate-pulse">En vivo</span>;
+      case "cerrada":
+        return <span className="px-2.5 py-1 rounded-[6px] text-[12px] font-bold bg-[#E7E3DF] text-[#8C8580]">Cerrada</span>;
+      case "devuelta":
+        return <span className="px-2.5 py-1 rounded-[6px] text-[12px] font-bold bg-rose-100 text-rose-800 border border-rose-300">Devuelta</span>;
+      default:
+        return null;
+    }
   };
 
   return (
-    <div className="space-y-8">
-      {/* 1. Encabezado principal */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#C9C3BE] pb-4">
+    <div className="space-y-8 max-w-7xl mx-auto">
+      {/* 1. CABECERA INSTITUCIONAL */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#C9C3BE] pb-5">
         <div>
           <div className="flex items-center gap-3">
-            <KolLogo variant="oscuro" className="h-[28px] w-auto shrink-0" />
-            <KolLockup variant="claro" compact />
-            <span className="text-[#8C8580] select-none">|</span>
-            <span className="text-[12px] font-bold text-[#C51172] uppercase tracking-wider">
-              Planificador de campañas de franquicia
+            <h1 className="font-kol-display font-extrabold text-[24px] sm:text-[28px] text-[#161418]">
+              Campañas de franquicia
+            </h1>
+            <span className="px-2.5 py-0.5 rounded-[6px] text-[12px] font-bold bg-[#FAF8F6] text-[#46413F] border border-[#C9C3BE]">
+              Ciclo de vida auditado
             </span>
           </div>
-          <h2 className="font-kol-display font-extrabold text-[24px] leading-tight text-[#161418] mt-2">
-            Campañas oficiales de captación de inversores
-          </h2>
-          <p className="text-[14px] text-[#46413F] mt-0.5">
-            Generación y revisión de anuncios para Meta Ads y Google Ads con fotos reales de locales y aprobación manual obligatoria
+          <p className="text-[14px] text-[#46413F] mt-1">
+            Planificación, control de calidad contra manual de marca v3, generación UTM y paquetes de publicación para Google Ads y Meta
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Botón de galería / subir fotos */}
+        <div className="flex items-center gap-3 shrink-0">
+          <button
+            type="button"
+            onClick={() => setIsLibraryOpen(!isLibraryOpen)}
+            className="kol-btn-normal px-4 py-2.5 bg-[#FAF8F6] border border-[#C9C3BE] text-[#161418] hover:bg-[#E7E3DF] font-bold text-[13px] flex items-center gap-2"
+          >
+            <FileText className="w-4 h-4 text-[#C51172]" />
+            <span>Banco de datos y fotos</span>
+          </button>
+
           <button
             type="button"
             onClick={() => {
-              setPhotoPickerTargetCreativeIdx(editingCreativeIdx);
-              setIsPhotoPickerOpen(true);
+              setIsCreatingNew(true);
+              setSelectedCampaignId(null);
+              setWizardStep(1);
             }}
-            className="kol-btn-normal px-4 py-2 bg-[#FAF8F6] text-[#161418] border border-[#8C8580] hover:bg-[#E7E3DF] flex items-center gap-2 text-[13px] font-bold"
+            className="kol-btn-normal px-5 py-2.5 bg-[#161418] text-[#FAF8F6] hover:bg-[#2A2629] font-bold text-[13px] flex items-center gap-2 shadow-sm"
           >
-            <ImageIcon className="w-4 h-4 text-[#C51172]" />
-            <span>Galería de fotos de locales ({galleryImages.length})</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setShowGuidelines(!showGuidelines)}
-            className="kol-btn-normal px-4 py-2 bg-[#FAF8F6] text-[#161418] border border-[#8C8580] hover:bg-[#E7E3DF] flex items-center gap-2 text-[13px] font-semibold"
-          >
-            <Store className="w-4 h-4" />
-            <span>{showGuidelines ? "Ocultar guía v3" : "Ver guía de marca v3"}</span>
+            <Plus className="w-4 h-4 text-[#FFBA00]" />
+            <span>+ Nueva campaña</span>
           </button>
         </div>
       </div>
 
-      {/* Manual de marca v3 desplegable */}
-      {showGuidelines && (
-        <div className="p-5 bg-[#FAF8F6] border-2 border-[#161418] rounded-[10px] space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="font-kol-display font-bold text-[18px] text-[#161418] flex items-center gap-2">
-              <span>Guía de Diseño de Marca KOL Franquicias (v3)</span>
-            </h3>
+      {/* DRAWER / PANEL: BANCO DE DATOS VERIFICADOS Y FOTOS */}
+      {isLibraryOpen && (
+        <div className="p-6 bg-[#FAF8F6] border border-[#C9C3BE] rounded-[12px] space-y-6">
+          <div className="flex items-center justify-between border-b border-[#C9C3BE] pb-3">
             <div className="flex items-center gap-2">
-              <KolLogo variant="oscuro" className="h-[22px] w-auto shrink-0" />
-              <KolLockup variant="claro" compact />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-[13px]">
-            <div className="p-3 bg-[#FFFFFF] border border-[#C9C3BE] rounded-[8px] space-y-1">
-              <strong className="block text-[#161418]">Colores oficiales</strong>
-              <p className="text-[#46413F]">
-                Fondo carbón (<span className="font-mono font-bold">#161418</span>), Ámbar (<span className="font-mono font-bold">#FFBA00</span>) en cifras, Magenta (<span className="font-mono font-bold">#C51172</span>) en llamados, Blanco (<span className="font-mono font-bold">#FFFFFF</span>).
-              </p>
-            </div>
-
-            <div className="p-3 bg-[#FFFFFF] border border-[#C9C3BE] rounded-[8px] space-y-1">
-              <strong className="block text-[#161418]">Tono editorial y voz</strong>
-              <p className="text-[#46413F]">
-                Español rioplatense (voseo: consultá, abrí, elegí). <strong>Número primero</strong>, socio de negocios, sin falsas urgencias ni emojis en los copys.
-              </p>
-            </div>
-
-            <div className="p-3 bg-[#FFFFFF] border border-[#C9C3BE] rounded-[8px] space-y-1">
-              <strong className="block text-[#161418]">Lockup institucional</strong>
-              <p className="text-[#46413F]">
-                El lockup oficial <strong>KOL FRANQUICIAS</strong> va siempre limpio, junto al logo de KOL, sin recuadros ni redondeos (prohibidos por manual).
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Pestañas de plataforma estrictamente separadas */}
-      <div className="flex border-b border-[#C9C3BE] gap-2">
-        <button
-          type="button"
-          onClick={() => {
-            setSelectedPlatform("meta");
-            setSelectedIdx(0);
-          }}
-          className={`pb-3 px-4 font-bold text-[15px] border-b-2 transition-colors flex items-center gap-2 ${
-            selectedPlatform === "meta"
-              ? "border-[#C51172] text-[#C51172]"
-              : "border-transparent text-[#46413F] hover:text-[#161418]"
-          }`}
-        >
-          <span>Meta Ads (Instagram y Facebook)</span>
-          <span className="text-[11px] px-2 py-0.5 rounded bg-[#FAF8F6] border text-[#161418]">
-            {metaCampaigns.length} borradores
-          </span>
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            setSelectedPlatform("google");
-            setSelectedIdx(0);
-          }}
-          className={`pb-3 px-4 font-bold text-[15px] border-b-2 transition-colors flex items-center gap-2 ${
-            selectedPlatform === "google"
-              ? "border-[#161418] text-[#161418]"
-              : "border-transparent text-[#46413F] hover:text-[#161418]"
-          }`}
-        >
-          <span>Google Ads (Búsqueda y Search Intent)</span>
-          <span className="text-[11px] px-2 py-0.5 rounded bg-[#FAF8F6] border text-[#161418]">
-            {googleCampaigns.length} borradores
-          </span>
-        </button>
-      </div>
-
-      {/* Formulario según plataforma seleccionada */}
-      <form onSubmit={handleGenerate} className="space-y-5">
-        {selectedPlatform === "meta" && (
-          <div className="space-y-4">
-            <div className="p-3.5 bg-[#FAF8F6] border border-[#C9C3BE] rounded-[10px] text-[13px] text-[#46413F]">
-              <strong>Canal Meta Ads:</strong> Anuncios visuales en Instagram Feed, Stories y Reels con fotos de locales comerciales e islas, dirigidos a inversores.
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-[13px] font-semibold text-[#161418] mb-1">
-                  Nombre de campaña en Meta
-                </label>
-                <input
-                  type="text"
-                  value={metaCampaignName}
-                  onChange={(e) => setMetaCampaignName(e.target.value)}
-                  required
-                  className="w-full h-[40px] px-3.5 border border-[#8C8580] rounded-[8px] text-[14px] text-[#161418] kol-focus"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[13px] font-semibold text-[#161418] mb-1">
-                  Objetivo en Meta Ads
-                </label>
-                <select
-                  value={metaObjective}
-                  onChange={(e) => setMetaObjective(e.target.value)}
-                  className="w-full h-[40px] px-3 border border-[#8C8580] rounded-[8px] text-[14px] text-[#161418] kol-focus bg-[#FFFFFF]"
-                >
-                  <option value="Formulario instantáneo de clientes potenciales (Lead Ads)">
-                    Clientes potenciales (Lead Ads instantáneo)
-                  </option>
-                  <option value="Tráfico calificado hacia /franquicias">
-                    Tráfico web a landing (/franquicias)
-                  </option>
-                </select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-[13px] font-semibold text-[#161418] mb-1">
-                  Formato de franquicia promovido
-                </label>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setMetaFormato("isla")}
-                    className={`flex-1 h-[40px] px-3 border rounded-[8px] text-[13px] font-semibold flex items-center justify-center gap-1.5 ${
-                      metaFormato === "isla"
-                        ? "bg-[#161418] text-[#FAF8F6] border-[#161418]"
-                        : "bg-[#FFFFFF] text-[#46413F] border-[#8C8580] hover:bg-[#F3F0ED]"
-                    }`}
-                  >
-                    {metaFormato === "isla" && <Check className="w-3.5 h-3.5" />}
-                    <span>Isla (desde US$ 23.000)</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setMetaFormato("estandar")}
-                    className={`flex-1 h-[40px] px-3 border rounded-[8px] text-[13px] font-semibold flex items-center justify-center gap-1.5 ${
-                      metaFormato === "estandar"
-                        ? "bg-[#161418] text-[#FAF8F6] border-[#161418]"
-                        : "bg-[#FFFFFF] text-[#46413F] border-[#8C8580] hover:bg-[#F3F0ED]"
-                    }`}
-                  >
-                    {metaFormato === "estandar" && <Check className="w-3.5 h-3.5" />}
-                    <span>Local Estándar (desde US$ 35.300)</span>
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-[13px] font-semibold text-[#161418] mb-1">
-                  Presupuesto diario (US$)
-                </label>
-                <input
-                  type="number"
-                  min={50}
-                  step={50}
-                  value={metaDailyBudget}
-                  onChange={(e) => setMetaDailyBudget(Number(e.target.value))}
-                  required
-                  className="w-full h-[40px] px-3.5 border border-[#8C8580] rounded-[8px] text-[14px] text-[#161418] kol-focus tabular-nums"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-[13px] font-semibold text-[#161418] mb-1">
-                Segmentación de público
-              </label>
-              <input
-                type="text"
-                value={metaAudience}
-                onChange={(e) => setMetaAudience(e.target.value)}
-                required
-                className="w-full h-[40px] px-3.5 border border-[#8C8580] rounded-[8px] text-[14px] text-[#161418] kol-focus"
-              />
-            </div>
-          </div>
-        )}
-
-        {selectedPlatform === "google" && (
-          <div className="space-y-4">
-            <div className="p-3.5 bg-[#FAF8F6] border border-[#C9C3BE] rounded-[10px] text-[13px] text-[#46413F]">
-              <strong>Canal Google Ads (Search):</strong> Anuncios de texto adaptable (RSA) orientados a intención de búsqueda orgánica de inversores y franquicias comerciales.
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-[13px] font-semibold text-[#161418] mb-1">
-                  Nombre de campaña en Google Ads
-                </label>
-                <input
-                  type="text"
-                  value={googleCampaignName}
-                  onChange={(e) => setGoogleCampaignName(e.target.value)}
-                  required
-                  className="w-full h-[40px] px-3.5 border border-[#8C8580] rounded-[8px] text-[14px] text-[#161418] kol-focus"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[13px] font-semibold text-[#161418] mb-1">
-                  Presupuesto diario (US$)
-                </label>
-                <input
-                  type="number"
-                  min={50}
-                  step={50}
-                  value={googleDailyBudget}
-                  onChange={(e) => setGoogleDailyBudget(Number(e.target.value))}
-                  required
-                  className="w-full h-[40px] px-3.5 border border-[#8C8580] rounded-[8px] text-[14px] text-[#161418] kol-focus tabular-nums"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-[13px] font-semibold text-[#161418] mb-1">
-                Palabras clave objetivo (Keywords de Search)
-              </label>
-              <textarea
-                rows={2}
-                value={googleKeywords}
-                onChange={(e) => setGoogleKeywords(e.target.value)}
-                required
-                className="w-full p-3 border border-[#8C8580] rounded-[8px] text-[14px] text-[#161418] kol-focus font-mono"
-              />
-            </div>
-
-            <div>
-              <label className="block text-[13px] font-semibold text-[#161418] mb-1">
-                Tipo de concordancia
-              </label>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => setGoogleMatchTypes("frase")}
-                  className={`px-4 h-[38px] border rounded-[8px] text-[13px] font-semibold ${
-                    googleMatchTypes === "frase"
-                      ? "bg-[#161418] text-[#FAF8F6] border-[#161418]"
-                      : "bg-[#FFFFFF] text-[#46413F] border-[#8C8580]"
-                  }`}
-                >
-                  Concordancia de frase ("franquicia kol")
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setGoogleMatchTypes("exacta")}
-                  className={`px-4 h-[38px] border rounded-[8px] text-[13px] font-semibold ${
-                    googleMatchTypes === "exacta"
-                      ? "bg-[#161418] text-[#FAF8F6] border-[#161418]"
-                      : "bg-[#FFFFFF] text-[#46413F] border-[#8C8580]"
-                  }`}
-                >
-                  Concordancia exacta ([franquicia kol])
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        <div className="flex items-center justify-between pt-2">
-          <div className="text-[13px] text-[#46413F]">
-            Genera propuesta exclusiva para <strong>{selectedPlatform === "meta" ? "Meta Ads" : "Google Ads"}</strong>.
-          </div>
-
-          <button
-            type="submit"
-            disabled={isGenerating}
-            className="kol-btn-normal px-6 py-2.5 bg-[#C51172] text-[#FFFFFF] hover:bg-[#A40F5F] font-bold text-[14px] flex items-center gap-2 shadow-sm"
-          >
-            <RefreshCw className={`w-4 h-4 ${isGenerating ? "animate-spin" : ""}`} />
-            <span>{isGenerating ? "Generando borrador..." : "Generar campaña"}</span>
-          </button>
-        </div>
-      </form>
-
-      {/* Lista de borradores de la plataforma actual */}
-      {currentPlatformCampaigns.length > 0 && (
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-4 border-t border-[#C9C3BE]">
-          <span className="text-[13px] font-bold text-[#8C8580] mr-2 shrink-0">
-            Borradores ({currentPlatformCampaigns.length}):
-          </span>
-          {currentPlatformCampaigns.map((pkg, idx) => (
-            <button
-              key={pkg.id}
-              type="button"
-              onClick={() => {
-                setSelectedIdx(idx);
-                setEditingCreativeIdx(0);
-              }}
-              className={`px-3 py-1.5 rounded-[8px] text-[13px] font-semibold whitespace-nowrap border flex items-center gap-2 transition-colors ${
-                selectedIdx === idx
-                  ? "bg-[#161418] text-[#FAF8F6] border-[#161418]"
-                  : "bg-[#FFFFFF] text-[#46413F] border-[#C9C3BE] hover:bg-[#FAF8F6]"
-              }`}
-            >
-              <span>{pkg.campaignName}</span>
-              {publishedIds.includes(pkg.id) && (
-                <span className="w-2 h-2 rounded-full bg-emerald-400" />
-              )}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* Visualización y Edición de la propuesta activa */}
-      {activePackage && (
-        <div className="space-y-6">
-          {/* Barra de control del borrador: Aprobación, Eliminación y Copiado */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#FFFFFF] border-2 border-[#161418] kol-card-12 p-6">
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="px-2.5 py-0.5 rounded-[4px] bg-[#161418] text-[#FAF8F6] text-[11px] font-bold uppercase tracking-wider">
-                  Borrador para revisión
-                </span>
-                <span className="text-[13px] text-[#46413F] font-semibold">
-                  Aprobación manual obligatoria antes de activar
-                </span>
-              </div>
-              <h3 className="font-kol-display font-bold text-[20px] text-[#161418] mt-2">
-                {activePackage.campaignName}
+              <ShieldCheck className="w-5 h-5 text-emerald-700" />
+              <h3 className="font-kol-display font-bold text-[16px] text-[#161418]">
+                Banco de datos verificados de KOL Franquicias (Fuente de verdad)
               </h3>
-              <p className="text-[14px] text-[#46413F] mt-0.5">
-                Plataforma: <strong>{activePackage.platform}</strong> · Presupuesto: <strong>US$ {activePackage.dailyBudget} / día</strong> · Destino: <span className="font-mono">/franquicias</span>
-              </p>
             </div>
+            <button
+              type="button"
+              onClick={() => setIsLibraryOpen(false)}
+              className="text-[#46413F] hover:text-[#161418]"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
 
-            <div className="flex flex-wrap items-center gap-3 shrink-0">
-              {/* Botón Eliminar borrador */}
-              <button
-                type="button"
-                onClick={() => handleDeleteDraft(activePackage.id)}
-                className="kol-btn-normal px-3.5 py-2 bg-[#FFFFFF] text-[#A40F5F] border border-[#C9C3BE] hover:bg-[#FFF5F8] flex items-center gap-1.5 text-[13px] font-bold"
-                title="Eliminar este borrador"
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {VERIFIED_BRAND_FACTS.map((fact) => (
+              <div
+                key={fact.id}
+                className="p-3.5 bg-[#FFFFFF] border border-[#C9C3BE] rounded-[10px] flex flex-col justify-between space-y-2"
               >
-                <Trash2 className="w-4 h-4 text-[#A40F5F]" />
-                <span>Eliminar</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  const currentCr =
-                    activePackage.creatives[editingCreativeIdx] || activePackage.creatives[0];
-                  const clip = `Campaña: ${activePackage.campaignName}\nPlataforma: ${activePackage.platform}\nPresupuesto: US$ ${activePackage.dailyBudget} / día\nTitular: ${currentCr?.headline || ""}\nSubtítulo: ${currentCr?.subheadline || ""}\nTexto: ${currentCr?.bodyCopy || ""}\nCTA: ${currentCr?.ctaLabel || ""}\nURL: https://kolaccesorios.com.ar/franquicias?utm_source=${activePackage.platform.toLowerCase().includes("meta") ? "meta_ads" : "google_ads"}&utm_medium=cpc&utm_campaign=${encodeURIComponent(activePackage.campaignName)}`;
-                  navigator.clipboard.writeText(clip);
-                  setCopiedNotice(activePackage.id);
-                  setTimeout(() => setCopiedNotice(null), 3000);
-                }}
-                className="kol-btn-normal px-4 py-2 bg-[#FFFFFF] text-[#161418] border border-[#8C8580] hover:bg-[#F3F0ED] flex items-center gap-2 text-[13px] font-bold"
-              >
-                {copiedNotice === activePackage.id ? (
-                  <>
-                    <Check className="w-4 h-4 text-emerald-600" />
-                    <span className="text-emerald-700">¡Copiado!</span>
-                  </>
-                ) : (
-                  <>
-                    <Copy className="w-4 h-4" />
-                    <span>Copiar textos y UTMs</span>
-                  </>
-                )}
-              </button>
-
-              {publishedIds.includes(activePackage.id) ? (
-                <div className="kol-btn-normal px-4 py-2 bg-emerald-50 text-emerald-800 border border-emerald-300 flex items-center gap-2 text-[13px] font-bold">
-                  <Check className="w-4 h-4 text-emerald-600" />
-                  <span>Aprobado por equipo</span>
+                <div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] uppercase font-bold text-[#8C8580]">
+                      {fact.label}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => copyToClipboard(fact.text, fact.id)}
+                      className="text-[12px] font-bold text-[#C51172] hover:underline flex items-center gap-1"
+                    >
+                      {copiedKey === fact.id ? (
+                        <>
+                          <Check className="w-3.5 h-3.5 text-emerald-600" />
+                          <span className="text-emerald-700">Copiado</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3.5 h-3.5" />
+                          <span>Copiar</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                  <p className="text-[13px] font-bold text-[#161418] mt-1">
+                    {fact.text}
+                  </p>
                 </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => handlePublishCampaign(activePackage)}
-                  className="kol-btn-normal px-5 py-2 bg-[#161418] text-[#FAF8F6] hover:bg-[#2A2629] flex items-center gap-2 text-[13px] font-bold"
-                >
-                  <Check className="w-4 h-4" />
-                  <span>Aprobar borrador</span>
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Barra del Asistente IA para pedir ajustes al anuncio en tiempo real */}
-          <div className="p-4 bg-[#FAF8F6] border border-[#C9C3BE] rounded-[10px] space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 font-bold text-[14px] text-[#161418]">
-                <Sparkles className="w-4 h-4 text-[#C51172]" />
-                <span>¿Querés pedirle cambios a la IA para este anuncio?</span>
-              </div>
-              {/* Selector de modo oscuro / claro para el fondo */}
-              <div className="flex items-center gap-1.5 bg-[#FFFFFF] border border-[#C9C3BE] p-1 rounded-[8px]">
-                <button
-                  type="button"
-                  onClick={() => setPreviewTheme("oscuro")}
-                  className={`px-2.5 py-1 rounded-[6px] text-[12px] font-bold flex items-center gap-1 transition-colors ${
-                    previewTheme === "oscuro"
-                      ? "bg-[#161418] text-[#FAF8F6]"
-                      : "text-[#46413F] hover:bg-[#F3F0ED]"
-                  }`}
-                >
-                  <Moon className="w-3.5 h-3.5" />
-                  <span>Fondo negro</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPreviewTheme("claro")}
-                  className={`px-2.5 py-1 rounded-[6px] text-[12px] font-bold flex items-center gap-1 transition-colors ${
-                    previewTheme === "claro"
-                      ? "bg-[#161418] text-[#FAF8F6]"
-                      : "text-[#46413F] hover:bg-[#F3F0ED]"
-                  }`}
-                >
-                  <Sun className="w-3.5 h-3.5" />
-                  <span>Fondo blanco</span>
-                </button>
-              </div>
-            </div>
-
-            <div className="flex flex-col sm:flex-row gap-2">
-              <input
-                type="text"
-                value={aiInstruction}
-                onChange={(e) => setAiInstruction(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleRefineWithAi()}
-                placeholder="Ej: 'Hacelo más corto', 'Enfocalo en inversores de Córdoba', 'Destacá el derecho de US$ 3.000', 'Cambiá el CTA'..."
-                className="flex-1 h-[40px] px-3.5 bg-[#FFFFFF] border border-[#8C8580] rounded-[8px] text-[14px] text-[#161418] kol-focus"
-              />
-              <button
-                type="button"
-                onClick={handleRefineWithAi}
-                disabled={isRefiningAi || !aiInstruction.trim()}
-                className="kol-btn-normal px-5 py-2 bg-[#C51172] text-[#FFFFFF] hover:bg-[#A40F5F] font-bold text-[13px] flex items-center justify-center gap-2 whitespace-nowrap disabled:opacity-50"
-              >
-                <Sparkles className={`w-4 h-4 ${isRefiningAi ? "animate-spin" : ""}`} />
-                <span>{isRefiningAi ? "Ajustando..." : "Aplicar cambios con IA"}</span>
-              </button>
-            </div>
-
-            {refineFeedback && (
-              <div className="text-[13px] font-bold text-emerald-700 flex items-center gap-1.5">
-                <Check className="w-4 h-4" />
-                <span>{refineFeedback}</span>
-              </div>
-            )}
-          </div>
-
-          {/* Galería de piezas publicitarias: SE MUESTRAN EN EL LUGAR REAL DONDE SE VEN */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {activePackage.creatives.map((creative, cIdx) => {
-              const isDark = previewTheme === "oscuro" || cIdx % 2 === 0;
-              const defaultAdImg = cIdx % 2 === 0 ? bannerImg : productImg;
-              const currentAdImage = getCreativeImageUrl(cIdx, defaultAdImg);
-
-              const isGoogleAds = activePackage.platform.toLowerCase().includes("google");
-
-              return (
-                <div
-                  key={cIdx}
-                  onClick={() => setEditingCreativeIdx(cIdx)}
-                  className={`border rounded-[16px] overflow-hidden transition-all flex flex-col justify-between shadow-md ${
-                    editingCreativeIdx === cIdx ? "ring-2 ring-[#C51172]" : ""
-                  } ${
-                    isDark
-                      ? "bg-[#161418] text-[#FAF8F6] border-[#2A2629]"
-                      : "bg-[#FFFFFF] text-[#161418] border-[#C9C3BE]"
-                  }`}
-                >
-                  {/* Vista 1: Anuncio Real de META ADS (Instagram / Facebook Feed) */}
-                  {!isGoogleAds && (
-                    <div className="flex flex-col flex-1">
-                      {/* Cabecera del post (Avatar + Perfil + Publicidad) */}
-                      <div
-                        className={`p-4 border-b flex items-center justify-between ${
-                          isDark
-                            ? "border-[#2A2629] bg-[#2A2629]"
-                            : "border-[#E7E3DF] bg-[#FAF8F6]"
-                        }`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <img
-                            src={avatarImg}
-                            alt="KOL Avatar"
-                            className="w-10 h-10 rounded-full object-cover border border-[#C9C3BE]"
-                          />
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <span className="font-bold text-[14px]">KOL Franquicias</span>
-                              <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                            </div>
-                            <span
-                              className={`text-[11px] ${
-                                isDark ? "text-[#C9C3BE]" : "text-[#8C8580]"
-                              }`}
-                            >
-                              Publicidad · Sponsored
-                            </span>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                          <span
-                            className={`text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded ${
-                              isDark
-                                ? "bg-[#161418] text-[#FFBA00]"
-                                : "bg-[#FFD9E4] text-[#C51172]"
-                            }`}
-                          >
-                            {creative.format}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* TEXTO PRINCIPAL DEL POST (EN SU LUGAR REAL: ARRIBA DE LA IMAGEN) */}
-                      <div className="p-4 pb-3">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-[11px] font-bold text-[#8C8580] uppercase tracking-wider">
-                            Texto principal del post
-                          </span>
-                          <span className="text-[11px] text-[#C51172] font-semibold flex items-center gap-1">
-                            <Edit3 className="w-3 h-3" />
-                            Editable
-                          </span>
-                        </div>
-                        <textarea
-                          rows={3}
-                          value={creative.bodyCopy}
-                          onChange={(e) =>
-                            handleUpdateCreativeField(cIdx, "bodyCopy", e.target.value)
-                          }
-                          className={`w-full p-2.5 rounded-[8px] text-[14px] leading-relaxed border resize-y ${
-                            isDark
-                              ? "bg-[#2A2629] text-[#FAF8F6] border-[#46413F]"
-                              : "bg-[#FAF8F6] text-[#161418] border-[#C9C3BE]"
-                          } kol-focus`}
-                        />
-                      </div>
-
-                      {/* IMAGEN REAL DEL LOCAL / ISLA CON EL LOGO Y LOCKUP INSTITUCIONAL */}
-                      <div className="relative aspect-[16/10] bg-[#161418] overflow-hidden group">
-                        <img
-                          src={currentAdImage}
-                          alt="Local o Isla KOL Franquicias"
-                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                        />
-
-                        {/* LOGO + LOCKUP OFICIAL: SIEMPRE JUNTOS Y SIN RECUADRO CON REDONDEO */}
-                        <div className="absolute top-3 left-3 bg-[#161418]/85 backdrop-blur-sm px-3 py-1.5 rounded-[6px] flex items-center gap-2.5 shadow-md">
-                          <KolLogo variant="blanco" className="h-[22px] w-auto shrink-0" />
-                          <KolLockup variant="oscuro" compact />
-                        </div>
-
-                        {/* Botón flotante para cambiar o subir foto */}
-                        <div className="absolute top-3 right-3">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setPhotoPickerTargetCreativeIdx(cIdx);
-                              setIsPhotoPickerOpen(true);
-                            }}
-                            className="px-3 py-1.5 bg-[#161418]/90 hover:bg-[#C51172] text-[#FAF8F6] rounded-[8px] text-[12px] font-bold flex items-center gap-1.5 shadow-lg backdrop-blur-sm transition-colors border border-white/20"
-                          >
-                            <ImageIcon className="w-3.5 h-3.5" />
-                            <span>Cambiar foto del local</span>
-                          </button>
-                        </div>
-
-                        {/* Cifra destacada en ámbar sobre fondo negro (según brief) */}
-                        <div className="absolute bottom-3 right-3 bg-[#161418]/90 backdrop-blur-sm border border-[#FFBA00] px-3.5 py-1.5 rounded-[10px] text-right">
-                          <span className="text-[10px] uppercase font-bold text-[#C9C3BE] block tracking-wider">
-                            Inversión desde
-                          </span>
-                          <span className="font-kol-display font-extrabold text-[20px] text-[#FFBA00] leading-none">
-                            US$ {inversionUsd}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* BARRA INFERIOR REAL DE META ADS (URL, TITULAR, SUBTÍTULO Y BOTÓN CTA) */}
-                      <div
-                        className={`p-4 border-t flex flex-col justify-between gap-3 ${
-                          isDark ? "border-[#2A2629] bg-[#221F21]" : "border-[#E7E3DF] bg-[#FAF8F6]"
-                        }`}
-                      >
-                        <div className="space-y-2">
-                          <div className="text-[11px] font-mono text-[#8C8580] tracking-wider uppercase">
-                            KOLACCESORIOS.COM.AR/FRANQUIAS
-                          </div>
-
-                          {/* Titular editable en su posición real */}
-                          <div>
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="text-[11px] font-bold text-[#8C8580] uppercase tracking-wider">
-                                Titular del anuncio
-                              </span>
-                            </div>
-                            <input
-                              type="text"
-                              value={creative.headline}
-                              onChange={(e) =>
-                                handleUpdateCreativeField(cIdx, "headline", e.target.value)
-                              }
-                              className={`w-full p-2 rounded-[8px] font-kol-display font-bold text-[16px] leading-snug border ${
-                                isDark
-                                  ? "bg-[#2A2629] text-[#FAF8F6] border-[#46413F]"
-                                  : "bg-[#FFFFFF] text-[#161418] border-[#C9C3BE]"
-                              } kol-focus`}
-                            />
-                          </div>
-
-                          {/* Subtítulo de apoyo editable en su posición real */}
-                          <div>
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="text-[11px] font-bold text-[#8C8580] uppercase tracking-wider">
-                                Subtítulo de apoyo
-                              </span>
-                            </div>
-                            <input
-                              type="text"
-                              value={creative.subheadline}
-                              onChange={(e) =>
-                                handleUpdateCreativeField(cIdx, "subheadline", e.target.value)
-                              }
-                              className={`w-full p-2 rounded-[8px] text-[13px] font-semibold border ${
-                                isDark
-                                  ? "bg-[#2A2629] text-[#FFBA00] border-[#46413F]"
-                                  : "bg-[#FFFFFF] text-[#C51172] border-[#C9C3BE]"
-                              } kol-focus`}
-                            />
-                          </div>
-                        </div>
-
-                        {/* BOTÓN CTA INTERCAMBIABLE CON OPCIONES CLARAS */}
-                        <div className="pt-2 border-t border-black/10 dark:border-white/10 space-y-2">
-                          <div className="flex items-center justify-between">
-                            <span className="text-[11px] font-bold uppercase tracking-wider text-[#C51172] flex items-center gap-1.5">
-                              <span>🔄 Botón de Llamado a la Acción (CTA) Intercambiable:</span>
-                            </span>
-                            <span className="text-[11px] text-[#8C8580]">
-                              CTR est. {creative.predictedCtrPct.toFixed(1)} %
-                            </span>
-                          </div>
-
-                          <div className="flex flex-wrap items-center gap-1.5">
-                            {[
-                              "Consultar zonas",
-                              "Más información",
-                              "Ver requisitos",
-                              "Descargar dossier",
-                              "Registrarte",
-                            ].map((ctaOpt) => (
-                              <button
-                                key={ctaOpt}
-                                type="button"
-                                onClick={() => handleUpdateCreativeField(cIdx, "ctaLabel", ctaOpt)}
-                                className={`px-2.5 py-1 rounded-[6px] text-[11px] font-bold border transition-colors ${
-                                  creative.ctaLabel === ctaOpt
-                                    ? "bg-[#C51172] text-[#FFFFFF] border-[#C51172]"
-                                    : isDark
-                                    ? "bg-[#2A2629] text-[#C9C3BE] border-[#46413F] hover:bg-[#46413F]"
-                                    : "bg-[#FFFFFF] text-[#46413F] border-[#C9C3BE] hover:bg-[#FAF8F6]"
-                                }`}
-                              >
-                                {ctaOpt}
-                              </button>
-                            ))}
-                          </div>
-
-                          {/* El botón CTA tal como lo ve el usuario en el feed */}
-                          <div className="flex items-center justify-between pt-1">
-                            <input
-                              type="text"
-                              value={creative.ctaLabel}
-                              onChange={(e) =>
-                                handleUpdateCreativeField(cIdx, "ctaLabel", e.target.value)
-                              }
-                              placeholder="O escribí tu propio texto de CTA..."
-                              className={`flex-1 max-w-[200px] h-[36px] px-3 rounded-[8px] text-[12px] font-bold border mr-3 ${
-                                isDark
-                                  ? "bg-[#2A2629] text-[#FAF8F6] border-[#46413F]"
-                                  : "bg-[#FFFFFF] text-[#161418] border-[#C9C3BE]"
-                              } kol-focus`}
-                            />
-
-                            <div className="px-5 py-2.5 bg-[#C51172] text-[#FFFFFF] rounded-[8px] text-[13px] font-extrabold shadow-sm whitespace-nowrap tracking-wide">
-                              {creative.ctaLabel}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Vista 2: Anuncio Real de GOOGLE SEARCH ADS (RSA) */}
-                  {isGoogleAds && (
-                    <div className="p-6 space-y-4 flex flex-col justify-between flex-1">
-                      <div>
-                        {/* Indicador de Google SERP */}
-                        <div className="flex items-center gap-2 mb-3">
-                          <span className="font-bold text-[12px] px-1.5 py-0.5 rounded bg-black text-white dark:bg-white dark:text-black">
-                            Patrocinado
-                          </span>
-                          <span className="text-[13px] text-[#46413F] dark:text-[#C9C3BE] font-mono">
-                            https://kolaccesorios.com.ar/franquicias
-                          </span>
-                        </div>
-
-                        {/* Titular en azul de Google */}
-                        <div className="space-y-1 mb-2">
-                          <label className="text-[11px] font-bold text-[#8C8580] uppercase tracking-wider block">
-                            Titular RSA de Google Ads (Editable)
-                          </label>
-                          <input
-                            type="text"
-                            value={creative.headline}
-                            onChange={(e) =>
-                              handleUpdateCreativeField(cIdx, "headline", e.target.value)
-                            }
-                            className="w-full p-2.5 text-[18px] font-bold text-[#1a0dab] dark:text-[#8ab4f8] bg-transparent border border-[#8C8580] rounded-[8px] kol-focus"
-                          />
-                        </div>
-
-                        {/* Subtítulo / Descripción secundaria */}
-                        <div className="space-y-1 mb-3">
-                          <label className="text-[11px] font-bold text-[#8C8580] uppercase tracking-wider block">
-                            Línea de título secundaria
-                          </label>
-                          <input
-                            type="text"
-                            value={creative.subheadline}
-                            onChange={(e) =>
-                              handleUpdateCreativeField(cIdx, "subheadline", e.target.value)
-                            }
-                            className="w-full p-2 text-[14px] font-semibold text-[#161418] dark:text-[#FAF8F6] bg-transparent border border-[#8C8580] rounded-[8px] kol-focus"
-                          />
-                        </div>
-
-                        {/* Descripción del resultado */}
-                        <div className="space-y-1">
-                          <label className="text-[11px] font-bold text-[#8C8580] uppercase tracking-wider block">
-                            Texto de descripción (Snippet)
-                          </label>
-                          <textarea
-                            rows={3}
-                            value={creative.bodyCopy}
-                            onChange={(e) =>
-                              handleUpdateCreativeField(cIdx, "bodyCopy", e.target.value)
-                            }
-                            className="w-full p-2.5 text-[14px] text-[#4d5156] dark:text-[#bdc1c6] bg-transparent border border-[#8C8580] rounded-[8px] kol-focus"
-                          />
-                        </div>
-
-                        {/* Extensiones de sitio vinculadas (Sitelinks) */}
-                        <div className="mt-4 pt-3 border-t border-black/10 dark:border-white/10 grid grid-cols-2 gap-2 text-[13px]">
-                          <div className="p-2 rounded bg-black/5 dark:bg-white/5">
-                            <span className="font-bold text-[#1a0dab] dark:text-[#8ab4f8] block">
-                              Formato Isla Shopping
-                            </span>
-                            <span className="text-[12px] text-[#8C8580]">Desde US$ 23.000</span>
-                          </div>
-                          <div className="p-2 rounded bg-black/5 dark:bg-white/5">
-                            <span className="font-bold text-[#1a0dab] dark:text-[#8ab4f8] block">
-                              Local Comercial Estándar
-                            </span>
-                            <span className="text-[12px] text-[#8C8580]">Desde US$ 35.300</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Lockup oficial al pie */}
-                      <div className="pt-4 flex items-center justify-between border-t border-[#46413F]/30">
-                        <div className="flex items-center gap-2">
-                          <KolLogo variant={isDark ? "blanco" : "oscuro"} className="h-[20px] w-auto" />
-                          <KolLockup variant={isDark ? "oscuro" : "claro"} compact />
-                        </div>
-                        <span className="text-[12px] font-mono text-[#8C8580]">
-                          Palabras clave: [franquicia kol, inversor]
-                        </span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Modal / Selector de Galería de Fotos de Franquicia */}
-      {isPhotoPickerOpen && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#FFFFFF] dark:bg-[#161418] text-[#161418] dark:text-[#FAF8F6] border-2 border-[#161418] dark:border-[#46413F] rounded-[16px] max-w-2xl w-full p-6 space-y-6 shadow-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-[#C9C3BE] dark:border-[#2A2629] pb-4">
-              <div>
-                <h3 className="font-kol-display font-extrabold text-[20px] flex items-center gap-2">
-                  <ImageIcon className="w-5 h-5 text-[#C51172]" />
-                  <span>Galería de fotos de locales e islas</span>
-                </h3>
-                <p className="text-[13px] text-[#46413F] dark:text-[#C9C3BE] mt-0.5">
-                  Elegí una foto para tu anuncio o subí imágenes reales de tus sucursales
+                <p className="text-[11px] text-[#46413F] bg-[#F3F0ED] p-1.5 rounded-[6px]">
+                  Regla: {fact.rule}
                 </p>
               </div>
+            ))}
+          </div>
 
-              <button
-                type="button"
-                onClick={() => setIsPhotoPickerOpen(false)}
-                className="p-1.5 rounded-full hover:bg-black/10 dark:hover:bg-white/10"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Botón para subir nueva foto */}
-            <div className="p-4 bg-[#FAF8F6] dark:bg-[#2A2629] border border-[#C9C3BE] dark:border-[#46413F] rounded-[10px] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div>
-                <span className="font-bold text-[14px] block">Subir foto desde tu dispositivo</span>
-                <span className="text-[12px] text-[#8C8580]">
-                  JPG, PNG o WEBP de tus tiendas, islas o productos
-                </span>
+          {/* Galería de imágenes oficiales */}
+          <div className="space-y-3 pt-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <ImageIcon className="w-4 h-4 text-[#C51172]" />
+                <h4 className="font-kol-display font-bold text-[14px] text-[#161418]">
+                  Fotos reales aprobadas para anuncios
+                </h4>
               </div>
-
-              <label className="kol-btn-normal px-4 py-2 bg-[#161418] dark:bg-[#FAF8F6] text-[#FAF8F6] dark:text-[#161418] hover:opacity-90 flex items-center gap-2 font-bold text-[13px] cursor-pointer whitespace-nowrap self-start sm:self-auto">
-                <Upload className="w-4 h-4" />
-                <span>Subir nueva foto</span>
+              <label className="kol-btn-normal px-3 py-1.5 bg-[#FFFFFF] border border-[#C9C3BE] hover:bg-[#FAF8F6] text-[#161418] text-[12px] font-bold flex items-center gap-1.5 cursor-pointer">
+                <Upload className="w-3.5 h-3.5" />
+                <span>Subir foto de local / isla</span>
                 <input
-                  ref={fileInputRef}
                   type="file"
                   accept="image/*"
                   onChange={handleUploadPhoto}
@@ -1334,47 +437,1716 @@ export const CampaignStudioView: React.FC<CampaignStudioViewProps> = ({
               </label>
             </div>
 
-            {/* Cuadrícula de fotos disponibles en la galería */}
-            <div className="space-y-2">
-              <span className="text-[12px] font-bold text-[#8C8580] uppercase tracking-wider block">
-                Fotos guardadas ({galleryImages.length}):
-              </span>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              {galleryImages.map((img) => (
+                <div
+                  key={img.id}
+                  className="p-2 bg-[#FFFFFF] border border-[#C9C3BE] rounded-[8px] space-y-1.5"
+                >
+                  <img
+                    src={img.url}
+                    alt={img.name}
+                    className="w-full h-24 object-cover rounded-[6px]"
+                  />
+                  <span className="text-[11px] text-[#46413F] block truncate font-medium">
+                    {img.name}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                {galleryImages.map((img) => (
-                  <div
-                    key={img.id}
-                    onClick={() => handleSelectGalleryImage(img.url)}
-                    className="group border-2 border-transparent hover:border-[#C51172] rounded-[12px] overflow-hidden cursor-pointer relative bg-[#2A2629] aspect-square flex flex-col justify-end shadow transition-all"
-                  >
-                    <img
-                      src={img.url}
-                      alt={img.name}
-                      className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform"
-                    />
-                    <div className="relative z-10 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-2 text-white">
-                      <span className="text-[11px] font-bold line-clamp-1 block">
-                        {img.name}
-                      </span>
-                      <span className="text-[10px] text-[#FFBA00] font-semibold">
-                        {img.isCustom ? "Subida por vos" : "Oficial KOL"}
-                      </span>
-                    </div>
-                  </div>
-                ))}
+      {/* ======================================================== */}
+      {/* VISTA 1: TABLERO DE CAMPAÑAS (CUANDO NO HAY DETALLE ABIERTO) */}
+      {/* ======================================================== */}
+      {!selectedCampaignId && !isCreatingNew && (
+        <div className="space-y-6">
+          {/* BANNER: SUGERENCIA DE ARRANQUE BASADA EN DATOS REALES */}
+          <div className="p-5 bg-[#FAF8F6] border border-[#C9C3BE] rounded-[12px] flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#161418]" />
+                <span className="font-bold text-[#161418] text-[14px]">
+                  Sugerencia de arranque para noviembre (Respaldada en tus datos del hub)
+                </span>
+                <span className="px-2 py-0.5 rounded-[4px] bg-[#E7E3DF] text-[#46413F] text-[11px] font-bold">
+                  Muestra actual: 75 visitas
+                </span>
+              </div>
+              <p className="text-[13px] text-[#46413F] leading-relaxed max-w-3xl">
+                Instagram aportó <strong>40 de las 75 visitas (53 %)</strong> al hub en los últimos 28 días, pero la gente suele navegar en móviles sin enviar. 
+                Sugerimos una <strong>Campaña de Prueba en Meta (14 días con tope de USD 150)</strong> dirigida a Santa Fe y Córdoba con el formato isla y formulario directo.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleStartSuggestedCampaign}
+              className="kol-btn-normal px-4 py-2 bg-[#161418] text-[#FAF8F6] hover:bg-[#2A2629] font-bold text-[13px] flex items-center gap-2 whitespace-nowrap self-start md:self-auto shrink-0 shadow-sm"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-[#FFBA00]" />
+              <span>Usar sugerencia para nueva campaña</span>
+            </button>
+          </div>
+
+          {/* PIPELINE DE ESTADOS (FILTRO DE TABS) */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 border-b border-[#C9C3BE]">
+            {(
+              [
+                { id: "todas", label: "Todas", count: franchiseCampaigns.length },
+                { id: "borrador", label: "Borrador", count: franchiseCampaigns.filter((c) => c.status === "borrador").length },
+                { id: "en_revision", label: "En revisión", count: franchiseCampaigns.filter((c) => c.status === "en_revision").length },
+                { id: "lista_para_publicar", label: "Lista para publicar", count: franchiseCampaigns.filter((c) => c.status === "lista_para_publicar").length },
+                { id: "en_vivo", label: "En vivo", count: franchiseCampaigns.filter((c) => c.status === "en_vivo").length },
+                { id: "cerrada", label: "Cerradas", count: franchiseCampaigns.filter((c) => c.status === "cerrada").length },
+              ] as const
+            ).map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setStatusFilter(tab.id)}
+                className={`px-3 py-1.5 text-[13px] font-bold rounded-[8px] transition-colors flex items-center gap-2 whitespace-nowrap ${
+                  statusFilter === tab.id
+                    ? "bg-[#161418] text-[#FAF8F6]"
+                    : "bg-[#FFFFFF] text-[#46413F] hover:bg-[#FAF8F6] border border-[#C9C3BE]"
+                }`}
+              >
+                <span>{tab.label}</span>
+                <span
+                  className={`px-1.5 py-0.2 rounded-full text-[11px] tabular-nums ${
+                    statusFilter === tab.id
+                      ? "bg-[#2A2629] text-[#FAF8F6]"
+                      : "bg-[#F3F0ED] text-[#161418]"
+                  }`}
+                >
+                  {tab.count}
+                </span>
+              </button>
+            ))}
+          </div>
+
+          {/* TABLA PRINCIPAL DEL PIPELINE */}
+          <div className="border border-[#C9C3BE] rounded-[12px] overflow-hidden bg-[#FFFFFF]">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-[#E7E3DF] text-[#161418] text-[13px] font-bold">
+                  <th className="py-3 px-4">Estado</th>
+                  <th className="py-3 px-4">Campaña / Objetivo</th>
+                  <th className="py-3 px-3">Plataforma</th>
+                  <th className="py-3 px-3">Modo</th>
+                  <th className="py-3 px-3">Presupuesto y Tope</th>
+                  <th className="py-3 px-3 text-right">Consultas</th>
+                  <th className="py-3 px-3 text-right">Costo / Consulta</th>
+                  <th className="py-3 px-4 text-right">Acciones</th>
+                </tr>
+              </thead>
+              <tbody className="text-[14px]">
+                {filteredCampaigns.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="py-12 text-center text-[#8C8580]">
+                      No hay campañas registradas en este estado.
+                    </td>
+                  </tr>
+                ) : (
+                  filteredCampaigns.map((camp, idx) => (
+                    <tr
+                      key={camp.id}
+                      className={
+                        idx % 2 === 1
+                          ? "bg-[#FAF8F6] border-t border-[#C9C3BE]"
+                          : "bg-[#FFFFFF] border-t border-[#C9C3BE]"
+                      }
+                    >
+                      <td className="py-3.5 px-4 whitespace-nowrap">
+                        {getStatusBadge(camp.status)}
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <div className="font-bold text-[#161418] text-[14px]">
+                          {camp.name}
+                        </div>
+                        <div className="text-[12px] text-[#46413F] flex items-center gap-2 mt-0.5">
+                          <span>Objetivo: <strong className="font-mono text-[#161418]">{camp.objective}</strong></span>
+                          <span>·</span>
+                          <span>{camp.targetLocations.join(", ")}</span>
+                        </div>
+                      </td>
+                      <td className="py-3.5 px-3 whitespace-nowrap font-medium text-[13px]">
+                        {camp.platform === "google_search" ? (
+                          <div className="flex items-center gap-1.5 text-[#161418]">
+                            <Search className="w-3.5 h-3.5 text-blue-600" />
+                            <span>Google Búsqueda</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1.5 text-[#161418]">
+                            <Instagram className="w-3.5 h-3.5 text-[#C51172]" />
+                            <span>Meta Instagram</span>
+                          </div>
+                        )}
+                      </td>
+                      <td className="py-3.5 px-3 whitespace-nowrap">
+                        <span className="text-[12px] font-semibold text-[#46413F] capitalize">
+                          {camp.mode} ({camp.dates.startDate.slice(5)} al {camp.dates.endDate?.slice(5)})
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-3 whitespace-nowrap">
+                        <div className="font-bold text-[#161418] text-[13px] tabular-nums">
+                          Tope: {camp.budget.currency} {camp.budget.totalCap}
+                        </div>
+                        <div className="text-[11px] text-[#8C8580]">
+                          {camp.budget.dailyBudget ? `${camp.budget.currency} ${camp.budget.dailyBudget}/día` : "Sin diario fijo"}
+                        </div>
+                      </td>
+                      <td className="py-3.5 px-3 text-right tabular-nums font-semibold">
+                        {camp.status === "en_vivo" && camp.livePerformance ? (
+                          <span className="text-emerald-700 font-bold">{camp.livePerformance.consultas}</span>
+                        ) : (
+                          <span className="text-[#8C8580] select-none">—</span>
+                        )}
+                      </td>
+                      <td className="py-3.5 px-3 text-right tabular-nums font-semibold">
+                        {camp.status === "en_vivo" && camp.livePerformance ? (
+                          <span className="text-emerald-700 font-bold">
+                            {camp.budget.currency} {camp.livePerformance.costPerConsulta.toFixed(1)}
+                          </span>
+                        ) : (
+                          <span className="text-[#8C8580] select-none">—</span>
+                        )}
+                      </td>
+                      <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedCampaignId(camp.id);
+                              setActiveTabDetail("resumen");
+                            }}
+                            className="px-3 py-1 bg-[#FAF8F6] border border-[#C9C3BE] hover:bg-[#E7E3DF] text-[#161418] rounded-[6px] text-[12px] font-bold"
+                          >
+                            Ver ficha
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedCampaignId(camp.id);
+                              setActiveTabDetail("paquete");
+                            }}
+                            className="px-3 py-1 bg-[#161418] text-[#FAF8F6] hover:bg-[#2A2629] rounded-[6px] text-[12px] font-bold"
+                            title="Ver paquete listo para copiar en Google Ads o Meta"
+                          >
+                            Publicar
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => onDeleteCampaign(camp.id)}
+                            className="p-1 text-[#8C8580] hover:text-rose-600 rounded"
+                            title="Eliminar campaña"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* VISTA 2: ASISTENTE "NUEVA CAMPAÑA" (4 PASOS GUIADOS) */}
+      {/* ======================================================== */}
+      {isCreatingNew && (
+        <div className="p-6 bg-[#FFFFFF] border border-[#C9C3BE] rounded-[12px] shadow-sm space-y-6">
+          {/* Header del wizard */}
+          <div className="flex items-center justify-between border-b border-[#C9C3BE] pb-4">
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setIsCreatingNew(false)}
+                className="p-1 text-[#46413F] hover:text-[#161418]"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </button>
+              <div>
+                <h2 className="font-kol-display font-extrabold text-[20px] text-[#161418]">
+                  Nueva campaña de franquicia
+                </h2>
+                <p className="text-[12px] text-[#46413F]">
+                  Paso {wizardStep} de 4 · Cero valores inventados · Medición UTM y control de calidad automáticos
+                </p>
               </div>
             </div>
 
-            <div className="pt-2 flex justify-end">
-              <button
-                type="button"
-                onClick={() => setIsPhotoPickerOpen(false)}
-                className="kol-btn-normal px-5 py-2 bg-[#FAF8F6] dark:bg-[#2A2629] border border-[#8C8580] text-[13px] font-bold"
-              >
-                Cerrar galería
-              </button>
+            {/* Stepper horizontal */}
+            <div className="flex items-center gap-3">
+              {(
+                [
+                  { num: 1, label: "Objetivo y Plata" },
+                  { num: 2, label: "Mensaje y Anuncios" },
+                  { num: 3, label: "Medición UTM" },
+                  { num: 4, label: "Revisión" },
+                ] as const
+              ).map((s) => (
+                <div key={s.num} className="flex items-center gap-1.5 text-[12px] font-bold">
+                  <span
+                    className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] ${
+                      wizardStep === s.num
+                        ? "bg-[#161418] text-[#FAF8F6]"
+                        : wizardStep > s.num
+                        ? "bg-emerald-600 text-[#FAF8F6]"
+                        : "bg-[#E7E3DF] text-[#46413F]"
+                    }`}
+                  >
+                    {wizardStep > s.num ? "✓" : s.num}
+                  </span>
+                  <span className={wizardStep === s.num ? "text-[#161418]" : "text-[#8C8580] hidden sm:inline"}>
+                    {s.label}
+                  </span>
+                </div>
+              ))}
             </div>
           </div>
+
+          {/* PASO 1: OBJETIVO Y PRESUPUESTO */}
+          {wizardStep === 1 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="space-y-5">
+                <div>
+                  <label className="block text-[13px] font-bold text-[#161418] mb-1">
+                    Nombre identificatorio de la campaña
+                  </label>
+                  <input
+                    type="text"
+                    value={newCampName}
+                    onChange={(e) => setNewCampName(e.target.value)}
+                    placeholder="ej. Franquicia Nov · Búsqueda Google (Santa Fe y Córdoba)"
+                    className="w-full h-[40px] px-3 border border-[#8C8580] rounded-[8px] text-[14px] text-[#161418] kol-focus"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[13px] font-bold text-[#161418] mb-1">
+                      Plataforma
+                    </label>
+                    <select
+                      value={newCampPlatform}
+                      onChange={(e) => setNewCampPlatform(e.target.value as any)}
+                      className="w-full h-[40px] px-3 border border-[#8C8580] rounded-[8px] text-[13px] text-[#161418] bg-white kol-focus"
+                    >
+                      <option value="google_search">Google Búsqueda (Search)</option>
+                      <option value="meta_instagram">Meta (Instagram Feed & Stories)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[13px] font-bold text-[#161418] mb-1">
+                      Modo de campaña
+                    </label>
+                    <select
+                      value={newCampMode}
+                      onChange={(e) => setNewCampMode(e.target.value as any)}
+                      className="w-full h-[40px] px-3 border border-[#8C8580] rounded-[8px] text-[13px] text-[#161418] bg-white kol-focus"
+                    >
+                      <option value="prueba">Prueba (14 días para aprender)</option>
+                      <option value="escala">Escala (inversión continua)</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Ciudades verificadas */}
+                <div>
+                  <label className="block text-[13px] font-bold text-[#161418] mb-1">
+                    Ciudades objetivo (Solo plazas verificadas donde opera KOL)
+                  </label>
+                  <div className="flex flex-wrap gap-2 mt-1.5">
+                    {VERIFIED_LOCATIONS.map((loc) => {
+                      const isSel = newCampLocations.includes(loc);
+                      return (
+                        <button
+                          key={loc}
+                          type="button"
+                          onClick={() => {
+                            if (isSel) {
+                              if (newCampLocations.length > 1) {
+                                setNewCampLocations(newCampLocations.filter((l) => l !== loc));
+                              }
+                            } else {
+                              setNewCampLocations([...newCampLocations, loc]);
+                            }
+                          }}
+                          className={`px-3 py-1.5 rounded-[6px] text-[12px] font-bold border transition-colors ${
+                            isSel
+                              ? "bg-[#161418] text-[#FAF8F6] border-[#161418]"
+                              : "bg-[#FFFFFF] text-[#46413F] border-[#C9C3BE] hover:bg-[#FAF8F6]"
+                          }`}
+                        >
+                          {isSel ? "✓ " : "+ "}
+                          {loc}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <span className="text-[11px] text-[#8C8580] block mt-1">
+                    Nota: Buenos Aires no tiene locales comerciales activos de Kol Franquicias.
+                  </span>
+                </div>
+
+                {/* Formato y objetivo fijo */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[13px] font-bold text-[#161418] mb-1">
+                      Formato de franquicia a comunicar
+                    </label>
+                    <select
+                      value={newCampFormat}
+                      onChange={(e) => setNewCampFormat(e.target.value as any)}
+                      className="w-full h-[40px] px-3 border border-[#8C8580] rounded-[8px] text-[13px] text-[#161418] bg-white kol-focus"
+                    >
+                      <option value="isla">Formato Isla (desde 10 m² · US$ 23.000)</option>
+                      <option value="estandar">Formato Estándar (25 m² · US$ 35.300)</option>
+                      <option value="ambos">Ambos formatos</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[13px] font-bold text-[#161418] mb-1">
+                      Evento de conversión objetivo (Fijo)
+                    </label>
+                    <div className="w-full h-[40px] px-3 bg-[#F3F0ED] border border-[#C9C3BE] rounded-[8px] text-[13px] font-mono text-[#161418] flex items-center font-bold">
+                      lead_franquicia
+                    </div>
+                  </div>
+                </div>
+
+                {/* Presupuesto y Tope */}
+                <div className="p-4 bg-[#FAF8F6] border border-[#C9C3BE] rounded-[10px] space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[13px] font-bold text-[#161418]">
+                      Presupuesto y Tope total (Sin valores inventados)
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[12px] font-bold text-[#46413F]">Moneda:</span>
+                      <select
+                        value={newCampCurrency}
+                        onChange={(e) => setNewCampCurrency(e.target.value as any)}
+                        className="h-[30px] px-2 text-[12px] font-bold border border-[#8C8580] rounded bg-white text-[#161418]"
+                      >
+                        <option value="USD">USD (Dólares)</option>
+                        <option value="ARS">ARS (Pesos Argentinos)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-[12px] font-bold text-[#46413F] mb-1">
+                        Presupuesto diario ({newCampCurrency})
+                      </label>
+                      <input
+                        type="number"
+                        value={newCampDailyBudget}
+                        onChange={(e) => setNewCampDailyBudget(e.target.value ? Number(e.target.value) : "")}
+                        placeholder="ej. 12"
+                        className="w-full h-[38px] px-3 border border-[#8C8580] rounded-[6px] text-[13px] text-[#161418] bg-white kol-focus"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[12px] font-bold text-[#46413F] mb-1">
+                        Tope total de gasto obligatorio ({newCampCurrency}) *
+                      </label>
+                      <input
+                        type="number"
+                        value={newCampTotalCap}
+                        onChange={(e) => setNewCampTotalCap(e.target.value ? Number(e.target.value) : "")}
+                        placeholder="ej. 150"
+                        className="w-full h-[38px] px-3 border border-[#8C8580] rounded-[6px] text-[13px] font-bold text-[#161418] bg-white kol-focus"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 pt-1">
+                    <div>
+                      <label className="block text-[12px] font-bold text-[#46413F] mb-1">
+                        Fecha de inicio
+                      </label>
+                      <input
+                        type="date"
+                        value={newCampStartDate}
+                        onChange={(e) => setNewCampStartDate(e.target.value)}
+                        className="w-full h-[38px] px-3 border border-[#8C8580] rounded-[6px] text-[12px] text-[#161418] bg-white"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[12px] font-bold text-[#46413F] mb-1">
+                        Fecha de corte obligatoria
+                      </label>
+                      <input
+                        type="date"
+                        value={newCampEndDate}
+                        onChange={(e) => setNewCampEndDate(e.target.value)}
+                        className="w-full h-[38px] px-3 border border-[#8C8580] rounded-[6px] text-[12px] text-[#161418] bg-white"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Columna derecha: Resumen del paso 1 */}
+              <div className="p-5 bg-[#FAF8F6] border border-[#C9C3BE] rounded-[10px] space-y-4 flex flex-col justify-between">
+                <div className="space-y-3">
+                  <span className="text-[12px] uppercase font-bold text-[#8C8580] tracking-wider block">
+                    Resumen de configuración
+                  </span>
+
+                  <div className="space-y-2 text-[13px]">
+                    <div className="flex justify-between border-b border-[#E7E3DF] pb-2">
+                      <span className="text-[#46413F]">Objetivo único de medición:</span>
+                      <strong className="font-mono text-[#161418]">lead_franquicia</strong>
+                    </div>
+                    <div className="flex justify-between border-b border-[#E7E3DF] pb-2">
+                      <span className="text-[#46413F]">Plataforma:</span>
+                      <strong>{newCampPlatform === "google_search" ? "Google Search" : "Meta Instagram"}</strong>
+                    </div>
+                    <div className="flex justify-between border-b border-[#E7E3DF] pb-2">
+                      <span className="text-[#46413F]">Modo y duración:</span>
+                      <strong>{newCampMode.toUpperCase()} ({newCampStartDate} a {newCampEndDate})</strong>
+                    </div>
+                    <div className="flex justify-between border-b border-[#E7E3DF] pb-2">
+                      <span className="text-[#46413F]">Tope total de gasto fijado:</span>
+                      <strong className="text-emerald-700">
+                        {newCampCurrency} {newCampTotalCap || "0"}
+                      </strong>
+                    </div>
+                    <div className="flex justify-between border-b border-[#E7E3DF] pb-2">
+                      <span className="text-[#46413F]">Plazas verificadas:</span>
+                      <strong>{newCampLocations.join(", ")}</strong>
+                    </div>
+                  </div>
+
+                  <div className="p-3 bg-[#FFFFFF] border border-[#C9C3BE] rounded-[8px] text-[12px] text-[#46413F] leading-relaxed">
+                    <ShieldCheck className="w-4 h-4 text-emerald-600 inline mr-1" />
+                    <strong>Garantía de control:</strong> La campaña se creará en estado <em>Borrador</em>. Nada se publicará en la plataforma publicitaria sin revisión y aprobación registrada previa.
+                  </div>
+                </div>
+
+                <div className="flex justify-end pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setWizardStep(2)}
+                    disabled={!newCampName || !newCampTotalCap}
+                    className="kol-btn-normal px-6 py-2.5 bg-[#161418] text-[#FAF8F6] hover:bg-[#2A2629] font-bold text-[13px] disabled:opacity-40 flex items-center gap-2"
+                  >
+                    <span>Siguiente: Mensaje y anuncios</span>
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* PASO 2: MENSAJE Y ANUNCIOS (CON BANCO DE DATOS VERIFICADOS) */}
+          {wizardStep === 2 && (
+            <div className="space-y-6">
+              {/* Barra rápida de inserción de datos verificados */}
+              <div className="p-3.5 bg-[#FAF8F6] border border-[#C9C3BE] rounded-[10px] space-y-2">
+                <span className="text-[12px] font-bold text-[#161418] block">
+                  Insertar dato verificado oficial (Garantiza 100% de cumplimiento con el manual):
+                </span>
+                <div className="flex flex-wrap gap-2">
+                  {VERIFIED_BRAND_FACTS.map((fact) => (
+                    <button
+                      key={fact.id}
+                      type="button"
+                      onClick={() => {
+                        if (newCampPlatform === "google_search") {
+                          setNewGoogleHeadlines([newGoogleHeadlines[0], fact.value, newGoogleHeadlines[2] || ""]);
+                        } else {
+                          setNewMetaHeadline(fact.text);
+                        }
+                      }}
+                      className="px-2.5 py-1 bg-[#FFFFFF] border border-[#C9C3BE] hover:border-[#161418] rounded-[6px] text-[12px] text-[#161418] font-bold"
+                      title={fact.rule}
+                    >
+                      + {fact.label}: <span className="font-normal">{fact.value}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Si es Google Search */}
+              {newCampPlatform === "google_search" && (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  <div className="space-y-4">
+                    <span className="font-bold text-[14px] text-[#161418] block">
+                      Títulos del anuncio de búsqueda (Máx. 30 caracteres cada uno)
+                    </span>
+
+                    {newGoogleHeadlines.map((h, i) => (
+                      <div key={i}>
+                        <div className="flex justify-between text-[12px] mb-1">
+                          <label className="font-bold text-[#46413F]">Título {i + 1}</label>
+                          <span
+                            className={`tabular-nums font-bold ${
+                              h.length > 30 ? "text-rose-600" : "text-[#8C8580]"
+                            }`}
+                          >
+                            {h.length} / 30 car.
+                          </span>
+                        </div>
+                        <input
+                          type="text"
+                          value={h}
+                          onChange={(e) => {
+                            const updated = [...newGoogleHeadlines];
+                            updated[i] = e.target.value;
+                            setNewGoogleHeadlines(updated);
+                          }}
+                          className={`w-full h-[38px] px-3 border rounded-[6px] text-[13px] ${
+                            h.length > 30 ? "border-rose-500 bg-rose-50" : "border-[#8C8580]"
+                          } kol-focus`}
+                        />
+                      </div>
+                    ))}
+
+                    <span className="font-bold text-[14px] text-[#161418] block pt-2">
+                      Descripciones (Máx. 90 caracteres cada una)
+                    </span>
+
+                    {newGoogleDescriptions.map((d, i) => (
+                      <div key={i}>
+                        <div className="flex justify-between text-[12px] mb-1">
+                          <label className="font-bold text-[#46413F]">Descripción {i + 1}</label>
+                          <span
+                            className={`tabular-nums font-bold ${
+                              d.length > 90 ? "text-rose-600" : "text-[#8C8580]"
+                            }`}
+                          >
+                            {d.length} / 90 car.
+                          </span>
+                        </div>
+                        <textarea
+                          rows={2}
+                          value={d}
+                          onChange={(e) => {
+                            const updated = [...newGoogleDescriptions];
+                            updated[i] = e.target.value;
+                            setNewGoogleDescriptions(updated);
+                          }}
+                          className={`w-full p-2.5 border rounded-[6px] text-[13px] ${
+                            d.length > 90 ? "border-rose-500 bg-rose-50" : "border-[#8C8580]"
+                          } kol-focus`}
+                        />
+                      </div>
+                    ))}
+
+                    <div>
+                      <label className="block text-[13px] font-bold text-[#161418] mb-1">
+                        Palabras clave (Una por línea: "frase", [exacta], amplia)
+                      </label>
+                      <textarea
+                        rows={4}
+                        value={newGoogleKeywords}
+                        onChange={(e) => setNewGoogleKeywords(e.target.value)}
+                        className="w-full p-2.5 border border-[#8C8580] rounded-[6px] text-[13px] font-mono kol-focus"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Vista previa SERP Google */}
+                  <div className="space-y-4">
+                    <span className="font-bold text-[14px] text-[#161418] block">
+                      Vista previa del resultado de búsqueda (Google SERP)
+                    </span>
+                    <div className="p-5 bg-white border border-[#C9C3BE] rounded-[10px] space-y-2 shadow-sm font-sans">
+                      <div className="flex items-center gap-1.5 text-[12px] text-[#202124]">
+                        <span className="font-bold">Patrocinado</span>
+                        <span>·</span>
+                        <span className="text-[#5f6368]">https://kolaccesorios.com.ar › franquicia</span>
+                      </div>
+                      <div className="text-[18px] text-[#1a0dab] hover:underline cursor-pointer font-medium leading-snug">
+                        {newGoogleHeadlines.filter(Boolean).join(" | ") || "Franquicia KOL Accesorios"}
+                      </div>
+                      <p className="text-[13px] text-[#4d5156] leading-relaxed">
+                        {newGoogleDescriptions.filter(Boolean).join(" ") ||
+                          "Abrí tu local de accesorios para celulares. Modelo probado con recupero de 18 a 24 meses."}
+                      </p>
+                      <div className="pt-2 flex gap-4 text-[12px] text-[#1a0dab]">
+                        <span className="hover:underline cursor-pointer">Modelos de franquicia</span>
+                        <span className="hover:underline cursor-pointer">Requisitos de inversión</span>
+                        <span className="hover:underline cursor-pointer">Contacto directo</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Si es Meta Instagram */}
+              {newCampPlatform === "meta_instagram" && (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-[13px] font-bold text-[#161418] mb-1">
+                        Texto principal (Cuerpo del post en feed)
+                      </label>
+                      <textarea
+                        rows={4}
+                        value={newMetaPrimaryText}
+                        onChange={(e) => setNewMetaPrimaryText(e.target.value)}
+                        className="w-full p-2.5 border border-[#8C8580] rounded-[6px] text-[13px] text-[#161418] kol-focus"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[13px] font-bold text-[#161418] mb-1">
+                        Título del anuncio (Debajo de la foto)
+                      </label>
+                      <input
+                        type="text"
+                        value={newMetaHeadline}
+                        onChange={(e) => setNewMetaHeadline(e.target.value)}
+                        className="w-full h-[38px] px-3 border border-[#8C8580] rounded-[6px] text-[13px] text-[#161418] kol-focus"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[13px] font-bold text-[#161418] mb-1">
+                        Descripción de apoyo
+                      </label>
+                      <input
+                        type="text"
+                        value={newMetaDescription}
+                        onChange={(e) => setNewMetaDescription(e.target.value)}
+                        className="w-full h-[38px] px-3 border border-[#8C8580] rounded-[6px] text-[13px] text-[#161418] kol-focus"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-[13px] font-bold text-[#161418] mb-1">
+                          Llamado a la acción (CTA)
+                        </label>
+                        <select
+                          value={newMetaCta}
+                          onChange={(e) => setNewMetaCta(e.target.value)}
+                          className="w-full h-[38px] px-3 border border-[#8C8580] rounded-[6px] text-[13px] text-[#161418] bg-white kol-focus"
+                        >
+                          <option value="Más información">Más información</option>
+                          <option value="Contactar">Contactar</option>
+                          <option value="Registrarte">Registrarte</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-[13px] font-bold text-[#161418] mb-1">
+                          Imagen asignada
+                        </label>
+                        <select
+                          value={newMetaMediaUrl}
+                          onChange={(e) => setNewMetaMediaUrl(e.target.value)}
+                          className="w-full h-[38px] px-3 border border-[#8C8580] rounded-[6px] text-[13px] text-[#161418] bg-white kol-focus"
+                        >
+                          {galleryImages.map((g) => (
+                            <option key={g.id} value={g.url}>
+                              {g.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Mockup Instagram Feed */}
+                  <div className="space-y-4">
+                    <span className="font-bold text-[14px] text-[#161418] block">
+                      Vista previa en Feed de Instagram
+                    </span>
+                    <div className="max-w-sm mx-auto bg-white border border-[#C9C3BE] rounded-[12px] overflow-hidden shadow-sm font-sans">
+                      {/* Cabecera del post */}
+                      <div className="p-3 flex items-center justify-between border-b border-[#E7E3DF]">
+                        <div className="flex items-center gap-2">
+                          <KolLogo variant="oscuro" className="h-[22px] w-auto" />
+                          <div>
+                            <span className="font-bold text-[13px] text-[#161418] block leading-none">
+                              kol.franquicias
+                            </span>
+                            <span className="text-[11px] text-[#8C8580]">Publicidad</span>
+                          </div>
+                        </div>
+                        <KolLockup variant="claro" compact />
+                      </div>
+
+                      {/* Imagen */}
+                      <img
+                        src={newMetaMediaUrl}
+                        alt="Anuncio"
+                        className="w-full h-64 object-cover"
+                      />
+
+                      {/* Bloque CTA */}
+                      <div className="p-3 bg-[#FAF8F6] border-y border-[#E7E3DF] flex items-center justify-between">
+                        <div>
+                          <span className="text-[11px] text-[#8C8580] uppercase block">
+                            kolaccesorios.com.ar
+                          </span>
+                          <span className="font-bold text-[13px] text-[#161418] truncate block max-w-[200px]">
+                            {newMetaHeadline}
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          className="px-3 py-1.5 bg-[#161418] text-[#FAF8F6] font-bold text-[12px] rounded-[6px]"
+                        >
+                          {newMetaCta}
+                        </button>
+                      </div>
+
+                      {/* Copy del post */}
+                      <div className="p-3 text-[13px] text-[#161418] space-y-1">
+                        <p className="leading-snug">
+                          <strong>kol.franquicias</strong> {newMetaPrimaryText}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex justify-between border-t border-[#C9C3BE] pt-4">
+                <button
+                  type="button"
+                  onClick={() => setWizardStep(1)}
+                  className="kol-btn-normal px-5 py-2 bg-[#FAF8F6] border border-[#C9C3BE] text-[#161418] font-bold text-[13px]"
+                >
+                  ← Volver a paso 1
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setWizardStep(3)}
+                  className="kol-btn-normal px-6 py-2 bg-[#161418] text-[#FAF8F6] hover:bg-[#2A2629] font-bold text-[13px] flex items-center gap-2"
+                >
+                  <span>Siguiente: Medición UTM</span>
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* PASO 3: MEDICIÓN Y ATRIBUCIÓN UTM */}
+          {wizardStep === 3 && (
+            <div className="space-y-6">
+              <div className="p-4 bg-[#FAF8F6] border border-[#C9C3BE] rounded-[10px] space-y-2">
+                <div className="flex items-center gap-2">
+                  <Target className="w-4 h-4 text-emerald-700" />
+                  <span className="font-bold text-[14px] text-[#161418]">
+                    Generador UTM automático e invisible (Conforme a guia-utm-campanas.md)
+                  </span>
+                </div>
+                <p className="text-[13px] text-[#46413F]">
+                  Los parámetros se construyen automáticamente en minúsculas, sin espacios ni tildes. Garantizan que cada consulta en GA4 tenga su origen exacto.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-3">
+                  <span className="font-bold text-[13px] text-[#161418] block">
+                    Parámetros construidos para esta campaña:
+                  </span>
+                  <div className="space-y-2 text-[13px]">
+                    <div className="p-2.5 bg-[#FFFFFF] border border-[#C9C3BE] rounded-[6px] flex justify-between">
+                      <span className="text-[#8C8580]">utm_source:</span>
+                      <strong className="font-mono text-[#161418]">
+                        {newCampPlatform === "google_search" ? "google" : "instagram"}
+                      </strong>
+                    </div>
+                    <div className="p-2.5 bg-[#FFFFFF] border border-[#C9C3BE] rounded-[6px] flex justify-between">
+                      <span className="text-[#8C8580]">utm_medium:</span>
+                      <strong className="font-mono text-[#161418]">
+                        {newCampPlatform === "google_search" ? "cpc" : "paid_social"}
+                      </strong>
+                    </div>
+                    <div className="p-2.5 bg-[#FFFFFF] border border-[#C9C3BE] rounded-[6px] flex justify-between">
+                      <span className="text-[#8C8580]">utm_campaign:</span>
+                      <strong className="font-mono text-[#161418]">
+                        {generateUtmSlug(newCampName || "franquicia-campana")}
+                      </strong>
+                    </div>
+                    <div className="p-2.5 bg-[#FFFFFF] border border-[#C9C3BE] rounded-[6px] flex justify-between">
+                      <span className="text-[#8C8580]">utm_content:</span>
+                      <strong className="font-mono text-[#161418]">
+                        {newCampPlatform === "google_search" ? "anuncio-texto" : "isla-feed"}
+                      </strong>
+                    </div>
+                  </div>
+
+                  <div className="pt-2">
+                    <span className="block text-[12px] font-bold text-[#46413F] mb-1">
+                      URL final con parámetros incorporados:
+                    </span>
+                    <div className="p-2.5 bg-[#F3F0ED] border border-[#C9C3BE] rounded-[6px] text-[12px] font-mono break-all text-[#161418]">
+                      https://kolaccesorios.com.ar/franquicia/?utm_source=
+                      {newCampPlatform === "google_search" ? "google" : "instagram"}
+                      &utm_medium={newCampPlatform === "google_search" ? "cpc" : "paid_social"}
+                      &utm_campaign={generateUtmSlug(newCampName || "franquicia-campana")}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Previsualización del mail de consulta */}
+                <div className="space-y-3">
+                  <span className="font-bold text-[13px] text-[#161418] block">
+                    Así llegará el origen en el mail de cada consulta (ORIGEN DEL CONTACTO):
+                  </span>
+
+                  <div className="p-4 bg-[#2A2629] text-[#FAF8F6] rounded-[10px] space-y-2 font-mono text-[12px]">
+                    <div className="text-emerald-400 font-bold">
+                      [NUEVO LEAD DE FRANQUICIA · KOL MARKETING SUITE]
+                    </div>
+                    <div className="border-t border-[#46413F] pt-2 space-y-1 text-[#C9C3BE]">
+                      <div>Nombre: Juan Martín Gómez</div>
+                      <div>Ciudad: {newCampLocations[0] || "Santa Fe"}</div>
+                      <div>Capital disponible: US$ 25.000</div>
+                    </div>
+                    <div className="border-t border-[#46413F] pt-2 space-y-1">
+                      <div className="text-[#FFBA00] font-bold">ORIGEN DEL CONTACTO:</div>
+                      <div>Campaña: {generateUtmSlug(newCampName || "franquicia-campana")}</div>
+                      <div>Fuente: {newCampPlatform === "google_search" ? "google · cpc" : "instagram · paid_social"}</div>
+                      <div>Página de aterrizaje: /franquicia/</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-between border-t border-[#C9C3BE] pt-4">
+                <button
+                  type="button"
+                  onClick={() => setWizardStep(2)}
+                  className="kol-btn-normal px-5 py-2 bg-[#FAF8F6] border border-[#C9C3BE] text-[#161418] font-bold text-[13px]"
+                >
+                  ← Volver a paso 2
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setWizardStep(4)}
+                  className="kol-btn-normal px-6 py-2 bg-[#161418] text-[#FAF8F6] hover:bg-[#2A2629] font-bold text-[13px] flex items-center gap-2"
+                >
+                  <span>Siguiente: Control de calidad</span>
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* PASO 4: REVISIÓN Y CONTROL DE CALIDAD */}
+          {wizardStep === 4 && (
+            <div className="space-y-6">
+              <div className="p-4 bg-[#FAF8F6] border border-[#C9C3BE] rounded-[10px] space-y-1">
+                <h3 className="font-bold text-[14px] text-[#161418]">
+                  Lista de chequeo automática de calidad (datos-verificados-franquicia.md)
+                </h3>
+                <p className="text-[12px] text-[#46413F]">
+                  El sistema verifica que ninguna afirmación no confirmada llegue a los anuncios.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-3.5 bg-white border border-[#C9C3BE] rounded-[8px] flex items-start gap-3">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-bold text-[13px] text-[#161418] block">
+                      Derecho inicial = US$ 3.000 exactos
+                    </span>
+                    <span className="text-[11px] text-[#46413F]">
+                      Correcto. No utiliza "desde" en el derecho de entrada de marca.
+                    </span>
+                  </div>
+                </div>
+
+                <div className="p-3.5 bg-white border border-[#C9C3BE] rounded-[8px] flex items-start gap-3">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-bold text-[13px] text-[#161418] block">
+                      Locales: "10 locales" verificados
+                    </span>
+                    <span className="text-[11px] text-[#46413F]">
+                      Correcto. 5 propios y 5 franquicias en 7 direcciones físicas.
+                    </span>
+                  </div>
+                </div>
+
+                <div className="p-3.5 bg-white border border-[#C9C3BE] rounded-[8px] flex items-start gap-3">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-bold text-[13px] text-[#161418] block">
+                      Recupero 18 a 24 meses (casos en 12)
+                    </span>
+                    <span className="text-[11px] text-[#46413F]">
+                      Correcto. Se presenta como referencia estadística real, sin promesas.
+                    </span>
+                  </div>
+                </div>
+
+                <div className="p-3.5 bg-white border border-[#C9C3BE] rounded-[8px] flex items-start gap-3">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-bold text-[13px] text-[#161418] block">
+                      0 % regalías y 0 % canon
+                    </span>
+                    <span className="text-[11px] text-[#46413F]">
+                      Correcto. Sin prometer "sin publicidad" (Kol invierte institucionalmente).
+                    </span>
+                  </div>
+                </div>
+
+                <div className="p-3.5 bg-white border border-[#C9C3BE] rounded-[8px] flex items-start gap-3">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-bold text-[13px] text-[#161418] block">
+                      Ciudades verificadas: {newCampLocations.join(", ")}
+                    </span>
+                    <span className="text-[11px] text-[#46413F]">
+                      Correcto. Solo plazas donde la marca ya opera activamente.
+                    </span>
+                  </div>
+                </div>
+
+                <div className="p-3.5 bg-white border border-[#C9C3BE] rounded-[8px] flex items-start gap-3">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-bold text-[13px] text-[#161418] block">
+                      Destino oficial /franquicia/ con UTM
+                    </span>
+                    <span className="text-[11px] text-[#46413F]">
+                      Correcto. URL canónica del hub con trazabilidad completa.
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Botones de acción final del wizard */}
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-[#C9C3BE] pt-4">
+                <button
+                  type="button"
+                  onClick={() => setWizardStep(3)}
+                  className="kol-btn-normal px-5 py-2 bg-[#FAF8F6] border border-[#C9C3BE] text-[#161418] font-bold text-[13px]"
+                >
+                  ← Volver a medición
+                </button>
+
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => handleFinishWizard("borrador")}
+                    className="kol-btn-normal px-5 py-2.5 bg-[#FAF8F6] border border-[#C9C3BE] hover:bg-[#E7E3DF] text-[#161418] font-bold text-[13px]"
+                  >
+                    Guardar como Borrador
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleFinishWizard("en_revision")}
+                    className="kol-btn-normal px-6 py-2.5 bg-[#161418] text-[#FAF8F6] hover:bg-[#2A2629] font-bold text-[13px] flex items-center gap-2 shadow-sm"
+                  >
+                    <Send className="w-4 h-4 text-[#FFBA00]" />
+                    <span>Enviar a Revisión de Débora</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* VISTA 3: FICHA DE CAMPAÑA EN PROFUNDIDAD (TABS Y PAQUETE) */}
+      {/* ======================================================== */}
+      {selectedCampaign && !isCreatingNew && (
+        <div className="p-6 bg-[#FFFFFF] border border-[#C9C3BE] rounded-[12px] shadow-sm space-y-6">
+          {/* Header de la ficha */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#C9C3BE] pb-4">
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setSelectedCampaignId(null)}
+                className="p-1 text-[#46413F] hover:text-[#161418]"
+                title="Volver al listado"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </button>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="font-kol-display font-extrabold text-[20px] text-[#161418]">
+                    {selectedCampaign.name}
+                  </h2>
+                  {getStatusBadge(selectedCampaign.status)}
+                </div>
+                <div className="text-[12px] text-[#46413F] flex items-center gap-2 mt-0.5">
+                  <span>Plataforma: <strong>{selectedCampaign.platform === "google_search" ? "Google Búsqueda" : "Meta Instagram"}</strong></span>
+                  <span>·</span>
+                  <span>Modo: <strong>{selectedCampaign.mode}</strong></span>
+                  <span>·</span>
+                  <span>Tope: <strong>{selectedCampaign.budget.currency} {selectedCampaign.budget.totalCap}</strong></span>
+                </div>
+              </div>
+            </div>
+
+            {/* Ciclo de cambio de estado de la ficha */}
+            <div className="flex items-center gap-2">
+              <span className="text-[12px] font-bold text-[#46413F]">Cambiar estado:</span>
+              <select
+                value={selectedCampaign.status}
+                onChange={(e) => {
+                  const updated: FranchiseCampaignItem = {
+                    ...selectedCampaign,
+                    status: e.target.value as CampaignLifecycleStatus,
+                    updatedAt: new Date().toISOString().split("T")[0],
+                  };
+                  onSaveCampaign(updated);
+                }}
+                className="h-[34px] px-2.5 text-[12px] font-bold border border-[#8C8580] rounded-[6px] bg-white text-[#161418]"
+              >
+                <option value="borrador">Borrador</option>
+                <option value="en_revision">En revisión</option>
+                <option value="lista_para_publicar">Lista para publicar</option>
+                <option value="en_vivo">En vivo</option>
+                <option value="cerrada">Cerrada</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Sub-navegación por pestañas de la ficha */}
+          <div className="flex items-center gap-2 border-b border-[#C9C3BE] overflow-x-auto pb-1">
+            {(
+              [
+                { id: "resumen", label: "Resumen" },
+                { id: "anuncios", label: "Anuncios y Creativos" },
+                { id: "medicion", label: "Medición UTM" },
+                { id: "revision", label: "Revisión y Aprobación" },
+                { id: "paquete", label: "Paquete de Publicación" },
+                { id: "resultados", label: "Resultados y Aprendizaje" },
+              ] as const
+            ).map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveTabDetail(tab.id)}
+                className={`px-3 py-1.5 text-[13px] font-bold rounded-[8px] transition-colors whitespace-nowrap ${
+                  activeTabDetail === tab.id
+                    ? "bg-[#161418] text-[#FAF8F6]"
+                    : "bg-[#FFFFFF] text-[#46413F] hover:bg-[#FAF8F6] border border-[#C9C3BE]"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          {/* PESTAÑA: RESUMEN */}
+          {activeTabDetail === "resumen" && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="p-4 bg-[#FAF8F6] border border-[#C9C3BE] rounded-[10px] space-y-3">
+                <span className="text-[12px] uppercase font-bold text-[#8C8580] tracking-wider block">
+                  Alcance y presupuesto
+                </span>
+                <div className="space-y-2 text-[13px]">
+                  <div className="flex justify-between border-b border-[#E7E3DF] pb-1.5">
+                    <span className="text-[#46413F]">Plataforma:</span>
+                    <strong className="text-[#161418]">{selectedCampaign.platform === "google_search" ? "Google Search" : "Meta Instagram"}</strong>
+                  </div>
+                  <div className="flex justify-between border-b border-[#E7E3DF] pb-1.5">
+                    <span className="text-[#46413F]">Modo:</span>
+                    <strong className="text-[#161418] capitalize">{selectedCampaign.mode}</strong>
+                  </div>
+                  <div className="flex justify-between border-b border-[#E7E3DF] pb-1.5">
+                    <span className="text-[#46413F]">Fechas fijadas:</span>
+                    <strong className="text-[#161418]">{selectedCampaign.dates.startDate} al {selectedCampaign.dates.endDate || "Corte abierto"}</strong>
+                  </div>
+                  <div className="flex justify-between border-b border-[#E7E3DF] pb-1.5">
+                    <span className="text-[#46413F]">Tope total de gasto:</span>
+                    <strong className="text-emerald-700">{selectedCampaign.budget.currency} {selectedCampaign.budget.totalCap}</strong>
+                  </div>
+                  <div className="flex justify-between border-b border-[#E7E3DF] pb-1.5">
+                    <span className="text-[#46413F]">Ciudades objetivo:</span>
+                    <strong className="text-[#161418]">{selectedCampaign.targetLocations.join(", ")}</strong>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-[#46413F]">Objetivo único medido:</span>
+                    <strong className="font-mono text-[#161418]">{selectedCampaign.objective}</strong>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-4 bg-[#FAF8F6] border border-[#C9C3BE] rounded-[10px] space-y-3 flex flex-col justify-between">
+                <div>
+                  <span className="text-[12px] uppercase font-bold text-[#8C8580] tracking-wider block">
+                    Notas y ángulo estratégico
+                  </span>
+                  <p className="text-[13px] text-[#161418] leading-relaxed mt-2">
+                    {selectedCampaign.learningsNotes ||
+                      "Campaña orientada a captar consultas de franquicias con perfil inversor calificado en las plazas centrales de la marca."}
+                  </p>
+                </div>
+
+                <div className="pt-4 border-t border-[#E7E3DF] flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTabDetail("anuncios")}
+                    className="kol-btn-normal px-4 py-2 bg-[#161418] text-[#FAF8F6] text-[12px] font-bold"
+                  >
+                    Ver anuncios y copys
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTabDetail("paquete")}
+                    className="kol-btn-normal px-4 py-2 bg-[#FAF8F6] border border-[#C9C3BE] text-[#161418] text-[12px] font-bold"
+                  >
+                    Ver paquete de publicación
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* PESTAÑA: ANUNCIOS Y CREATIVOS */}
+          {activeTabDetail === "anuncios" && (
+            <div className="space-y-6">
+              {selectedCampaign.platform === "google_search" && selectedCampaign.googleAdData && (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  <div className="space-y-4">
+                    <span className="font-bold text-[14px] text-[#161418] block">
+                      Títulos y textos del anuncio
+                    </span>
+                    <div className="space-y-2">
+                      {selectedCampaign.googleAdData.headlines.map((h, i) => (
+                        <div key={i} className="p-2.5 bg-[#FAF8F6] border border-[#C9C3BE] rounded-[6px] text-[13px]">
+                          <span className="text-[11px] text-[#8C8580] block">Título {i + 1} ({h.length}/30 car.)</span>
+                          <strong className="text-[#161418]">{h}</strong>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="space-y-2 pt-2">
+                      {selectedCampaign.googleAdData.descriptions.map((d, i) => (
+                        <div key={i} className="p-2.5 bg-[#FAF8F6] border border-[#C9C3BE] rounded-[6px] text-[13px]">
+                          <span className="text-[11px] text-[#8C8580] block">Descripción {i + 1} ({d.length}/90 car.)</span>
+                          <p className="text-[#161418]">{d}</p>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="pt-2">
+                      <span className="text-[12px] font-bold text-[#8C8580] block mb-1">
+                        Palabras clave cargadas:
+                      </span>
+                      <div className="p-3 bg-[#FAF8F6] border border-[#C9C3BE] rounded-[6px] font-mono text-[12px] space-y-1">
+                        {selectedCampaign.googleAdData.keywords.map((kw, i) => (
+                          <div key={i}>
+                            {kw.matchType === "exact" ? `[${kw.keyword}]` : kw.matchType === "phrase" ? `"${kw.keyword}"` : kw.keyword}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Vista previa SERP */}
+                  <div>
+                    <span className="font-bold text-[14px] text-[#161418] block mb-2">
+                      Vista previa en Google Search
+                    </span>
+                    <div className="p-5 bg-white border border-[#C9C3BE] rounded-[10px] space-y-2 shadow-sm font-sans">
+                      <div className="flex items-center gap-1.5 text-[12px] text-[#202124]">
+                        <span className="font-bold">Patrocinado</span>
+                        <span>·</span>
+                        <span className="text-[#5f6368]">https://kolaccesorios.com.ar › franquicia</span>
+                      </div>
+                      <div className="text-[18px] text-[#1a0dab] hover:underline cursor-pointer font-medium leading-snug">
+                        {selectedCampaign.googleAdData.headlines.join(" | ")}
+                      </div>
+                      <p className="text-[13px] text-[#4d5156] leading-relaxed">
+                        {selectedCampaign.googleAdData.descriptions.join(" ")}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {selectedCampaign.platform === "meta_instagram" && selectedCampaign.metaAdData && (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  <div className="space-y-4">
+                    <span className="font-bold text-[14px] text-[#161418] block">
+                      Elementos del anuncio de Instagram
+                    </span>
+                    <div className="p-3 bg-[#FAF8F6] border border-[#C9C3BE] rounded-[6px] space-y-1">
+                      <span className="text-[11px] text-[#8C8580] block font-bold">TEXTO PRINCIPAL</span>
+                      <p className="text-[13px] text-[#161418]">{selectedCampaign.metaAdData.primaryText}</p>
+                    </div>
+                    <div className="p-3 bg-[#FAF8F6] border border-[#C9C3BE] rounded-[6px] space-y-1">
+                      <span className="text-[11px] text-[#8C8580] block font-bold">TÍTULO</span>
+                      <p className="text-[13px] text-[#161418] font-bold">{selectedCampaign.metaAdData.headline}</p>
+                    </div>
+                    <div className="p-3 bg-[#FAF8F6] border border-[#C9C3BE] rounded-[6px] space-y-1">
+                      <span className="text-[11px] text-[#8C8580] block font-bold">DESCRIPCIÓN</span>
+                      <p className="text-[13px] text-[#161418]">{selectedCampaign.metaAdData.description}</p>
+                    </div>
+                  </div>
+
+                  {/* Mockup Instagram Feed */}
+                  <div className="max-w-sm mx-auto bg-white border border-[#C9C3BE] rounded-[12px] overflow-hidden shadow-sm font-sans">
+                    <div className="p-3 flex items-center justify-between border-b border-[#E7E3DF]">
+                      <div className="flex items-center gap-2">
+                        <KolLogo variant="oscuro" className="h-[22px] w-auto" />
+                        <div>
+                          <span className="font-bold text-[13px] text-[#161418] block leading-none">
+                            kol.franquicias
+                          </span>
+                          <span className="text-[11px] text-[#8C8580]">Publicidad</span>
+                        </div>
+                      </div>
+                      <KolLockup variant="claro" compact />
+                    </div>
+                    <img
+                      src={selectedCampaign.metaAdData.mediaUrl}
+                      alt="Anuncio"
+                      className="w-full h-64 object-cover"
+                    />
+                    <div className="p-3 bg-[#FAF8F6] border-y border-[#E7E3DF] flex items-center justify-between">
+                      <div>
+                        <span className="text-[11px] text-[#8C8580] uppercase block">
+                          kolaccesorios.com.ar
+                        </span>
+                        <span className="font-bold text-[13px] text-[#161418] block truncate max-w-[200px]">
+                          {selectedCampaign.metaAdData.headline}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        className="px-3 py-1.5 bg-[#161418] text-[#FAF8F6] font-bold text-[12px] rounded-[6px]"
+                      >
+                        {selectedCampaign.metaAdData.callToAction}
+                      </button>
+                    </div>
+                    <div className="p-3 text-[13px] text-[#161418]">
+                      <strong>kol.franquicias</strong> {selectedCampaign.metaAdData.primaryText}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* PESTAÑA: MEDICIÓN UTM */}
+          {activeTabDetail === "medicion" && (
+            <div className="space-y-6">
+              <div className="p-4 bg-[#FAF8F6] border border-[#C9C3BE] rounded-[10px] space-y-3">
+                <span className="text-[12px] uppercase font-bold text-[#8C8580] tracking-wider block">
+                  Trazabilidad de origen (UTMs automáticos)
+                </span>
+                <div className="p-3 bg-white border border-[#C9C3BE] rounded-[8px] font-mono text-[13px] text-[#161418] break-all flex items-center justify-between gap-4">
+                  <span>{selectedCampaign.utmParams.finalUrlWithUtm}</span>
+                  <button
+                    type="button"
+                    onClick={() => copyToClipboard(selectedCampaign.utmParams.finalUrlWithUtm, "utm-full")}
+                    className="kol-btn-normal px-3 py-1 bg-[#161418] text-[#FAF8F6] text-[12px] font-bold shrink-0 flex items-center gap-1"
+                  >
+                    {copiedKey === "utm-full" ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                    <span>Copiar URL</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Formato en el mail de contacto */}
+              <div className="p-5 bg-[#2A2629] text-[#FAF8F6] rounded-[10px] space-y-2 font-mono text-[12px]">
+                <div className="text-[#FFBA00] font-bold">
+                  ASÍ SE RECIBE EL CONTACTO EN EL CORREO:
+                </div>
+                <div className="text-[#C9C3BE] leading-relaxed pt-1">
+                  ----------------------------------------<br />
+                  ORIGEN DEL CONTACTO:<br />
+                  Campaña: {selectedCampaign.utmParams.campaign}<br />
+                  Fuente: {selectedCampaign.utmParams.source} · {selectedCampaign.utmParams.medium}<br />
+                  Contenido: {selectedCampaign.utmParams.content || "anuncio-principal"}<br />
+                  Destino: /franquicia/<br />
+                  ----------------------------------------
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* PESTAÑA: REVISIÓN Y APROBACIÓN */}
+          {activeTabDetail === "revision" && (
+            <div className="space-y-6">
+              <div className="p-4 bg-[#FAF8F6] border border-[#C9C3BE] rounded-[10px] space-y-3">
+                <span className="font-bold text-[14px] text-[#161418] block">
+                  Checklist automático de control de calidad
+                </span>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="p-3 bg-white border border-[#C9C3BE] rounded-[6px] flex items-center gap-2 text-[13px]">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>Derecho inicial = US$ 3.000 exactos (no "desde")</span>
+                  </div>
+                  <div className="p-3 bg-white border border-[#C9C3BE] rounded-[6px] flex items-center gap-2 text-[13px]">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>10 locales verificados (5 propios y 5 franquicias)</span>
+                  </div>
+                  <div className="p-3 bg-white border border-[#C9C3BE] rounded-[6px] flex items-center gap-2 text-[13px]">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>Recupero estimado de 18 a 24 meses (casos en 12)</span>
+                  </div>
+                  <div className="p-3 bg-white border border-[#C9C3BE] rounded-[6px] flex items-center gap-2 text-[13px]">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>0 % regalías y 0 % canon de publicidad</span>
+                  </div>
+                  <div className="p-3 bg-white border border-[#C9C3BE] rounded-[6px] flex items-center gap-2 text-[13px]">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>Ciudades verificadas: {selectedCampaign.targetLocations.join(", ")}</span>
+                  </div>
+                  <div className="p-3 bg-white border border-[#C9C3BE] rounded-[6px] flex items-center gap-2 text-[13px]">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>Destino oficial https://kolaccesorios.com.ar/franquicia/</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Registro de aprobaciones */}
+              <div className="p-4 bg-white border border-[#C9C3BE] rounded-[10px] space-y-3">
+                <span className="font-bold text-[14px] text-[#161418] block">
+                  Historial de auditoría y aprobaciones
+                </span>
+                {selectedCampaign.approvalHistory.length === 0 ? (
+                  <p className="text-[13px] text-[#8C8580]">
+                    Todavía no se registraron aprobaciones formales para esta campaña.
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {selectedCampaign.approvalHistory.map((appr) => (
+                      <div key={appr.id} className="p-3 bg-[#FAF8F6] border border-[#C9C3BE] rounded-[6px] text-[13px] flex items-start justify-between">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <strong className="text-[#161418]">{appr.user}</strong>
+                            <span className="text-[11px] text-[#8C8580]">({appr.role})</span>
+                            <span className="px-2 py-0.2 rounded bg-emerald-100 text-emerald-800 text-[11px] font-bold">
+                              {appr.status.toUpperCase()}
+                            </span>
+                          </div>
+                          <p className="text-[#46413F] mt-1">{appr.comment}</p>
+                        </div>
+                        <span className="text-[11px] text-[#8C8580] tabular-nums">{appr.date}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Botón para registrar visto bueno */}
+                <div className="pt-2 flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const newAppr = {
+                        id: `appr-${Date.now()}`,
+                        date: new Date().toISOString().replace("T", " ").slice(0, 16),
+                        user: "Débora",
+                        role: "consultora" as const,
+                        status: "aprobado" as const,
+                        comment: "Visto bueno confirmado para marca, textos y UTMs. Listo para autorizar presupuesto.",
+                      };
+                      const updated: FranchiseCampaignItem = {
+                        ...selectedCampaign,
+                        status: "lista_para_publicar",
+                        approvalHistory: [newAppr, ...selectedCampaign.approvalHistory],
+                      };
+                      onSaveCampaign(updated);
+                    }}
+                    className="kol-btn-normal px-4 py-2 bg-[#161418] text-[#FAF8F6] font-bold text-[12px] flex items-center gap-2"
+                  >
+                    <Check className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>Aprobar como Consultora (Débora)</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* PESTAÑA: PAQUETE DE PUBLICACIÓN (PASO A PASO LISTO PARA COPIAR) */}
+          {activeTabDetail === "paquete" && (
+            <div className="space-y-6">
+              <div className="p-4 bg-[#FAF8F6] border border-[#C9C3BE] rounded-[10px] space-y-1">
+                <h3 className="font-bold text-[14px] text-[#161418]">
+                  Paquete de publicación para {selectedCampaign.platform === "google_search" ? "Google Ads" : "Meta Ads Manager"}
+                </h3>
+                <p className="text-[12px] text-[#46413F]">
+                  Copia y pega cada valor en la plataforma exactamente en este orden. Cada campo tiene su botón individual de copiado.
+                </p>
+              </div>
+
+              {selectedCampaign.platform === "google_search" && selectedCampaign.googleAdData && (
+                <div className="space-y-4">
+                  {/* Paso 1 */}
+                  <div className="p-4 bg-white border border-[#C9C3BE] rounded-[8px] space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="font-bold text-[13px] text-[#161418]">
+                        Paso 1 · Tipo y nombre de campaña
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => copyToClipboard(selectedCampaign.name, "pkg-name")}
+                        className="text-[12px] font-bold text-[#C51172] hover:underline flex items-center gap-1"
+                      >
+                        {copiedKey === "pkg-name" ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                        <span>Copiar nombre</span>
+                      </button>
+                    </div>
+                    <div className="p-2.5 bg-[#FAF8F6] rounded text-[13px] font-mono text-[#161418]">
+                      Tipo: Búsqueda (Search) · Nombre: {selectedCampaign.name}
+                    </div>
+                  </div>
+
+                  {/* Paso 2 */}
+                  <div className="p-4 bg-white border border-[#C9C3BE] rounded-[8px] space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="font-bold text-[13px] text-[#161418]">
+                        Paso 2 · Objetivo de conversión único
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => copyToClipboard(selectedCampaign.objective, "pkg-obj")}
+                        className="text-[12px] font-bold text-[#C51172] hover:underline flex items-center gap-1"
+                      >
+                        {copiedKey === "pkg-obj" ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                        <span>Copiar objetivo</span>
+                      </button>
+                    </div>
+                    <div className="p-2.5 bg-[#FAF8F6] rounded text-[13px] text-[#161418]">
+                      Elegir únicamente la acción de conversión: <strong className="font-mono text-emerald-800">{selectedCampaign.objective}</strong> (no seleccionar generate_lead ni compras de retail).
+                    </div>
+                  </div>
+
+                  {/* Paso 3 */}
+                  <div className="p-4 bg-white border border-[#C9C3BE] rounded-[8px] space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="font-bold text-[13px] text-[#161418]">
+                        Paso 3 · Presupuesto diario y ubicaciones
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => copyToClipboard(selectedCampaign.targetLocations.join(", "), "pkg-loc")}
+                        className="text-[12px] font-bold text-[#C51172] hover:underline flex items-center gap-1"
+                      >
+                        {copiedKey === "pkg-loc" ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                        <span>Copiar ciudades</span>
+                      </button>
+                    </div>
+                    <div className="p-2.5 bg-[#FAF8F6] rounded text-[13px] text-[#161418] space-y-1">
+                      <div>Presupuesto diario: <strong>{selectedCampaign.budget.currency} {selectedCampaign.budget.dailyBudget || "15"}</strong></div>
+                      <div>Tope fijado: <strong>{selectedCampaign.budget.currency} {selectedCampaign.budget.totalCap}</strong></div>
+                      <div>Ubicaciones: <strong>{selectedCampaign.targetLocations.join(", ")}</strong></div>
+                    </div>
+                  </div>
+
+                  {/* Paso 4 */}
+                  <div className="p-4 bg-white border border-[#C9C3BE] rounded-[8px] space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="font-bold text-[13px] text-[#161418]">
+                        Paso 4 · Palabras clave
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          copyToClipboard(
+                            selectedCampaign.googleAdData?.keywords
+                              .map((k) => (k.matchType === "exact" ? `[${k.keyword}]` : `"${k.keyword}"`))
+                              .join("\n") || "",
+                            "pkg-kw"
+                          )
+                        }
+                        className="text-[12px] font-bold text-[#C51172] hover:underline flex items-center gap-1"
+                      >
+                        {copiedKey === "pkg-kw" ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                        <span>Copiar todas las palabras</span>
+                      </button>
+                    </div>
+                    <div className="p-2.5 bg-[#FAF8F6] rounded text-[13px] font-mono text-[#161418]">
+                      {selectedCampaign.googleAdData.keywords.map((k) => (k.matchType === "exact" ? `[${k.keyword}]` : `"${k.keyword}"`)).join("\n")}
+                    </div>
+                  </div>
+
+                  {/* Paso 5 */}
+                  <div className="p-4 bg-white border border-[#C9C3BE] rounded-[8px] space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="font-bold text-[13px] text-[#161418]">
+                        Paso 5 · Títulos y descripciones
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          copyToClipboard(
+                            `TÍTULOS:\n${selectedCampaign.googleAdData?.headlines.join("\n")}\n\nDESCRIPCIONES:\n${selectedCampaign.googleAdData?.descriptions.join("\n")}`,
+                            "pkg-ads"
+                          )
+                        }
+                        className="text-[12px] font-bold text-[#C51172] hover:underline flex items-center gap-1"
+                      >
+                        {copiedKey === "pkg-ads" ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                        <span>Copiar textos</span>
+                      </button>
+                    </div>
+                    <div className="p-2.5 bg-[#FAF8F6] rounded text-[13px] text-[#161418] space-y-1">
+                      {selectedCampaign.googleAdData.headlines.map((h, i) => (
+                        <div key={i}>Título {i + 1}: <strong>{h}</strong></div>
+                      ))}
+                      {selectedCampaign.googleAdData.descriptions.map((d, i) => (
+                        <div key={i} className="pt-1">Desc {i + 1}: {d}</div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Paso 6 */}
+                  <div className="p-4 bg-white border border-[#C9C3BE] rounded-[8px] space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="font-bold text-[13px] text-[#161418]">
+                        Paso 6 · Sufijo de URL final con UTMs
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => copyToClipboard(selectedCampaign.googleAdData?.finalUrlSuffix || "", "pkg-suffix")}
+                        className="text-[12px] font-bold text-[#C51172] hover:underline flex items-center gap-1"
+                      >
+                        {copiedKey === "pkg-suffix" ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                        <span>Copiar sufijo</span>
+                      </button>
+                    </div>
+                    <div className="p-2.5 bg-[#FAF8F6] rounded text-[12px] font-mono break-all text-[#161418]">
+                      {selectedCampaign.googleAdData.finalUrlSuffix}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Checklist "Antes de activar en la plataforma" */}
+              <div className="p-4 bg-[#FAF8F6] border border-[#C9C3BE] rounded-[10px] space-y-2">
+                <span className="font-bold text-[13px] text-[#161418] block">
+                  Paso 7 · Checklist obligatorio antes de activar
+                </span>
+                <div className="space-y-1.5 text-[13px] text-[#46413F]">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" defaultChecked className="rounded" />
+                    <span>Campaña creada en <strong>PAUSA</strong> (no arranca sola).</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" defaultChecked className="rounded" />
+                    <span>Etiquetado automático de Google / Meta activado en la cuenta.</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" defaultChecked className="rounded" />
+                    <span>Tope total de gasto cargado como presupuesto total ({selectedCampaign.budget.currency} {selectedCampaign.budget.totalCap}).</span>
+                  </label>
+                </div>
+
+                <div className="pt-4 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const updated: FranchiseCampaignItem = {
+                        ...selectedCampaign,
+                        status: "en_vivo",
+                        livePerformance: {
+                          spend: 0,
+                          impressions: 0,
+                          clicks: 0,
+                          consultas: 0,
+                          costPerConsulta: 0,
+                          daysRunning: 1,
+                          statusMessage: "Día 1 de 14 · Fase de aprendizaje activa · GA4 consolida eventos en 24-48 horas",
+                        },
+                      };
+                      onSaveCampaign(updated);
+                      setActiveTabDetail("resultados");
+                    }}
+                    className="kol-btn-normal px-6 py-2.5 bg-[#161418] text-[#FAF8F6] hover:bg-[#2A2629] font-bold text-[13px] flex items-center gap-2 shadow-sm"
+                  >
+                    <Send className="w-4 h-4 text-[#FFBA00]" />
+                    <span>Marcar como creada y poner En Vivo</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* PESTAÑA: RESULTADOS Y APRENDIZAJE */}
+          {activeTabDetail === "resultados" && (
+            <div className="space-y-6">
+              {/* Semáforo de paciencia de las primeras 72h */}
+              <div className="p-4 bg-[#FAF8F6] border border-[#C9C3BE] rounded-[10px] space-y-2">
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-amber-700" />
+                  <span className="font-bold text-[14px] text-[#161418]">
+                    Semáforo de paciencia (Primeras 72 horas)
+                  </span>
+                </div>
+                <p className="text-[13px] text-[#46413F] leading-relaxed">
+                  {selectedCampaign.livePerformance?.statusMessage ||
+                    "Día 1 de 14 · Fase de aprendizaje activa · GA4 consolida los eventos de consulta (lead_franquicia) en 24-48 h. Todavía es temprano para sacar conclusiones de costo por consulta. No cambiar parámetros."}
+                </p>
+              </div>
+
+              {/* Métricas reales */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div className="p-3.5 bg-[#FFFFFF] border border-[#C9C3BE] rounded-[8px]">
+                  <span className="text-[12px] text-[#8C8580] uppercase font-bold block">Gasto real acumulado</span>
+                  <span className="font-kol-display font-extrabold text-[22px] text-[#161418] tabular-nums">
+                    {selectedCampaign.budget.currency} {selectedCampaign.livePerformance?.spend ?? 0}
+                  </span>
+                  <span className="text-[11px] text-[#8C8580] block">
+                    Tope fijado: {selectedCampaign.budget.currency} {selectedCampaign.budget.totalCap}
+                  </span>
+                </div>
+
+                <div className="p-3.5 bg-[#FFFFFF] border border-[#C9C3BE] rounded-[8px]">
+                  <span className="text-[12px] text-[#8C8580] uppercase font-bold block">Clics a /franquicia/</span>
+                  <span className="font-kol-display font-extrabold text-[22px] text-[#161418] tabular-nums">
+                    {selectedCampaign.livePerformance?.clicks ?? 0}
+                  </span>
+                </div>
+
+                <div className="p-3.5 bg-[#FFFFFF] border border-[#C9C3BE] rounded-[8px]">
+                  <span className="text-[12px] text-[#8C8580] uppercase font-bold block">Consultas recibidas</span>
+                  <span className="font-kol-display font-extrabold text-[22px] text-[#161418] tabular-nums">
+                    {selectedCampaign.livePerformance?.consultas ?? 0}
+                  </span>
+                </div>
+
+                <div className="p-3.5 bg-[#FFFFFF] border border-[#C9C3BE] rounded-[8px]">
+                  <span className="text-[12px] text-[#8C8580] uppercase font-bold block">Costo por consulta</span>
+                  <span className="font-kol-display font-extrabold text-[22px] text-[#C51172] tabular-nums">
+                    {selectedCampaign.livePerformance?.costPerConsulta ? `${selectedCampaign.budget.currency} ${selectedCampaign.livePerformance.costPerConsulta}` : "—"}
+                  </span>
+                </div>
+              </div>
+
+              {/* Qué aprendimos (Registro cualitativo) */}
+              <div className="p-4 bg-white border border-[#C9C3BE] rounded-[10px] space-y-3">
+                <span className="font-bold text-[14px] text-[#161418] block">
+                  Qué aprendimos con esta campaña (Alimenta las próximas decisiones)
+                </span>
+                <textarea
+                  rows={4}
+                  value={selectedCampaign.learningsNotes || ""}
+                  onChange={(e) => {
+                    const updated = { ...selectedCampaign, learningsNotes: e.target.value };
+                    onSaveCampaign(updated);
+                  }}
+                  placeholder="Anotar aprendizajes: qué anuncio rindió mejor, si las consultas de Santa Fe fueron de mejor calidad que las de Córdoba, si hubo dudas en el formulario..."
+                  className="w-full p-3 border border-[#8C8580] rounded-[8px] text-[13px] text-[#161418] kol-focus"
+                />
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

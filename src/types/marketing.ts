@@ -193,6 +193,95 @@ export interface GeneratedCampaignPackage {
   createdAt: string;
 }
 
+export type CampaignLifecycleStatus =
+  | "idea"
+  | "borrador"
+  | "en_revision"
+  | "lista_para_publicar"
+  | "en_vivo"
+  | "cerrada"
+  | "devuelta";
+
+export type CampaignLifecycleMode = "prueba" | "escala";
+
+export interface FranchiseCampaignQualityChecklist {
+  derechoInicialExacto: boolean; // US$ 3.000 exactos, nunca "desde"
+  localesVerificados: boolean; // 10 locales (5 propios y 5 franquicias)
+  recuperoVerificado: boolean; // 18 a 24 meses, casos en 12
+  regaliasCanonCero: boolean; // 0% regalías y 0% canon
+  ciudadesVerificadas: boolean; // Solo Santa Fe, Santo Tomé, Córdoba
+  destinoCanonica: boolean; // https://kolaccesorios.com.ar/franquicia/
+  utmValidos: boolean; // minúsculas, sin tildes, con guiones
+  eventoConversionUnico: boolean; // lead_franquicia únicamente
+}
+
+export interface CampaignApprovalRecord {
+  id: string;
+  date: string;
+  user: string;
+  role: "consultora" | "responsable_gasto";
+  status: "aprobado" | "cambios_pedidos";
+  comment?: string;
+}
+
+export interface FranchiseCampaignItem {
+  id: string;
+  name: string;
+  platform: "google_search" | "meta_instagram";
+  mode: CampaignLifecycleMode;
+  status: CampaignLifecycleStatus;
+  createdAt: string;
+  updatedAt: string;
+  dates: {
+    startDate: string;
+    endDate?: string;
+  };
+  budget: {
+    currency: "USD" | "ARS";
+    dailyBudget?: number;
+    totalCap: number;
+    maxCpaTarget?: number;
+  };
+  targetLocations: string[];
+  format: "isla" | "estandar" | "ambos";
+  objective: "lead_franquicia";
+  landingPageUrl: string;
+  utmParams: {
+    source: string;
+    medium: string;
+    campaign: string;
+    term?: string;
+    content?: string;
+    finalUrlWithUtm: string;
+  };
+  googleAdData?: {
+    headlines: string[];
+    descriptions: string[];
+    keywords: Array<{ keyword: string; matchType: "exact" | "phrase" | "broad" }>;
+    finalUrlSuffix: string;
+  };
+  metaAdData?: {
+    primaryText: string;
+    headline: string;
+    description: string;
+    callToAction: string;
+    mediaUrl: string;
+    feedPlacement: string;
+  };
+  qualityChecklist: FranchiseCampaignQualityChecklist;
+  approvalHistory: CampaignApprovalRecord[];
+  livePerformance?: {
+    spend: number;
+    impressions: number;
+    clicks: number;
+    consultas: number;
+    costPerConsulta: number;
+    daysRunning: number;
+    statusMessage?: string;
+  };
+  learningsNotes?: string;
+}
+
 export interface ConnectedAccountsConfig {
   onboardingCompleted: boolean;
   gmpAccountEmail: string;

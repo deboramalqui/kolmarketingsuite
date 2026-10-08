@@ -10,6 +10,7 @@ import {
   GoogleSearchKeyword,
   FranchiseFunnelStep,
   AcquisitionChannel,
+  FranchiseCampaignItem,
 } from "../types/marketing";
 
 import productCreativeImg from "../assets/images/ad_creative_product_1791309919650.jpg";
@@ -386,3 +387,187 @@ export const INITIAL_PREDICTIVE_FORECAST: PredictiveForecastResult = {
 };
 
 export const INITIAL_GENERATED_CAMPAIGNS: GeneratedCampaignPackage[] = [];
+
+// Ciudades verificadas con locales y presencia real de KOL
+export const VERIFIED_LOCATIONS: string[] = [
+  "Santa Fe",
+  "Santo Tomé",
+  "Córdoba Capital",
+];
+
+// Banco de datos verificados de KOL Franquicias (para inserción y chequeo automático)
+export const VERIFIED_BRAND_FACTS = [
+  {
+    id: "derecho_inicial",
+    label: "Derecho inicial",
+    text: "US$ 3.000 exactos (pago único)",
+    value: "US$ 3.000",
+    rule: "Nunca decir 'desde US$ 3.000', es un valor fijo exacto.",
+  },
+  {
+    id: "regalias",
+    label: "Regalías y canon",
+    text: "0 % regalías mensuales y 0 % canon de publicidad",
+    value: "0 %",
+    rule: "No decir 'sin publicidad'; Kol sí invierte en publicidad de marca nacional.",
+  },
+  {
+    id: "locales",
+    label: "Locales activos",
+    text: "10 locales en el país (5 propios y 5 franquicias) en 7 direcciones",
+    value: "10 locales",
+    rule: "Nunca '7 locales' ni 'sucursales'; son 10 locales en 7 direcciones físicas.",
+  },
+  {
+    id: "recupero",
+    label: "Plazo de recupero",
+    text: "Recupero estimado de 18 a 24 meses, con casos en 12",
+    value: "18 a 24 meses",
+    rule: "Siempre como referencia estadística real, nunca como promesa de ganancia.",
+  },
+  {
+    id: "inversion_isla",
+    label: "Inversión formato isla",
+    text: "Inversión total estimada desde US$ 23.000 (desde 10 m²)",
+    value: "desde US$ 23.000",
+    rule: "La inversión total sí lleva 'desde', a diferencia del derecho inicial.",
+  },
+  {
+    id: "destino_canonica",
+    label: "Destino oficial",
+    text: "https://kolaccesorios.com.ar/franquicia/",
+    value: "/franquicia/",
+    rule: "Todo enlace de campaña debe apuntar a la ruta canónica del hub con UTM.",
+  },
+];
+
+export const INITIAL_FRANCHISE_CAMPAIGNS: FranchiseCampaignItem[] = [
+  {
+    id: "cmp-nov-search-01",
+    name: "Franquicia Nov · Búsqueda Google (Santa Fe y Córdoba)",
+    platform: "google_search",
+    mode: "prueba",
+    status: "en_revision",
+    createdAt: "2026-10-08",
+    updatedAt: "2026-10-08",
+    dates: {
+      startDate: "2026-11-01",
+      endDate: "2026-11-15",
+    },
+    budget: {
+      currency: "USD",
+      dailyBudget: 15,
+      totalCap: 210,
+      maxCpaTarget: 35,
+    },
+    targetLocations: ["Santa Fe", "Santo Tomé", "Córdoba Capital"],
+    format: "isla",
+    objective: "lead_franquicia",
+    landingPageUrl: "https://kolaccesorios.com.ar/franquicia/",
+    utmParams: {
+      source: "google",
+      medium: "cpc",
+      campaign: "franquicia-nov-busqueda-santafe-cordoba",
+      term: "{keyword}",
+      content: "anuncio-inversor-isla",
+      finalUrlWithUtm:
+        "https://kolaccesorios.com.ar/franquicia/?utm_source=google&utm_medium=cpc&utm_campaign=franquicia-nov-busqueda-santafe-cordoba&utm_term={keyword}&utm_content=anuncio-inversor-isla",
+    },
+    googleAdData: {
+      headlines: [
+        "Franquicia KOL Accesorios",
+        "Derecho inicial US$ 3.000",
+        "0% Regalías · 10 Locales",
+      ],
+      descriptions: [
+        "Abrí tu local de accesorios para celulares. Modelo probado con recupero de 18 a 24 meses.",
+        "10 locales en Argentina. Sin canon de publicidad ni regalías mensuales. Consultá.",
+      ],
+      keywords: [
+        { keyword: "franquicia kol accesorios", matchType: "phrase" },
+        { keyword: "franquicias celulares cordoba", matchType: "phrase" },
+        { keyword: "franquicia tecnologia santa fe", matchType: "phrase" },
+        { keyword: "cuanto cuesta franquicia kol", matchType: "exact" },
+      ],
+      finalUrlSuffix:
+        "utm_source=google&utm_medium=cpc&utm_campaign=franquicia-nov-busqueda-santafe-cordoba&utm_term={keyword}&utm_content=anuncio-inversor-isla",
+    },
+    qualityChecklist: {
+      derechoInicialExacto: true,
+      localesVerificados: true,
+      recuperoVerificado: true,
+      regaliasCanonCero: true,
+      ciudadesVerificadas: true,
+      destinoCanonica: true,
+      utmValidos: true,
+      eventoConversionUnico: true,
+    },
+    approvalHistory: [
+      {
+        id: "appr-01",
+        date: "2026-10-08 11:30",
+        user: "Débora",
+        role: "consultora",
+        status: "aprobado",
+        comment:
+          "Textos, UTMs y datos verificados contra manual v3. Pendiente visto bueno de tope presupuestario por Didi.",
+      },
+    ],
+    learningsNotes:
+      "Campaña de prueba de 14 días orientada a medir costo por consulta real en Google Search para plazas centrales donde ya opera la marca.",
+  },
+  {
+    id: "cmp-nov-meta-02",
+    name: "Franquicia Nov · Instagram Feed (Isla Shopping)",
+    platform: "meta_instagram",
+    mode: "prueba",
+    status: "borrador",
+    createdAt: "2026-10-08",
+    updatedAt: "2026-10-08",
+    dates: {
+      startDate: "2026-11-01",
+      endDate: "2026-11-15",
+    },
+    budget: {
+      currency: "USD",
+      dailyBudget: 10,
+      totalCap: 150,
+      maxCpaTarget: 30,
+    },
+    targetLocations: ["Córdoba Capital", "Santa Fe"],
+    format: "isla",
+    objective: "lead_franquicia",
+    landingPageUrl: "https://kolaccesorios.com.ar/franquicia/",
+    utmParams: {
+      source: "instagram",
+      medium: "paid_social",
+      campaign: "franquicia-nov-instagram-feed-isla",
+      term: "perfil-inversor",
+      content: "banner-isla-shopping",
+      finalUrlWithUtm:
+        "https://kolaccesorios.com.ar/franquicia/?utm_source=instagram&utm_medium=paid_social&utm_campaign=franquicia-nov-instagram-feed-isla&utm_content=banner-isla-shopping",
+    },
+    metaAdData: {
+      primaryText:
+        "¿Buscás una franquicia con bajo costo fijo en tecnología? KOL cuenta con 10 locales en el país. Inversión inicial con US$ 3.000 de derecho de marca, 0 % de regalías y 0 % de canon publicitario.",
+      headline: "Franquicia KOL · Formato Isla",
+      description: "Recupero estimado de 18 a 24 meses, con casos en 12",
+      callToAction: "Más información",
+      mediaUrl: bannerCreativeImg,
+      feedPlacement: "Instagram Feed & Explorar",
+    },
+    qualityChecklist: {
+      derechoInicialExacto: true,
+      localesVerificados: true,
+      recuperoVerificado: true,
+      regaliasCanonCero: true,
+      ciudadesVerificadas: true,
+      destinoCanonica: true,
+      utmValidos: true,
+      eventoConversionUnico: true,
+    },
+    approvalHistory: [],
+    learningsNotes:
+      "Capitaliza las 40 visitas actuales que llegan desde Instagram orgánico para medir si el tráfico pago califica y completa el formulario.",
+  },
+];
