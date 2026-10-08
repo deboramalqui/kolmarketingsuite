@@ -36,6 +36,7 @@ import { HoyDashboardView } from "./components/HoyDashboardView";
 import { FuentesView } from "./components/FuentesView";
 import { ConexionesView } from "./components/ConexionesView";
 import { KolLogo } from "./components/KolLogo";
+import { KolLockup } from "./components/KolLockup";
 import {
   RefreshCw,
   MessageSquare,
@@ -65,8 +66,8 @@ export default function App() {
         const saved = localStorage.getItem("kol_marketing_accounts_config");
         if (saved) {
           const parsed = JSON.parse(saved);
-          if (parsed.gmpAccountEmail === "marketing@kolfranquicias.com.ar") {
-            parsed.gmpAccountEmail = "malquidebora@gmail.com";
+          if (parsed.gmpAccountEmail?.includes("marketing@") || parsed.gmpAccountEmail?.includes("redes.kol")) {
+            parsed.gmpAccountEmail = "";
           }
           return { ...INITIAL_CONNECTED_ACCOUNTS, ...parsed };
         }
@@ -84,7 +85,17 @@ export default function App() {
       })
       .then((serverData) => {
         if (serverData && typeof serverData === "object") {
-          setAccountsConfig((prev) => ({ ...prev, ...serverData }));
+          const cleanEmail =
+            serverData.gmpAccountEmail &&
+            !serverData.gmpAccountEmail.includes("marketing@") &&
+            !serverData.gmpAccountEmail.includes("redes.kol")
+              ? serverData.gmpAccountEmail
+              : "";
+          setAccountsConfig((prev) => ({
+            ...prev,
+            ...serverData,
+            gmpAccountEmail: cleanEmail,
+          }));
         }
       })
       .catch(() => {});
@@ -111,7 +122,12 @@ export default function App() {
   const [clarityPages, setClarityPages] = useState<ClarityPageTelemetry[]>(() => {
     try {
       const saved = localStorage.getItem("kol_marketing_clarity_pages");
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed.filter((p: any) => !p.pageUrl?.includes("modelos-isla"));
+        }
+      }
     } catch {}
     return INITIAL_CLARITY_PAGES;
   });
@@ -121,7 +137,19 @@ export default function App() {
       const saved = localStorage.getItem("kol_marketing_keywords");
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const sanitized = parsed.map((kw: any) => ({
+            ...kw,
+            landingPage:
+              kw.landingPage && !kw.landingPage.includes("modelos-isla")
+                ? kw.landingPage
+                : "/franquicias",
+          }));
+          try {
+            localStorage.setItem("kol_marketing_keywords", JSON.stringify(sanitized));
+          } catch {}
+          return sanitized;
+        }
       }
     } catch {}
     return INITIAL_SEARCH_KEYWORDS;
@@ -360,8 +388,15 @@ export default function App() {
   const hubVisitorsCount = funnelSteps[0]?.count || 75;
   const conversionRatePct = ((consultasCount / hubVisitorsCount) * 100).toFixed(1);
 
+  // Modo oscuro total del branding para Conexiones y Preguntale a los datos
+  const isDarkView = activeTab === "connections" || activeTab === "assistant";
+
   return (
-    <div className="min-h-screen bg-[#FFFFFF] text-[#161418] flex flex-col font-kol-body selection:bg-[#FFD9E4] selection:text-[#161418]">
+    <div
+      className={`min-h-screen flex flex-col font-kol-body selection:bg-[#FFD9E4] selection:text-[#161418] transition-colors ${
+        isDarkView ? "bg-[#161418] text-[#FAF8F6]" : "bg-[#FFFFFF] text-[#161418]"
+      }`}
+    >
       {/* 1. CABECERA PRINCIPAL EN MODO OSCURO (#161418 / #2A2629) */}
       <header className="bg-[#161418] text-[#FAF8F6] border-b border-[#2A2629] px-4 sm:px-6 lg:px-8 py-6">
         <div className="max-w-[1440px] mx-auto space-y-6">
@@ -369,14 +404,11 @@ export default function App() {
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             <div className="space-y-1">
               <div className="flex items-center gap-3">
-                <KolLogo variant="blanco" className="h-[30px] w-auto shrink-0" />
-                <span className="text-[#8C8580] font-light text-[20px] select-none">|</span>
-                <span className="font-kol-display font-extrabold text-[15px] tracking-[0.22em] text-[#FAF8F6] uppercase">
-                  FRANQUICIAS
-                </span>
+                <KolLogo variant="blanco" className="h-[32px] w-auto shrink-0" />
+                <KolLockup variant="oscuro" compact />
               </div>
               <h1 className="font-kol-display font-extrabold text-[22px] sm:text-[26px] leading-[32px] text-[#FAF8F6]">
-                Tablero de franquicia · Protocolo verificado de medición
+                KOL Marketing Suite
               </h1>
               <p className="text-[13px] text-[#C9C3BE]">
                 Medición del embudo de captación con datos reales de Google Marketing Platform, Microsoft Clarity y Meta
@@ -441,9 +473,8 @@ export default function App() {
                     consultas
                   </span>
                 </div>
-                <div className="text-[13px] text-[#FAF8F6] mt-2 flex items-center justify-between">
+                <div className="text-[13px] text-[#FAF8F6] mt-2">
                   <span>+1 vs período anterior (28d)</span>
-                  <span className="text-[11px] font-mono text-[#FFBA00]">GA4 lead_franquicia</span>
                 </div>
               </div>
 
@@ -481,20 +512,16 @@ export default function App() {
                     ({consultasCount} de {hubVisitorsCount})
                   </span>
                 </div>
-                <div className="text-[12px] text-[#FFD9E4] mt-2 flex items-center gap-1 font-semibold">
-                  <span>⚠️ Muestra chica (&lt;100 visitas al hub)</span>
+                <div className="text-[12px] text-[#C9C3BE] mt-2 flex items-center gap-1.5 font-medium">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#FFBA00] shrink-0" />
+                  <span>Muestra chica (&lt;100 visitas al hub)</span>
                 </div>
               </div>
 
               {/* Tarjeta 4: Fricción de la página */}
               <div className="bg-[#2A2629] border border-[#46413F] kol-card-12 px-5 py-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-[13px] text-[#C9C3BE] truncate font-medium">
-                    Fricción de la página
-                  </span>
-                  <span className="px-2 py-0.5 rounded-[4px] bg-[#FFD9E4] text-[#161418] text-[11px] font-bold">
-                    Clarity activo
-                  </span>
+                <div className="text-[13px] text-[#C9C3BE] truncate font-medium">
+                  Fricción de la página
                 </div>
                 <div className="text-[12px] text-[#8C8580] truncate mt-0.5">
                   ¿La gente se traba?
@@ -504,15 +531,8 @@ export default function App() {
                     Normal · Alerta en hub
                   </span>
                 </div>
-                <div className="text-[13px] text-[#FAF8F6] mt-2 flex items-center justify-between">
+                <div className="text-[13px] text-[#FAF8F6] mt-2">
                   <span>3.1 % rage clicks en /franquicias</span>
-                  <button
-                    type="button"
-                    onClick={() => handleOpenClarityRecordings("/franquicias")}
-                    className="text-[12px] text-[#FFBA00] hover:underline font-bold"
-                  >
-                    Ver sesiones
-                  </button>
                 </div>
               </div>
             </div>
@@ -520,18 +540,22 @@ export default function App() {
         </div>
       </header>
 
-      {/* 3. MENÚ DE CAPÍTULOS EN TEMA BLANCO */}
-      <nav className="bg-[#FFFFFF] text-[#161418] border-b border-[#C9C3BE] px-4 sm:px-6 lg:px-8 sticky top-0 z-30">
+      {/* 3. MENÚ DE CAPÍTULOS */}
+      <nav
+        className={`${
+          isDarkView
+            ? "bg-[#161418] text-[#FAF8F6] border-b border-[#2A2629]"
+            : "bg-[#FFFFFF] text-[#161418] border-b border-[#C9C3BE]"
+        } px-4 sm:px-6 lg:px-8 sticky top-0 z-30 transition-colors`}
+      >
         <div className="max-w-[1440px] mx-auto flex items-center justify-between gap-6 overflow-x-auto py-3">
           <div className="flex items-center gap-2 sm:gap-3">
             {(
               [
                 { id: "hoy", num: "1", label: "Hoy" },
                 { id: "fuentes", num: "2", label: "Fuentes" },
-                { id: "assistant", num: "3", label: "Preguntale a los datos" },
-                { id: "campaigns", num: "4", label: "Campañas" },
-                { id: "reports", num: "5", label: "Informes" },
-                { id: "connections", num: "6", label: "Conexiones" },
+                { id: "campaigns", num: "3", label: "Campañas" },
+                { id: "reports", num: "4", label: "Informes" },
               ] as const
             ).map((item) => {
               const active = activeTab === item.id;
@@ -541,7 +565,11 @@ export default function App() {
                   type="button"
                   onClick={() => setActiveTab(item.id)}
                   className={`group px-3.5 py-2 rounded-[10px] active:rounded-[4px] flex items-center gap-2.5 whitespace-nowrap transition-colors kol-focus ${
-                    active
+                    isDarkView
+                      ? active
+                        ? "bg-[#2A2629] text-[#FAF8F6]"
+                        : "bg-[#161418] text-[#C9C3BE] hover:bg-[#2A2629] hover:text-[#FAF8F6]"
+                      : active
                       ? "bg-[#F3F0ED] text-[#161418]"
                       : "bg-[#FFFFFF] text-[#46413F] hover:bg-[#FAF8F6] hover:text-[#161418]"
                   }`}
@@ -549,7 +577,11 @@ export default function App() {
                   <span
                     className={`font-kol-display font-extrabold text-[15px] leading-none pb-0.5 border-b-[3px] transition-colors ${
                       active
-                        ? "text-[#C51172] border-[#C51172]"
+                        ? isDarkView
+                          ? "text-[#FFBA00] border-[#FFBA00]"
+                          : "text-[#C51172] border-[#C51172]"
+                        : isDarkView
+                        ? "text-[#8C8580] border-[#46413F] group-hover:text-[#FAF8F6] group-hover:border-[#C9C3BE]"
                         : "text-[#46413F] border-[#C9C3BE] group-hover:text-[#161418] group-hover:border-[#8C8580]"
                     }`}
                   >
@@ -557,7 +589,11 @@ export default function App() {
                   </span>
                   <span
                     className={`font-kol-display text-[14px] ${
-                      active ? "font-bold text-[#161418]" : "font-semibold"
+                      active
+                        ? isDarkView
+                          ? "font-bold text-[#FAF8F6]"
+                          : "font-bold text-[#161418]"
+                        : "font-semibold"
                     }`}
                   >
                     {item.label}
@@ -567,7 +603,11 @@ export default function App() {
             })}
           </div>
 
-          <div className="hidden xl:flex items-center gap-3 shrink-0 pl-4 border-l border-[#C9C3BE]">
+          <div
+            className={`hidden xl:flex items-center gap-3 shrink-0 pl-4 border-l ${
+              isDarkView ? "border-[#2A2629]" : "border-[#C9C3BE]"
+            }`}
+          >
             <span className="text-[13px] font-semibold text-[#8C8580]">
               Hub de franquicias: 10 locales en Argentina
             </span>
@@ -627,6 +667,17 @@ export default function App() {
             onManualSync={handleManualSync}
             isSyncing={isSyncing}
             initialSubTab={fuentesSubTab}
+            onUpdateKeywordLandingPage={(kwId, newLandingPage) => {
+              setSearchKeywords((prev) => {
+                const updated = prev.map((k) =>
+                  k.id === kwId ? { ...k, landingPage: newLandingPage } : k
+                );
+                try {
+                  localStorage.setItem("kol_marketing_keywords", JSON.stringify(updated));
+                } catch {}
+                return updated;
+              });
+            }}
           />
         )}
 
@@ -676,6 +727,9 @@ export default function App() {
             onAddGeneratedCampaign={(pkg) =>
               setGeneratedCampaigns((prev) => [pkg, ...prev])
             }
+            onDeleteGeneratedCampaign={(pkgId) =>
+              setGeneratedCampaigns((prev) => prev.filter((p) => p.id !== pkgId))
+            }
             onPublishToGmp={(newCamp) =>
               setCampaigns((prev) => [newCamp, ...prev])
             }
@@ -724,33 +778,19 @@ export default function App() {
         )}
       </main>
 
-      {/* Pie libre en tema blanco */}
-      <footer className="border-t border-[#C9C3BE] bg-[#FFFFFF] py-6 px-6 mt-16">
-        <div className="max-w-[1440px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-[14px] text-[#46413F]">
+      {/* Pie institucional en negro oficial como el header */}
+      <footer className="border-t border-[#2A2629] bg-[#161418] text-[#FAF8F6] py-6 px-4 sm:px-6 lg:px-8 mt-16">
+        <div className="max-w-[1440px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-[14px]">
           <div className="flex items-center gap-3">
-            <KolLogo variant="oscuro" className="h-[24px] w-auto shrink-0" />
-            <span className="text-[#C9C3BE] font-light text-[18px]">|</span>
-            <span className="font-kol-display font-extrabold text-[13px] tracking-[0.2em] text-[#161418] uppercase">
-              FRANQUICIAS
+            <KolLogo variant="blanco" className="h-[28px] w-auto shrink-0" />
+            <KolLockup variant="oscuro" compact />
+            <span className="text-[#46413F] font-light select-none">|</span>
+            <span className="font-kol-display font-extrabold text-[#FAF8F6] text-[15px] tracking-wide">
+              KOL Marketing Suite
             </span>
-            <span className="text-[#8C8580] ml-2">· Google Marketing Platform, Microsoft Clarity y Meta</span>
           </div>
-          <div className="flex items-center gap-4">
-            <button
-              type="button"
-              onClick={() => setActiveTab("connections")}
-              className="font-semibold text-[#C51172] underline decoration-2 underline-offset-4 hover:text-[#A40F5F]"
-            >
-              Centro de conexiones
-            </button>
-            <span>·</span>
-            <button
-              type="button"
-              onClick={() => setActiveTab("reports")}
-              className="font-semibold text-[#C51172] underline decoration-2 underline-offset-4 hover:text-[#A40F5F]"
-            >
-              Resumen semanal
-            </button>
+          <div className="text-[12px] text-[#C9C3BE]">
+            Medición del embudo de captación con datos reales de Google Marketing Platform, Microsoft Clarity y Meta
           </div>
         </div>
       </footer>

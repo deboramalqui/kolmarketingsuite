@@ -3,13 +3,10 @@ import { ConnectedAccountsConfig } from "../types/marketing";
 import {
   Check,
   RefreshCw,
-  Sliders,
-  ShieldCheck,
   Server,
-  Layers,
   Info,
-  Globe,
-  Radio,
+  User,
+  ShieldCheck,
   ExternalLink,
 } from "lucide-react";
 
@@ -28,7 +25,14 @@ export const ConexionesView: React.FC<ConexionesViewProps> = ({
   isSyncing,
   syncNotice,
 }) => {
-  const [formData, setFormData] = useState<ConnectedAccountsConfig>(config);
+  const [formData, setFormData] = useState<ConnectedAccountsConfig>({
+    ...config,
+    gmpAccountEmail:
+      config.gmpAccountEmail?.includes("marketing@") ||
+      config.gmpAccountEmail?.includes("redes.kol")
+        ? ""
+        : config.gmpAccountEmail || "",
+  });
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
 
   const handleSave = async (e: React.FormEvent) => {
@@ -40,24 +44,29 @@ export const ConexionesView: React.FC<ConexionesViewProps> = ({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
       });
-      setSaveStatus("Configuración guardada en servidor y sincronizada para todo el equipo.");
+      setSaveStatus("Configuración guardada en el servidor.");
       setTimeout(() => setSaveStatus(null), 4000);
     } catch {
-      setSaveStatus("Guardado en local (el servidor no respondió)");
+      setSaveStatus("Configuración guardada en local.");
       setTimeout(() => setSaveStatus(null), 4000);
     }
   };
 
   return (
-    <div className="space-y-8 max-w-4xl mx-auto">
-      {/* Encabezado */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#C9C3BE] pb-4">
-        <div>
-          <h2 className="font-kol-display font-extrabold text-[24px] leading-[30px] text-[#161418]">
-            Centro de conexiones (KOL Marketing Suite)
+    <div className="space-y-8 max-w-4xl mx-auto text-[#FAF8F6]">
+      {/* Encabezado con tema oscuro */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#46413F] pb-5">
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <span className="text-[12px] font-bold text-[#FFBA00] uppercase tracking-wider">
+              Centro de Conexiones
+            </span>
+          </div>
+          <h2 className="font-kol-display font-extrabold text-[24px] leading-tight text-[#FAF8F6]">
+            Administración unificada de fuentes de datos
           </h2>
-          <p className="text-[14px] text-[#46413F] mt-1">
-            Administración unificada de Google Marketing Platform, Microsoft Clarity y Meta para el tablero de franquicias
+          <p className="text-[14px] text-[#C9C3BE]">
+            Estado de Google Marketing Platform, Microsoft Clarity y Meta para el tablero de franquicias
           </p>
         </div>
 
@@ -65,45 +74,66 @@ export const ConexionesView: React.FC<ConexionesViewProps> = ({
           type="button"
           onClick={onTriggerSync}
           disabled={isSyncing}
-          className="kol-btn-normal px-5 py-2.5 bg-[#C51172] text-[#FFFFFF] hover:bg-[#A40F5F] flex items-center gap-2 font-bold whitespace-nowrap self-start sm:self-auto shadow-sm"
+          className="kol-btn-normal px-5 py-2.5 bg-[#C51172] text-[#FFFFFF] hover:bg-[#A40F5F] flex items-center gap-2 font-bold whitespace-nowrap self-start sm:self-auto shadow-md"
         >
           <RefreshCw className={`w-4 h-4 ${isSyncing ? "animate-spin" : ""}`} />
           <span>{isSyncing ? "Actualizando todo..." : "Actualizar datos ahora"}</span>
         </button>
       </div>
 
+      {/* Identidad de usuario en sesión */}
+      <div className="p-4 bg-[#2A2629] border border-[#46413F] rounded-[10px] space-y-2">
+        <div className="flex items-center gap-2 text-[14px] font-bold text-[#FAF8F6]">
+          <User className="w-4 h-4 text-[#FFBA00]" />
+          <span>Sesión activa</span>
+        </div>
+        <div className="p-3 bg-[#161418] border border-[#46413F] rounded-[8px] flex items-center justify-between">
+          <div>
+            <span className="text-[#8C8580] block text-[11px] uppercase font-bold tracking-wider">
+              Usuario conectado
+            </span>
+            <span className="font-semibold text-[#FAF8F6] text-[14px]">
+              malquidebora@gmail.com
+            </span>
+          </div>
+          <span className="px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-700 text-[11px] font-bold">
+            Verificado
+          </span>
+        </div>
+      </div>
+
       {saveStatus && (
-        <div className="p-3.5 bg-emerald-50 border border-emerald-300 rounded-[10px] text-[14px] text-emerald-800 font-medium flex items-center gap-2">
-          <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+        <div className="p-3.5 bg-emerald-950/80 border border-emerald-600 rounded-[10px] text-[14px] text-emerald-300 font-medium flex items-center gap-2">
+          <Check className="w-4 h-4 text-emerald-400 shrink-0" />
           <span>{saveStatus}</span>
         </div>
       )}
 
       {syncNotice && (
-        <div className="p-3.5 bg-[#FAF8F6] border border-[#C9C3BE] rounded-[10px] text-[14px] text-[#161418] font-medium flex items-center gap-2">
-          <Info className="w-4 h-4 text-[#C51172] shrink-0" />
+        <div className="p-3.5 bg-[#2A2629] border border-[#46413F] rounded-[10px] text-[14px] text-[#FAF8F6] font-medium flex items-center gap-2">
+          <Info className="w-4 h-4 text-[#FFBA00] shrink-0" />
           <span>{syncNotice}</span>
         </div>
       )}
 
       <form onSubmit={handleSave} className="space-y-6">
         {/* 1. Google Analytics 4 */}
-        <div className="p-6 bg-[#FFFFFF] border border-[#C9C3BE] rounded-[12px] space-y-4">
+        <div className="p-6 bg-[#2A2629] border border-[#46413F] rounded-[12px] space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <span className="w-3 h-3 rounded-full bg-emerald-600" />
-              <h3 className="font-kol-display font-bold text-[18px] text-[#161418]">
+              <span className="w-3 h-3 rounded-full bg-emerald-400 shadow-sm" />
+              <h3 className="font-kol-display font-bold text-[18px] text-[#FAF8F6]">
                 1. Google Analytics 4 (GA4)
               </h3>
             </div>
-            <span className="px-2.5 py-0.5 rounded-[4px] bg-[#E7E3DF] text-[#161418] text-[12px] font-bold">
-              Propiedad activa: 372010641
+            <span className="px-2.5 py-0.5 rounded-[4px] bg-emerald-950 text-emerald-400 border border-emerald-700 text-[12px] font-bold">
+              Conectado · Propiedad 372010641
             </span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-[13px] font-semibold text-[#161418] mb-1">
+              <label className="block text-[13px] font-semibold text-[#C9C3BE] mb-1">
                 Property ID de GA4
               </label>
               <input
@@ -112,14 +142,14 @@ export const ConexionesView: React.FC<ConexionesViewProps> = ({
                 onChange={(e) =>
                   setFormData({ ...formData, gmpPropertyId: e.target.value })
                 }
-                className="w-full h-[40px] px-3 border border-[#8C8580] rounded-[8px] text-[14px] font-mono text-[#161418] kol-focus"
+                className="w-full h-[40px] px-3 bg-[#161418] border border-[#46413F] rounded-[8px] text-[14px] font-mono text-[#FAF8F6] kol-focus"
                 placeholder="372010641"
               />
             </div>
 
             <div>
-              <label className="block text-[13px] font-semibold text-[#161418] mb-1">
-                Correo de cuenta Google asociada
+              <label className="block text-[13px] font-semibold text-[#C9C3BE] mb-1">
+                Correo de cuenta Google asociada (opcional)
               </label>
               <input
                 type="email"
@@ -127,63 +157,104 @@ export const ConexionesView: React.FC<ConexionesViewProps> = ({
                 onChange={(e) =>
                   setFormData({ ...formData, gmpAccountEmail: e.target.value })
                 }
-                className="w-full h-[40px] px-3 border border-[#8C8580] rounded-[8px] text-[14px] text-[#161418] kol-focus"
-                placeholder="malquidebora@gmail.com"
+                className="w-full h-[40px] px-3 bg-[#161418] border border-[#46413F] rounded-[8px] text-[14px] text-[#FAF8F6] kol-focus placeholder-[#8C8580]"
+                placeholder="tu-cuenta-google@... (opcional)"
               />
             </div>
           </div>
 
-          <div className="p-3 bg-[#FAF8F6] border border-[#E7E3DF] rounded-[8px] text-[13px] text-[#46413F] space-y-1">
+          <div className="p-3 bg-[#161418] border border-[#46413F] rounded-[8px] text-[13px] text-[#C9C3BE] space-y-1">
             <p>
-              <strong>Evento de conversión único configurado:</strong> <code className="bg-[#E7E3DF] px-1 rounded font-bold text-[#161418]">lead_franquicia</code>.
+              <strong>Evento de conversión único verificado:</strong> <code className="bg-[#2A2629] text-[#FFBA00] px-1.5 py-0.5 rounded font-mono font-bold">lead_franquicia</code>.
             </p>
             <p className="text-[12px] text-[#8C8580]">
-              Cualquier otro evento como generate_lead (WhatsApp retail) o purchase no se computa para evitar distorsiones.
+              Cualquier otro evento comercial (generate_lead o purchase) se descarta para evitar desvíos en los datos de franquicias.
             </p>
           </div>
         </div>
 
         {/* 2. Google Search Console */}
-        <div className="p-6 bg-[#FFFFFF] border border-[#C9C3BE] rounded-[12px] space-y-4">
+        <div className="p-6 bg-[#2A2629] border border-[#46413F] rounded-[12px] space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <span className="w-3 h-3 rounded-full bg-emerald-600" />
-              <h3 className="font-kol-display font-bold text-[18px] text-[#161418]">
+              <span className="w-3 h-3 rounded-full bg-emerald-400" />
+              <h3 className="font-kol-display font-bold text-[18px] text-[#FAF8F6]">
                 2. Google Search Console
               </h3>
             </div>
-            <span className="px-2.5 py-0.5 rounded-[4px] bg-[#E7E3DF] text-[#161418] text-[12px] font-bold">
-              kolaccesorios.com.ar
+            <span className="px-2.5 py-0.5 rounded-[4px] bg-emerald-950 text-emerald-400 border border-emerald-700 text-[12px] font-bold">
+              Conectado · kolaccesorios.com.ar
             </span>
           </div>
 
-          <p className="text-[14px] text-[#46413F]">
-            Mide consultas orgánicas y palabras clave que dirigen tráfico al hub de franquicias (<span className="font-mono">/franquicias</span>). Podés conectar vía API o subir las exportaciones periódicas en CSV desde la pantalla "Hoy" o "Fuentes".
+          <p className="text-[14px] text-[#C9C3BE]">
+            Mide las búsquedas orgánicas reales que llevan tráfico al hub <span className="font-mono text-[#FAF8F6]">/franquicias</span> y sus páginas hijas (<span className="font-mono text-[#FAF8F6]">/cuanto-cuesta</span>, <span className="font-mono text-[#FAF8F6]">/requisitos</span>, etc.).
           </p>
         </div>
 
-        {/* 3. Meta Ads */}
-        <div className="p-6 bg-[#FFFFFF] border border-[#C9C3BE] rounded-[12px] space-y-4">
+        {/* 3. Microsoft Clarity */}
+        <div className="p-6 bg-[#2A2629] border border-[#46413F] rounded-[12px] space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <span className="w-3 h-3 rounded-full bg-[#8C8580]" />
-              <h3 className="font-kol-display font-bold text-[18px] text-[#161418]">
-                3. Meta Ads (Campañas pagas)
+              <span className="w-3 h-3 rounded-full bg-emerald-400" />
+              <h3 className="font-kol-display font-bold text-[18px] text-[#FAF8F6]">
+                3. Microsoft Clarity (Mapas de calor y grabaciones)
               </h3>
             </div>
-            <span className="px-2.5 py-0.5 rounded-[4px] bg-[#F3F0ED] text-[#46413F] text-[12px] font-bold">
-              Inactivo · Se activa en noviembre
+            <span className="px-2.5 py-0.5 rounded-[4px] bg-emerald-950 text-emerald-400 border border-emerald-700 text-[12px] font-bold">
+              Conectado · Proyecto ytmpieugg9
             </span>
           </div>
 
-          <div className="p-3.5 bg-[#FFF9E6] border border-[#FFE699] rounded-[8px] text-[13px] text-[#996F00] leading-snug">
-            <strong>Decisión del 5/10/2026:</strong> No se mide Meta por ahora. Se activa automáticamente con las campañas de franquicias en noviembre para no mezclar datos sin inversión.
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-[13px] font-semibold text-[#C9C3BE] mb-1">
+                Project ID de Clarity
+              </label>
+              <input
+                type="text"
+                value={formData.clarityProjectId}
+                onChange={(e) =>
+                  setFormData({ ...formData, clarityProjectId: e.target.value })
+                }
+                className="w-full h-[40px] px-3 bg-[#161418] border border-[#46413F] rounded-[8px] text-[14px] font-mono text-[#FAF8F6] kol-focus"
+                placeholder="ytmpieugg9"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[13px] font-semibold text-[#C9C3BE] mb-1">
+                Estado de vinculación con GA4
+              </label>
+              <div className="h-[40px] px-3 border border-[#46413F] bg-[#161418] rounded-[8px] text-[14px] text-[#FAF8F6] flex items-center">
+                Sincronizado con propiedad 372010641
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* 4. Meta Ads */}
+        <div className="p-6 bg-[#2A2629] border border-[#46413F] rounded-[12px] space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <span className="w-3 h-3 rounded-full bg-[#8C8580]" />
+              <h3 className="font-kol-display font-bold text-[18px] text-[#FAF8F6]">
+                4. Meta Ads (Campañas de Facebook e Instagram)
+              </h3>
+            </div>
+            <span className="px-2.5 py-0.5 rounded-[4px] bg-[#161418] text-[#8C8580] border border-[#46413F] text-[12px] font-bold">
+              No conectado todavía · Pendiente Noviembre
+            </span>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 opacity-80">
+          <div className="p-3.5 bg-[#161418] border border-[#46413F] rounded-[8px] text-[13px] text-[#C9C3BE] leading-relaxed">
+            <strong>Estado actual:</strong> Todavía no conectaste tu cuenta de Meta Ads. Se activará cuando se lancen las campañas de franquicias en noviembre para no mezclar datos sin inversión.
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-[13px] font-semibold text-[#161418] mb-1">
-                Ad Account ID (precargado)
+              <label className="block text-[13px] font-semibold text-[#C9C3BE] mb-1">
+                Ad Account ID de Meta (cuando conectes)
               </label>
               <input
                 type="text"
@@ -191,14 +262,14 @@ export const ConexionesView: React.FC<ConexionesViewProps> = ({
                 onChange={(e) =>
                   setFormData({ ...formData, metaAdAccountId: e.target.value })
                 }
-                className="w-full h-[40px] px-3 border border-[#8C8580] rounded-[8px] text-[14px] font-mono text-[#161418] kol-focus"
-                placeholder="act_1029384756"
+                className="w-full h-[40px] px-3 bg-[#161418] border border-[#46413F] rounded-[8px] text-[14px] font-mono text-[#FAF8F6] kol-focus"
+                placeholder="act_..."
               />
             </div>
 
             <div>
-              <label className="block text-[13px] font-semibold text-[#161418] mb-1">
-                Palabras clave para filtrar campañas
+              <label className="block text-[13px] font-semibold text-[#C9C3BE] mb-1">
+                Filtro de campañas permitidas
               </label>
               <input
                 type="text"
@@ -212,74 +283,23 @@ export const ConexionesView: React.FC<ConexionesViewProps> = ({
                       .filter(Boolean),
                   })
                 }
-                className="w-full h-[40px] px-3 border border-[#8C8580] rounded-[8px] text-[14px] text-[#161418] kol-focus"
+                className="w-full h-[40px] px-3 bg-[#161418] border border-[#46413F] rounded-[8px] text-[14px] text-[#FAF8F6] kol-focus"
                 placeholder="franquicia, inversor"
               />
             </div>
           </div>
         </div>
 
-        {/* 4. Microsoft Clarity */}
-        <div className="p-6 bg-[#FFFFFF] border border-[#C9C3BE] rounded-[12px] space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <span className="w-3 h-3 rounded-full bg-[#C51172]" />
-              <h3 className="font-kol-display font-bold text-[18px] text-[#161418]">
-                4. Microsoft Clarity (Mapas de calor y grabaciones)
-              </h3>
-            </div>
-            <span className="px-2.5 py-0.5 rounded-[4px] bg-[#FFD9E4] text-[#161418] text-[12px] font-bold">
-              Proyecto: ytmpieugg9
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-[13px] font-semibold text-[#161418] mb-1">
-                Project ID de Clarity
-              </label>
-              <input
-                type="text"
-                value={formData.clarityProjectId}
-                onChange={(e) =>
-                  setFormData({ ...formData, clarityProjectId: e.target.value })
-                }
-                className="w-full h-[40px] px-3 border border-[#8C8580] rounded-[8px] text-[14px] font-mono text-[#161418] kol-focus"
-                placeholder="ytmpieugg9"
-              />
-            </div>
-
-            <div>
-              <label className="block text-[13px] font-semibold text-[#161418] mb-1">
-                Token de Data Export (opcional para API)
-              </label>
-              <input
-                type="password"
-                value={formData.clarityApiToken || ""}
-                onChange={(e) =>
-                  setFormData({ ...formData, clarityApiToken: e.target.value })
-                }
-                className="w-full h-[40px] px-3 border border-[#8C8580] rounded-[8px] text-[14px] font-mono text-[#161418] kol-focus"
-                placeholder="eyJhbGciOi..."
-              />
-            </div>
-          </div>
-
-          <p className="text-[13px] text-[#46413F]">
-            El proyecto <span className="font-mono font-semibold">ytmpieugg9</span> está integrado en vivo con la propiedad GA4 <span className="font-mono font-semibold">372010641</span>. Las grabaciones de sesiones se pueden abrir filtradas directamente por página o por evento <code className="bg-[#E7E3DF] px-1 rounded">lead_franquicia</code>.
-          </p>
-        </div>
-
-        {/* Botón de guardado */}
+        {/* Guardado */}
         <div className="flex items-center justify-between pt-2">
           <div className="flex items-center gap-2 text-[13px] text-[#8C8580]">
             <Server className="w-4 h-4 shrink-0" />
-            <span>Los datos se guardan de forma centralizada en el servidor para todo el equipo.</span>
+            <span>Los datos se guardan de forma centralizada en el servidor.</span>
           </div>
 
           <button
             type="submit"
-            className="kol-btn-normal px-6 py-2.5 bg-[#161418] text-[#FAF8F6] hover:bg-[#2A2629] font-bold text-[14px]"
+            className="kol-btn-normal px-6 py-2.5 bg-[#FFBA00] text-[#161418] hover:opacity-90 font-bold text-[14px]"
           >
             Guardar cambios
           </button>

@@ -33,6 +33,7 @@ interface FuentesViewProps {
   onManualSync: () => void;
   isSyncing: boolean;
   initialSubTab?: "ga4" | "search" | "meta" | "clarity";
+  onUpdateKeywordLandingPage?: (id: string, newLandingPage: string) => void;
 }
 
 export const FuentesView: React.FC<FuentesViewProps> = ({
@@ -47,11 +48,13 @@ export const FuentesView: React.FC<FuentesViewProps> = ({
   onManualSync,
   isSyncing,
   initialSubTab = "ga4",
+  onUpdateKeywordLandingPage,
 }) => {
   const [subTab, setSubTab] = useState<"ga4" | "search" | "meta" | "clarity">(
     initialSubTab
   );
-  const [searchQuery, setSearchQuery] = useState("");
+  const [editingKwId, setEditingKwId] = useState<string | null>(null);
+  const [customUrlInput, setCustomUrlInput] = useState("");
 
   return (
     <div className="space-y-8">
@@ -122,7 +125,7 @@ export const FuentesView: React.FC<FuentesViewProps> = ({
               <div className="flex items-center gap-2.5">
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-600" />
                 <span className="font-bold text-[#161418] text-[15px]">
-                  Propiedad GA4: 372010641 · {accountsConfig.gmpAccountEmail || "malquidebora@gmail.com"}
+                  Propiedad GA4: 372010641
                 </span>
               </div>
               <span className="text-[13px] bg-[#E7E3DF] text-[#161418] font-semibold px-2.5 py-1 rounded-[6px]">
@@ -186,31 +189,54 @@ export const FuentesView: React.FC<FuentesViewProps> = ({
       {/* SUB-PESTAÑA 2: SEARCH CONSOLE */}
       {subTab === "search" && (
         <div className="space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 bg-[#FAF8F6] border border-[#C9C3BE] rounded-[10px]">
+          <div className="p-4 bg-[#FAF8F6] border border-[#C9C3BE] rounded-[10px]">
             <div className="space-y-1">
-              <div className="font-bold text-[#161418] text-[15px]">
-                Google Search Console · Propiedad kolaccesorios.com.ar
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-600" />
+                <span className="font-bold text-[#161418] text-[15px]">
+                  Google Search Console · Propiedad kolaccesorios.com.ar
+                </span>
               </div>
               <p className="text-[13px] text-[#46413F]">
-                Términos de búsqueda orgánicos con intencionalidad de franquicias e inversión
+                Todas las consultas orgánicas que registraron impresiones hacia el hub de franquicias
               </p>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2">
-              <label className="kol-btn-normal px-3 py-1.5 bg-[#FFFFFF] text-[#161418] border border-[#8C8580] hover:bg-[#F3F0ED] flex items-center gap-1.5 cursor-pointer text-[13px] font-semibold">
-                <Upload className="w-3.5 h-3.5" />
-                <span>Subir CSV de Search Console</span>
-                <input
-                  type="file"
-                  accept=".csv"
-                  onChange={onUploadKeywordsCsv}
-                  className="hidden"
-                />
-              </label>
             </div>
           </div>
 
-          {/* Tabla de términos */}
+          {/* Tarjetas resumen de métricas Search Console */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="p-3.5 bg-[#FAF8F6] border border-[#C9C3BE] rounded-[8px]">
+              <span className="text-[12px] text-[#8C8580] uppercase font-bold block">Consultas con impresiones</span>
+              <span className="font-kol-display font-extrabold text-[22px] text-[#161418] tabular-nums">
+                {searchKeywords.length}
+              </span>
+            </div>
+            <div className="p-3.5 bg-[#FAF8F6] border border-[#C9C3BE] rounded-[8px]">
+              <span className="text-[12px] text-[#8C8580] uppercase font-bold block">Clics orgánicos</span>
+              <span className="font-kol-display font-extrabold text-[22px] text-[#161418] tabular-nums">
+                {searchKeywords.reduce((acc, kw) => acc + kw.clicks, 0)}
+              </span>
+            </div>
+            <div className="p-3.5 bg-[#FAF8F6] border border-[#C9C3BE] rounded-[8px]">
+              <span className="text-[12px] text-[#8C8580] uppercase font-bold block">Impresiones totales</span>
+              <span className="font-kol-display font-extrabold text-[22px] text-[#161418] tabular-nums">
+                {searchKeywords.reduce((acc, kw) => acc + kw.impressions, 0).toLocaleString("es-AR")}
+              </span>
+            </div>
+            <div className="p-3.5 bg-[#FAF8F6] border border-[#C9C3BE] rounded-[8px]">
+              <span className="text-[12px] text-[#8C8580] uppercase font-bold block">CTR Promedio ponderado</span>
+              <span className="font-kol-display font-extrabold text-[22px] text-[#C51172] tabular-nums">
+                {(
+                  (searchKeywords.reduce((acc, kw) => acc + kw.clicks, 0) /
+                    Math.max(1, searchKeywords.reduce((acc, kw) => acc + kw.impressions, 0))) *
+                  100
+                ).toFixed(1)}{" "}
+                %
+              </span>
+            </div>
+          </div>
+
+          {/* Tabla de términos orgánicos */}
           <div className="border border-[#C9C3BE] rounded-[10px] overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
@@ -300,7 +326,7 @@ export const FuentesView: React.FC<FuentesViewProps> = ({
           <div className="p-4 bg-[#FAF8F6] border border-[#C9C3BE] rounded-[10px] flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#C51172]" />
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-600" />
                 <span className="font-bold text-[#161418] text-[15px]">
                   Microsoft Clarity · Proyecto: ytmpieugg9 (Vinculado a GA4 372010641)
                 </span>
