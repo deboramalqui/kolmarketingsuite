@@ -57,7 +57,7 @@ export const ConexionesView: React.FC<ConexionesViewProps> = ({
             Centro de conexiones (KOL Marketing Suite)
           </h2>
           <p className="text-[14px] text-[#46413F] mt-1">
-            Administración unificada de GA4, Search Console, Meta Ads y Clarity para el tablero de franquicias
+            Administración unificada de Google Marketing Platform, Microsoft Clarity y Meta para el tablero de franquicias
           </p>
         </div>
 
@@ -128,7 +128,7 @@ export const ConexionesView: React.FC<ConexionesViewProps> = ({
                   setFormData({ ...formData, gmpAccountEmail: e.target.value })
                 }
                 className="w-full h-[40px] px-3 border border-[#8C8580] rounded-[8px] text-[14px] text-[#161418] kol-focus"
-                placeholder="marketing@kolfranquicias.com.ar"
+                placeholder="malquidebora@gmail.com"
               />
             </div>
           </div>

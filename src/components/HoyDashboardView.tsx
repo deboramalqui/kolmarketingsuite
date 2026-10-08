@@ -73,7 +73,7 @@ export const HoyDashboardView: React.FC<HoyDashboardViewProps> = ({
             Alertas automáticas del período (28 días)
           </h2>
           <span className="text-[12px] font-bold text-[#8C8580]">
-            Actualizado en vivo con GA4, Search Console y Clarity
+            Actualizado en vivo con Google Marketing Platform, Microsoft Clarity y Meta
           </span>
         </div>
 
@@ -476,7 +476,32 @@ export const HoyDashboardView: React.FC<HoyDashboardViewProps> = ({
           </div>
 
           <div className="text-[#46413F] text-[12px]">
-            Filtrado exclusivamente a páginas de franquicia (<span className="font-mono">/franquicias*</span>)
+            Filtrado exclusivamente a búsquedas que llevan a <span className="font-mono">/franquicias</span>
+          </div>
+        </div>
+
+        {/* Cuadro explicativo directo para que cualquiera en Kol lo entienda */}
+        <div className="p-4 bg-[#FAF8F6] border border-[#C9C3BE] rounded-[10px] space-y-2 text-[14px]">
+          <div className="font-bold text-[#161418] flex items-center gap-2">
+            <Info className="w-4 h-4 text-[#C51172]" />
+            <span>¿Qué muestra esta sección y cómo leerla?</span>
+          </div>
+          <p className="text-[#46413F] leading-relaxed">
+            Son las <strong>frases exactas que personas reales escribieron en el buscador de Google</strong> antes de hacer clic y entrar a la página de franquicias (<code className="bg-[#E7E3DF] px-1 rounded font-semibold text-[#161418]">/franquicias</code>).
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1 text-[13px]">
+            <div className="p-2.5 bg-[#FFFFFF] border border-[#E7E3DF] rounded-[6px]">
+              <strong className="block text-[#161418]">Personas que entraron (Clics)</strong>
+              <span className="text-[#46413F]">Cuántos tocaron el enlace en Google y entraron al hub tras buscar esa frase.</span>
+            </div>
+            <div className="p-2.5 bg-[#FFFFFF] border border-[#E7E3DF] rounded-[6px]">
+              <strong className="block text-[#161418]">Veces que apareció en Google</strong>
+              <span className="text-[#46413F]">Cuántas veces el buscador le mostró la web de KOL a personas que buscaban eso.</span>
+            </div>
+            <div className="p-2.5 bg-[#FFFFFF] border border-[#E7E3DF] rounded-[6px]">
+              <strong className="block text-[#161418]">Lugar en Google (Posición)</strong>
+              <span className="text-[#46413F]">Puesto promedio en la lista de resultados (#1 es primer resultado arriba de todo).</span>
+            </div>
           </div>
         </div>
 
@@ -494,13 +519,13 @@ export const HoyDashboardView: React.FC<HoyDashboardViewProps> = ({
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-[#E7E3DF] text-[#2A2629] text-[13px] font-bold">
-                  <th className="py-3 px-4">Consulta de búsqueda</th>
+                  <th className="py-3 px-4">Frase que buscaron en Google</th>
                   <th className="py-3 px-3">Página de destino</th>
-                  <th className="py-3 px-3 text-right">Clics</th>
-                  <th className="py-3 px-3 text-right">Impresiones</th>
-                  <th className="py-3 px-3 text-right">CTR %</th>
-                  <th className="py-3 px-3 text-right">Posición</th>
-                  <th className="py-3 px-3 text-right">Consultas</th>
+                  <th className="py-3 px-3 text-right">Personas que entraron (Clics)</th>
+                  <th className="py-3 px-3 text-right">Veces que apareció</th>
+                  <th className="py-3 px-3 text-right">% que entró (CTR)</th>
+                  <th className="py-3 px-3 text-right">Lugar en Google</th>
+                  <th className="py-3 px-3 text-right">Consultas enviadas</th>
                 </tr>
               </thead>
               <tbody className="text-[14px] text-[#161418]">

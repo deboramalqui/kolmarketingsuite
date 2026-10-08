@@ -169,7 +169,7 @@ export const CampaignStudioView: React.FC<CampaignStudioViewProps> = ({
                 1
               </span>
               <h2 className="font-kol-display font-bold text-[22px] leading-[28px] text-[#161418]">
-                Automatizá tu campaña en Google Marketing Platform
+                Automatizá tu campaña en Google Marketing Platform, Microsoft Clarity y Meta
               </h2>
             </div>
             <p className="text-[15px] text-[#46413F] mt-2">

@@ -118,7 +118,7 @@ export const PredictiveAnalyticsView: React.FC<PredictiveAnalyticsViewProps> = (
               </h2>
             </div>
             <p className="text-[15px] text-[#46413F] mt-2">
-              Elegí el horizonte para proyectar ROAS, CPA y eventos clave del embudo de 4 etapas según Google Marketing Platform y Clarity
+              Elegí el horizonte para proyectar ROAS, CPA y eventos clave del embudo de 4 etapas según Google Marketing Platform, Microsoft Clarity y Meta
             </p>
           </div>
 
@@ -284,7 +284,7 @@ export const PredictiveAnalyticsView: React.FC<PredictiveAnalyticsViewProps> = (
               </h3>
             </div>
             <p className="text-[15px] text-[#46413F] mt-2">
-              Elegí una categoría para filtrar o aplicá el ajuste directamente en Google Marketing Platform
+              Elegí una categoría para filtrar o aplicá el ajuste directamente en Google Marketing Platform, Microsoft Clarity y Meta
             </p>
           </div>
 

@@ -25,7 +25,7 @@ function getGenAIClient() {
 const createReportDeclaration: FunctionDeclaration = {
   name: "create_custom_report",
   description:
-    "Crea programáticamente un nuevo reporte personalizado combinando métricas de Google Marketing Platform (GA4, DV360, SA360, CM360) y Microsoft Clarity.",
+    "Crea programáticamente un nuevo reporte personalizado combinando métricas de Google Marketing Platform, Microsoft Clarity y Meta.",
   parameters: {
     type: Type.OBJECT,
     properties: {
@@ -80,7 +80,7 @@ const deleteReportDeclaration: FunctionDeclaration = {
 const createCampaignDeclaration: FunctionDeclaration = {
   name: "create_ad_campaign",
   description:
-    "Automatiza la creación de una nueva campaña publicitaria multicanal en Google Marketing Platform respetando las guías de diseño de marca del usuario.",
+    "Automatiza la creación de una nueva campaña publicitaria multicanal en Google Marketing Platform, Microsoft Clarity y Meta respetando las guías de diseño de marca del usuario.",
   parameters: {
     type: Type.OBJECT,
     properties: {
@@ -739,7 +739,7 @@ ${JSON.stringify(contextData || {}, null, 2)}`;
 
       if (!replyText && functionCalls.length > 0) {
         const names = functionCalls.map((fc) => fc.name).join(", ");
-        replyText = `He procesado la acción solicitada (${names}) directamente sobre tu entorno de Google Marketing Platform y Clarity.`;
+        replyText = `He procesado la acción solicitada (${names}) directamente sobre tu entorno de Google Marketing Platform, Microsoft Clarity y Meta.`;
       }
 
       res.json({
@@ -759,7 +759,7 @@ ${JSON.stringify(contextData || {}, null, 2)}`;
       const { campaigns, clarityMetrics, horizonDays = 30 } = req.body;
       const ai = getGenAIClient();
 
-      const prompt = `Analiza el siguiente conjunto de datos históricos y en tiempo real de Google Marketing Platform (GA4, DV360, SA360, CM360) y Microsoft Clarity (Rage Clicks, Dead Clicks, Scroll Depth, Quickbacks).
+      const prompt = `Analiza el siguiente conjunto de datos históricos y en tiempo real de Google Marketing Platform, Microsoft Clarity y Meta (GA4, DV360, SA360, CM360, Meta Ads y Clarity).
 Genera una predicción cuantitativa rigurosa para los próximos ${horizonDays} días y 4 recomendaciones altamente accionables divididas en Segmentación, Presupuesto y Creativos/UX.
 
 Datos de campañas GMP:
@@ -871,7 +871,7 @@ ${JSON.stringify(clarityMetrics || {}, null, 2)}`;
       const { brief, brandGuidelines, clarityInsights } = req.body;
       const ai = getGenAIClient();
 
-      const prompt = `Crea una campaña publicitaria multicanal automatizada para Google Marketing Platform (Display & Video 360, Search Ads 360, Campaign Manager 360) siguiendo estrictamente las Guías de Diseño de Marca del usuario y optimizando contra las fricciones detectadas en Microsoft Clarity.
+      const prompt = `Crea una campaña publicitaria multicanal automatizada para Google Marketing Platform, Microsoft Clarity y Meta siguiendo estrictamente las Guías de Diseño de Marca del usuario y optimizando contra las fricciones detectadas en Microsoft Clarity.
 
 Brief de campaña solicitado:
 ${JSON.stringify(brief || {}, null, 2)}
@@ -965,13 +965,13 @@ ${JSON.stringify(clarityInsights || {}, null, 2)}`;
 
       const prompt = `Genera el contenido completo de un informe ejecutivo de rendimiento personalizado listo para enviarse por correo electrónico.
 Configuración del informe:
-- Nombre: ${scheduleConfig?.name || "Informe Ejecutivo GMP & Clarity"}
+- Nombre: ${scheduleConfig?.name || "Informe Ejecutivo Google Marketing Platform, Microsoft Clarity y Meta"}
 - Destinatario: ${scheduleConfig?.recipientEmail || "marketing@empresa.com"}
 - Frecuencia: ${scheduleConfig?.frequency || "Semanal"}
 - Formato: ${scheduleConfig?.format || "HTML Interactivo"}
 - Métricas solicitadas: ${(scheduleConfig?.metrics || []).join(", ")}
 
-Datos actuales de Google Marketing Platform:
+Datos actuales de Google Marketing Platform, Microsoft Clarity y Meta:
 ${JSON.stringify(gmpSummary || {}, null, 2)}
 
 Datos actuales de Microsoft Clarity:

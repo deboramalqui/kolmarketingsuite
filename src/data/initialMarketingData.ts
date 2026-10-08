@@ -25,7 +25,7 @@ export const STUDIO_ASSETS = {
 // Configuración de conexiones de KOL Franquicias
 export const INITIAL_CONNECTED_ACCOUNTS: ConnectedAccountsConfig = {
   onboardingCompleted: true,
-  gmpAccountEmail: "marketing@kolfranquicias.com.ar",
+  gmpAccountEmail: "malquidebora@gmail.com",
   gmpPropertyId: "372010641",
   gmpConnectedModules: [
     "Google Analytics 4 (Data API v1beta)",
@@ -155,7 +155,7 @@ export const INITIAL_SEARCH_KEYWORDS: GoogleSearchKeyword[] = [
     ctrPct: 5.5,
     avgPosition: 2.1,
     conversions: 1,
-    landingPage: "/franquicias/modelos-isla",
+    landingPage: "/franquicias",
     date: "2026-10-05",
   },
   {
@@ -191,7 +191,7 @@ export const INITIAL_SEARCH_KEYWORDS: GoogleSearchKeyword[] = [
     ctrPct: 5.3,
     avgPosition: 2.8,
     conversions: 0,
-    landingPage: "/franquicias/modelos-isla",
+    landingPage: "/franquicias",
     date: "2026-10-02",
   },
 ];
@@ -221,7 +221,7 @@ export const INITIAL_CLARITY_PAGES: ClarityPageTelemetry[] = [
   {
     id: "clr-hub",
     pageUrl: "/franquicias",
-    sessions: 52,
+    sessions: 60,
     rageClicksPct: 3.1,
     deadClicksPct: 4.8,
     avgScrollDepthPct: 64,
@@ -237,16 +237,6 @@ export const INITIAL_CLARITY_PAGES: ClarityPageTelemetry[] = [
     avgScrollDepthPct: 82,
     quickbacksPct: 4.0,
     dominantFrictionIssue: "Duda o pausa de ~35 segundos en el campo de selección de provincia / capital disponible.",
-  },
-  {
-    id: "clr-isla",
-    pageUrl: "/franquicias/modelos-isla",
-    sessions: 8,
-    rageClicksPct: 0.0,
-    deadClicksPct: 1.5,
-    avgScrollDepthPct: 71,
-    quickbacksPct: 6.2,
-    dominantFrictionIssue: "Excelente lectura de desglose de obra (22%) y mercadería (65%) para formato Isla 10 m².",
   },
 ];
 

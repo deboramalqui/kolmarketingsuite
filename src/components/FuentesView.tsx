@@ -62,7 +62,7 @@ export const FuentesView: React.FC<FuentesViewProps> = ({
             Fuentes de datos conectadas
           </h2>
           <p className="text-[14px] text-[#46413F] mt-1">
-            Tablas técnicas detalladas por plataforma: Google Analytics 4, Search Console, Meta Ads y Clarity
+            Tablas técnicas detalladas por plataforma: Google Marketing Platform, Microsoft Clarity y Meta
           </p>
         </div>
 
@@ -122,7 +122,7 @@ export const FuentesView: React.FC<FuentesViewProps> = ({
               <div className="flex items-center gap-2.5">
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-600" />
                 <span className="font-bold text-[#161418] text-[15px]">
-                  Propiedad GA4: 372010641 · {accountsConfig.gmpAccountEmail || "marketing@kolfranquicias.com.ar"}
+                  Propiedad GA4: 372010641 · {accountsConfig.gmpAccountEmail || "malquidebora@gmail.com"}
                 </span>
               </div>
               <span className="text-[13px] bg-[#E7E3DF] text-[#161418] font-semibold px-2.5 py-1 rounded-[6px]">
@@ -159,32 +159,22 @@ export const FuentesView: React.FC<FuentesViewProps> = ({
               <tbody className="text-[14px] text-[#161418]">
                 <tr className="bg-[#FFFFFF] border-t border-[#C9C3BE]">
                   <td className="py-3 px-4 font-bold">
-                    /franquicias <span className="text-[12px] text-[#46413F] font-normal">(Hub principal)</span>
+                    /franquicias <span className="text-[12px] text-[#46413F] font-normal">(Hub principal de franquicias)</span>
                   </td>
-                  <td className="py-3 px-3 text-right tabular-nums font-semibold">75</td>
-                  <td className="py-3 px-3 text-right tabular-nums">71</td>
+                  <td className="py-3 px-3 text-right tabular-nums font-semibold">60</td>
+                  <td className="py-3 px-3 text-right tabular-nums">57</td>
                   <td className="py-3 px-3 text-right tabular-nums">38.4 %</td>
                   <td className="py-3 px-3 text-right tabular-nums font-bold text-[#C51172]">1</td>
                   <td className="py-3 px-3 text-right text-emerald-700 text-[13px] font-semibold">✓ Vinculado</td>
                 </tr>
                 <tr className="bg-[#FAF8F6] border-t border-[#C9C3BE]">
                   <td className="py-3 px-4 font-bold">
-                    /franquicias/formulario <span className="text-[12px] text-[#46413F] font-normal">(Paso de envío)</span>
+                    /franquicias/formulario <span className="text-[12px] text-[#46413F] font-normal">(Formulario de contacto de franquicia)</span>
                   </td>
                   <td className="py-3 px-3 text-right tabular-nums font-semibold">15</td>
                   <td className="py-3 px-3 text-right tabular-nums">14</td>
                   <td className="py-3 px-3 text-right tabular-nums">12.0 %</td>
                   <td className="py-3 px-3 text-right tabular-nums font-bold text-[#C51172]">1</td>
-                  <td className="py-3 px-3 text-right text-emerald-700 text-[13px] font-semibold">✓ Vinculado</td>
-                </tr>
-                <tr className="bg-[#FFFFFF] border-t border-[#C9C3BE]">
-                  <td className="py-3 px-4 font-bold">
-                    /franquicias/modelos-isla <span className="text-[12px] text-[#46413F] font-normal">(Formato Isla US$ 23.000)</span>
-                  </td>
-                  <td className="py-3 px-3 text-right tabular-nums font-semibold">8</td>
-                  <td className="py-3 px-3 text-right tabular-nums">8</td>
-                  <td className="py-3 px-3 text-right tabular-nums">25.0 %</td>
-                  <td className="py-3 px-3 text-right tabular-nums font-bold text-[#C51172]">0</td>
                   <td className="py-3 px-3 text-right text-emerald-700 text-[13px] font-semibold">✓ Vinculado</td>
                 </tr>
               </tbody>

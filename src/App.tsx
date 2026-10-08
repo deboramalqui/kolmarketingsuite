@@ -63,7 +63,13 @@ export default function App() {
     () => {
       try {
         const saved = localStorage.getItem("kol_marketing_accounts_config");
-        if (saved) return { ...INITIAL_CONNECTED_ACCOUNTS, ...JSON.parse(saved) };
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed.gmpAccountEmail === "marketing@kolfranquicias.com.ar") {
+            parsed.gmpAccountEmail = "malquidebora@gmail.com";
+          }
+          return { ...INITIAL_CONNECTED_ACCOUNTS, ...parsed };
+        }
       } catch {}
       return INITIAL_CONNECTED_ACCOUNTS;
     }
@@ -202,7 +208,7 @@ export default function App() {
     {
       id: "msg-welcome",
       role: "assistant",
-      text: "Estás en el asistente de datos de KOL Franquicias.\n\nSolo respondo con datos reales de tu hub (Google Analytics 4, Search Console y Microsoft Clarity) bajo el protocolo oficial de medición.\n\nPodés preguntarme qué canal trae más consultas, dónde se traba la gente en el formulario, qué buscan en Google antes de entrar, o pedirme el enlace directo a las grabaciones de sesión en Clarity.",
+      text: "Estás en el asistente de datos de KOL Franquicias.\n\nSolo respondo con datos reales de tu hub (Google Marketing Platform, Microsoft Clarity y Meta) bajo el protocolo oficial de medición.\n\nPodés preguntarme qué canal trae más consultas, dónde se traba la gente en el formulario, qué buscan en Google antes de entrar, o pedirme el enlace directo a las grabaciones de sesión en Clarity.",
       timestamp: new Date().toTimeString().slice(0, 5),
     },
   ]);
@@ -240,7 +246,7 @@ export default function App() {
       if (Array.isArray(data.errors) && data.errors.length > 0) {
         setSyncNotice(data.errors[0]);
       } else {
-        setSyncNotice("Datos sincronizados con éxito desde GA4, Search Console y Clarity.");
+        setSyncNotice("Datos sincronizados con éxito desde Google Marketing Platform, Microsoft Clarity y Meta.");
         setTimeout(() => setSyncNotice(null), 4000);
       }
     } catch {
@@ -363,14 +369,17 @@ export default function App() {
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             <div className="space-y-1">
               <div className="flex items-center gap-3">
-                <KolLogo variant="blanco" className="h-[32px] w-auto shrink-0" />
-                <span className="kol-lockup">KOL FRANQUICIAS</span>
+                <KolLogo variant="blanco" className="h-[30px] w-auto shrink-0" />
+                <span className="text-[#8C8580] font-light text-[20px] select-none">|</span>
+                <span className="font-kol-display font-extrabold text-[15px] tracking-[0.22em] text-[#FAF8F6] uppercase">
+                  FRANQUICIAS
+                </span>
               </div>
               <h1 className="font-kol-display font-extrabold text-[22px] sm:text-[26px] leading-[32px] text-[#FAF8F6]">
                 Tablero de franquicia · Protocolo verificado de medición
               </h1>
               <p className="text-[13px] text-[#C9C3BE]">
-                Medición del embudo de captación con datos reales de Google Analytics 4, Search Console y Microsoft Clarity
+                Medición del embudo de captación con datos reales de Google Marketing Platform, Microsoft Clarity y Meta
               </p>
             </div>
 
@@ -381,7 +390,7 @@ export default function App() {
                 onClick={handleManualSync}
                 disabled={isSyncing}
                 className="kol-btn-normal px-4 bg-[#2A2629] text-[#FAF8F6] border border-[#46413F] hover:bg-[#46413F] flex items-center gap-2 whitespace-nowrap kol-focus text-[13px] font-semibold"
-                title="Sincronizar GA4, Search Console y Clarity"
+                title="Sincronizar Google Marketing Platform, Microsoft Clarity y Meta"
               >
                 <RefreshCw
                   className={`w-3.5 h-3.5 ${isSyncing ? "animate-spin" : ""}`}
@@ -718,10 +727,13 @@ export default function App() {
       {/* Pie libre en tema blanco */}
       <footer className="border-t border-[#C9C3BE] bg-[#FFFFFF] py-6 px-6 mt-16">
         <div className="max-w-[1440px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-[14px] text-[#46413F]">
-          <div className="flex items-center gap-4">
-            <KolLogo variant="oscuro" className="h-[28px] w-auto" />
-            <span className="kol-lockup-light">KOL FRANQUICIAS</span>
-            <span>Tablero de franquicias · GA4 (372010641) y Microsoft Clarity (ytmpieugg9)</span>
+          <div className="flex items-center gap-3">
+            <KolLogo variant="oscuro" className="h-[24px] w-auto shrink-0" />
+            <span className="text-[#C9C3BE] font-light text-[18px]">|</span>
+            <span className="font-kol-display font-extrabold text-[13px] tracking-[0.2em] text-[#161418] uppercase">
+              FRANQUICIAS
+            </span>
+            <span className="text-[#8C8580] ml-2">· Google Marketing Platform, Microsoft Clarity y Meta</span>
           </div>
           <div className="flex items-center gap-4">
             <button

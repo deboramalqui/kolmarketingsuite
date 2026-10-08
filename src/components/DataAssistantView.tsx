@@ -226,7 +226,7 @@ export const DataAssistantView: React.FC<DataAssistantViewProps> = ({
         role: "assistant",
         text:
           data.text ||
-          "Listo, ya ejecuté la acción solicitada sobre tus datos de Google Marketing Platform y Clarity.",
+          "Listo, ya ejecuté la acción solicitada sobre tus datos de Google Marketing Platform, Microsoft Clarity y Meta.",
         timestamp: new Date().toTimeString().slice(0, 5),
         executedActions:
           executedActions.length > 0 ? executedActions : undefined,
@@ -258,7 +258,7 @@ export const DataAssistantView: React.FC<DataAssistantViewProps> = ({
               Consultá tus datos y ejecutá acciones
             </h2>
             <p className="text-[14px] text-[#46413F] mt-0.5">
-              Hacé preguntas sobre Google Marketing Platform y Clarity, o pedí que cree reportes, los elimine o programe envíos
+              Hacé preguntas sobre Google Marketing Platform, Microsoft Clarity y Meta, o pedí que cree reportes, los elimine o programe envíos
             </p>
           </div>
         </div>
@@ -304,7 +304,7 @@ export const DataAssistantView: React.FC<DataAssistantViewProps> = ({
           {isLoading && (
             <div className="flex items-center gap-2 text-[14px] text-[#161418] p-3.5 bg-[#F3F0ED] border border-[#C9C3BE] kol-card-12 w-fit">
               <RefreshCw className="w-4 h-4 animate-spin text-[#C51172]" />
-              <span>Consultando datos de Google Marketing Platform y Clarity...</span>
+              <span>Consultando datos de Google Marketing Platform, Microsoft Clarity y Meta...</span>
             </div>
           )}
         </div>

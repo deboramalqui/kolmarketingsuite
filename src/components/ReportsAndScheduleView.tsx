@@ -231,7 +231,7 @@ export const ReportsAndScheduleView: React.FC<ReportsAndScheduleViewProps> = ({
           `[KOL Franquicias] ${sched.name} (${sched.frequency})`,
         executiveHeadline:
           content.executiveHeadline ||
-          "Resumen de rendimiento de Google Marketing Platform y Clarity",
+          "Resumen de rendimiento de Google Marketing Platform, Microsoft Clarity y Meta",
         executiveSummary:
           content.executiveSummary ||
           "Informe generado automáticamente con métricas sincronizadas.",
@@ -313,7 +313,7 @@ export const ReportsAndScheduleView: React.FC<ReportsAndScheduleViewProps> = ({
               </h2>
             </div>
             <p className="text-[15px] text-[#46413F] mt-2">
-              Armá tus propios cruces entre Google Marketing Platform y Clarity o pedíselo por escrito al asistente
+              Armá tus propios cruces entre Google Marketing Platform, Microsoft Clarity y Meta o pedíselo por escrito al asistente
             </p>
           </div>
           <span className="text-[14px] font-bold text-[#161418] tabular-nums">
