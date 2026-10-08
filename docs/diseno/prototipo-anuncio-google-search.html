@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prototipo · anuncio de Google Búsqueda</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--negro:#161418;--roto:#FAF8F6;--g50:#F3F0ED;--g100:#E7E3DF;--g300:#C9C3BE;--g500:#8C8580;--g600:#6A6460;--g700:#46413F;--mag:#A40F5F}
+*{box-sizing:border-box}[hidden]{display:none!important}
+body{margin:0;font-family:Roboto,system-ui,sans-serif;background:var(--g50);color:var(--negro)}
+h1,h2,h3{font-family:Montserrat,system-ui,sans-serif}
+.demo{background:#fff7d6;border-bottom:1px solid #e8d98a;padding:10px 20px;font-size:13px;color:#4a4020}
+.layout{display:grid;grid-template-columns:minmax(320px,500px) 1fr;gap:28px;max-width:1240px;margin:0 auto;padding:24px;align-items:start}
+@media(max-width:900px){.layout{grid-template-columns:1fr}}
+.panel{background:#fff;border:1px solid var(--g100);border-radius:14px;padding:18px;margin-bottom:16px}
+.panel h2{margin:0 0 4px;font-size:17px}.panel h3{margin:0 0 4px;font-size:14px}
+.sub{margin:0 0 12px;font-size:12.5px;color:var(--g600)}
+label.l{display:block;font-size:12px;font-weight:700;color:var(--g700);margin:10px 0 4px}
+.fld{position:relative;margin-bottom:8px}
+.fld input,.fld textarea,.bx{width:100%;border:1px solid var(--g500);border-radius:10px;padding:9px 52px 9px 11px;font:inherit;font-size:14px;background:#fff;color:var(--negro)}
+.fld textarea{resize:vertical;min-height:58px;padding-right:11px}
+.fld .n{position:absolute;right:10px;top:10px;font-size:11.5px;color:var(--g600);pointer-events:none}
+.fld textarea ~ .n{top:auto;bottom:8px;background:#fff;padding-left:4px}
+.fld.over input,.fld.over textarea{border-color:var(--mag);box-shadow:0 0 0 1px var(--mag)}
+.fld.over .n{color:var(--mag);font-weight:700}
+.fld .tag{position:absolute;left:-0px;top:-0px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.add{background:none;border:1px dashed var(--g500);border-radius:10px;padding:7px 12px;font:inherit;font-size:13px;color:var(--g700);cursor:pointer}
+.add:hover{background:var(--g50)}
+.seg{display:inline-flex;border:1px solid var(--g500);border-radius:10px;overflow:hidden}
+.seg button{background:#fff;border:0;padding:8px 14px;font:inherit;font-size:13px;cursor:pointer;color:var(--negro)}
+.seg button[aria-pressed=true]{background:var(--negro);color:var(--roto)}
+textarea.kw{width:100%;border:1px solid var(--g500);border-radius:10px;padding:9px 11px;font:13.5px/1.5 ui-monospace,Menlo,monospace;min-height:110px}
+.help{font-size:12px;color:var(--g600);line-height:1.5;margin-top:6px}
+.help code{background:var(--g50);padding:1px 5px;border-radius:5px}
+.chk div{font-size:13px;padding:4px 0;display:flex;gap:8px}
+.chk .ok{color:#1f7a49}.chk .bad{color:var(--mag);font-weight:700}.chk .soft{color:var(--g700)}
+
+/* ---- vista previa ---- */
+.stage{position:sticky;top:12px}
+.bar{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.serp{background:#fff;border:1px solid #dadce0;border-radius:12px;padding:18px 20px;font-family:arial,sans-serif;color:#202124}
+.serp.m{max-width:390px;padding:14px 16px}
+.q{display:flex;align-items:center;gap:10px;border:1px solid #dfe1e5;border-radius:24px;padding:9px 16px;font-size:15px;margin-bottom:16px;box-shadow:0 1px 4px rgba(32,33,36,.14)}
+.q input{border:0;outline:0;font:inherit;flex:1;min-width:0;background:none}
+.ad .top{display:flex;align-items:center;gap:10px;margin-bottom:4px}
+.fav{width:28px;height:28px;border-radius:50%;background:#f1f3f4;display:grid;place-items:center;font-size:12px;font-weight:700;color:#202124;flex:none}
+.site{font-size:14px;line-height:1.2}.site .u{font-size:12px;color:#4d5156}
+.badge{font-weight:700;font-size:12px;color:#202124}
+.hl{font-size:20px;line-height:1.3;color:#1a0dab;margin:2px 0 4px;cursor:pointer}
+.m .hl{font-size:18px}
+.hl:hover{text-decoration:underline}
+.ds{font-size:14px;line-height:1.58;color:#4d5156}
+.ds b{color:#202124}
+.sl{display:flex;flex-wrap:wrap;gap:6px 22px;margin-top:10px}
+.sl a{font-size:14px;color:#1a0dab;cursor:pointer}
+.sl a:hover{text-decoration:underline}
+.sl-list{margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:10px 22px}
+.sl-list .it a{font-size:14px;color:#1a0dab;display:block}
+.sl-list .it span{font-size:13px;color:#4d5156}
+.co{font-size:13px;color:#4d5156;margin-top:8px}
+.m .sl-list{grid-template-columns:1fr}
+.other{margin-top:18px;padding-top:14px;border-top:1px solid #ebebeb;color:#9aa0a6;font-size:13px}
+.note{font-size:12px;color:var(--g600);margin-top:10px;line-height:1.5}
+</style>
+</head>
+<body>
+<div class="demo"><b>Prototipo.</b> Así se ve un anuncio de <b>Google Búsqueda</b>: solo texto, sin imagen. Editá a la izquierda, mirá a la derecha. Textos y palabras clave de ejemplo (los que ya trae la herramienta), a validar.</div>
+
+<div class="layout">
+<div>
+  <section class="panel">
+    <h2>Anuncio de búsqueda adaptable</h2>
+    <p class="sub">Google combina tus títulos y descripciones y arma distintas versiones. Cuantas más opciones cargues, más puede probar.</p>
+
+    <label class="l">Títulos (hasta 15 · 30 caracteres cada uno · mínimo 3)</label>
+    <div id="heads"></div>
+    <button class="add" id="addH" type="button">+ Agregar título</button>
+
+    <label class="l" style="margin-top:16px">Descripciones (hasta 4 · 90 caracteres cada una · mínimo 2)</label>
+    <div id="descs"></div>
+    <button class="add" id="addD" type="button">+ Agregar descripción</button>
+
+    <label class="l" style="margin-top:16px">Dirección que se muestra</label>
+    <div class="row2">
+      <div class="fld"><input id="dom" value="kolaccesorios.com" aria-label="Dominio"><span class="n"></span></div>
+      <div class="row2" style="gap:6px">
+        <div class="fld" id="p1w"><input id="p1" value="franquicia" aria-label="Ruta 1"><span class="n" id="p1n"></span></div>
+        <div class="fld" id="p2w"><input id="p2" value="" placeholder="opcional" aria-label="Ruta 2"><span class="n" id="p2n"></span></div>
+      </div>
+    </div>
+    <div class="help">Es solo lo que se ve. La página real a la que se llega es la URL final con los UTM (ej. <code>kolaccesorios.com/franquicia/</code>).</div>
+  </section>
+
+  <section class="panel">
+    <h3>Enlaces de sitio</h3>
+    <p class="sub">Links extra debajo del anuncio. Título hasta 25 caracteres; cada línea de descripción hasta 35.</p>
+    <div id="sls"></div>
+  </section>
+
+  <section class="panel">
+    <h3>Destacados</h3>
+    <p class="sub">Frases cortas, hasta 25 caracteres cada una.</p>
+    <div id="cos"></div>
+  </section>
+
+  <section class="panel">
+    <h3>Palabras clave</h3>
+    <p class="sub">Una por línea. El tipo de concordancia se escribe con símbolos.</p>
+    <textarea class="kw" id="kw">"franquicia kol accesorios"
+"franquicias celulares cordoba"
+"franquicia tecnologia santa fe"
+[cuanto cuesta franquicia kol]</textarea>
+    <div class="help"><code>"así"</code> frase: la búsqueda tiene que incluir esa frase. <code>[así]</code> exacta: solo esa búsqueda o muy parecida. <code>así</code> sin símbolos (amplia): Google puede mostrar el anuncio en búsquedas relacionadas y suele gastar más sin traer consultas buenas.</div>
+    <div id="kwInfo" class="help"></div>
+    <label class="l">Palabras que NO queremos (negativas)</label>
+    <textarea class="kw" id="neg" style="min-height:70px" placeholder="una por línea, ej. gratis"></textarea>
+  </section>
+
+  <section class="panel chk" id="chk"></section>
+</div>
+
+<section class="stage">
+  <div class="bar">
+    <div class="seg" id="segDev"><button data-d="d" aria-pressed="true" type="button">Computadora</button><button data-d="m" aria-pressed="false" type="button">Celular</button></div>
+    <button class="add" id="shuffle" type="button">↻ Ver otra combinación</button>
+  </div>
+  <div class="serp" id="serp">
+    <div class="q"><span aria-hidden="true">🔍</span><input id="query" value="franquicia kol accesorios" aria-label="Búsqueda de ejemplo"></div>
+    <div class="ad" id="ad"></div>
+    <div class="other">Resultados orgánicos…</div>
+  </div>
+  <p class="note" id="stNote"></p>
+</section>
+</div>
+
+<script>
+(function(){
+  var $=function(i){return document.getElementById(i)};
+  var H=["Franquicia KOL Accesorios","Derecho inicial US$ 3.000","0% Regalías · 10 Locales"];
+  var D=["Abrí tu local de accesorios para celulares. Modelo probado con recupero de 18 a 24 meses.","10 locales en Argentina. Sin canon de publicidad ni regalías mensuales. Consultá."];
+  var SL=[["Modelos de franquicia","",""],["Requisitos de inversión","",""],["Contacto directo","",""],["","",""]];
+  var CO=["","","",""];
+  var dev='d',seed=0;
+
+  function esc(s){return s.replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+  function field(kind,i,val,max,ph,ta){
+    var tag=ta?'textarea':'input';
+    return '<div class="fld" data-w="'+kind+i+'"><'+tag+' data-k="'+kind+'" data-i="'+i+'" data-max="'+max+'" placeholder="'+(ph||'')+'" '+(ta?'':'value="'+esc(val)+'"')+'>'+(ta?esc(val)+'</textarea>':'')+'<span class="n"></span></div>';
+  }
+  function build(){
+    $('heads').innerHTML=H.map(function(v,i){return field('h',i,v,30,'Título '+(i+1))}).join('');
+    $('descs').innerHTML=D.map(function(v,i){return field('d',i,v,90,'Descripción '+(i+1),true)}).join('');
+    $('sls').innerHTML=SL.map(function(s,i){return '<div style="margin-bottom:12px"><div class="fld">'+field('st',i,s[0],25,'Enlace '+(i+1)).replace('<div class="fld"','<div').replace(/<\/div>$/,'')+'</div><div class="row2">'+field('s1',i,s[1],35,'Línea 1 (opcional)')+field('s2',i,s[2],35,'Línea 2 (opcional)')+'</div></div>'}).join('');
+    $('cos').innerHTML=CO.map(function(v,i){return field('c',i,v,25,'Destacado '+(i+1))}).join('');
+    $('addH').hidden=H.length>=15;$('addD').hidden=D.length>=4;
+    counters();
+  }
+  function counters(){
+    document.querySelectorAll('[data-max]').forEach(function(e){
+      var n=e.value.length,max=+e.dataset.max,w=e.closest('.fld');
+      var sp=w.querySelector('.n');sp.textContent=n+'/'+max;w.classList.toggle('over',n>max)})
+    pathCnt();
+  }
+  function pathCnt(){[['p1',15],['p2',15]].forEach(function(p){var e=$(p[0]),n=e.value.length;$(p[0]+'n').textContent=n+'/15';$(p[0]+'w').classList.toggle('over',n>15)})}
+
+  function read(){
+    document.querySelectorAll('[data-k]').forEach(function(e){
+      var k=e.dataset.k,i=+e.dataset.i,v=e.value;
+      if(k==='h')H[i]=v;else if(k==='d')D[i]=v;else if(k==='st')SL[i][0]=v;else if(k==='s1')SL[i][1]=v;else if(k==='s2')SL[i][2]=v;else if(k==='c')CO[i]=v});
+  }
+
+  function pick(arr,n,sd){
+    var a=arr.filter(function(x){return x.trim()});
+    if(sd===0)return a.slice(0,n);
+    var r=a.slice(),s=sd;
+    for(var i=r.length-1;i>0;i--){s=(s*9301+49297)%233280;var j=Math.floor(s/233280*(i+1));var t=r[i];r[i]=r[j];r[j]=t}
+    return r.slice(0,n);
+  }
+  function bold(text){
+    var q=$('query').value.toLowerCase().split(/\s+/).filter(function(w){return w.length>3});
+    var t=esc(text);q.forEach(function(w){t=t.replace(new RegExp('('+w.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','ig'),'<b>$1</b>')});return t;
+  }
+  function render(){
+    read();counters();
+    var heads=pick(H,3,seed),descs=pick(D,2,seed);
+    var path=[ $('dom').value ];var p1=$('p1').value,p2=$('p2').value;
+    var url=$('dom').value+(p1?' › '+p1:'')+(p2?' › '+p2:'');
+    var h=heads.length?heads.join(' | '):'Tu título aparece acá';
+    var d=descs.length?descs.join(' '):'Tu descripción aparece acá.';
+    var sls=SL.filter(function(s){return s[0].trim()}),cos=CO.filter(function(c){return c.trim()});
+    var hasDesc=sls.some(function(s){return s[1]||s[2]});
+    var html='<div class="top"><div class="fav">K</div><div class="site"><div><span class="badge">Patrocinado</span> · '+esc($('dom').value)+'</div><div class="u">'+esc(url)+'</div></div></div>'+
+      '<div class="hl">'+esc(h)+'</div><div class="ds">'+bold(d)+'</div>';
+    if(cos.length)html+='<div class="co">'+cos.map(esc).join(' · ')+'</div>';
+    if(sls.length){
+      if(hasDesc&&dev==='d')html+='<div class="sl-list">'+sls.slice(0,4).map(function(s){return '<div class="it"><a>'+esc(s[0])+'</a><span>'+esc([s[1],s[2]].filter(Boolean).join(' · '))+'</span></div>'}).join('')+'</div>';
+      else html+='<div class="sl">'+sls.slice(0,dev==='m'?3:4).map(function(s){return '<a>'+esc(s[0])+'</a>'}).join('')+'</div>';
+    }
+    $('ad').innerHTML=html;
+    $('serp').className='serp'+(dev==='m'?' m':'');
+    $('stNote').textContent='Mostrado: '+heads.length+' de '+H.filter(function(x){return x.trim()}).length+' títulos y '+descs.length+' de '+D.filter(function(x){return x.trim()}).length+' descripciones. Google nunca muestra más de 3 títulos y 2 descripciones a la vez y los combina distinto para cada búsqueda. En celular puede mostrar menos texto.';
+    kwInfo();check();
+  }
+
+  function kwInfo(){
+    var l=$('kw').value.split('\n').map(function(s){return s.trim()}).filter(Boolean);
+    var f=l.filter(function(x){return /^".*"$/.test(x)}).length,e=l.filter(function(x){return /^\[.*\]$/.test(x)}).length,a=l.length-f-e;
+    $('kwInfo').textContent=l.length+' palabras clave: '+f+' de frase, '+e+' exactas, '+a+' amplias.';
+  }
+
+  function check(){
+    var hs=H.filter(function(x){return x.trim()}),ds=D.filter(function(x){return x.trim()});
+    var all=hs.concat(ds).join(' ');
+    var lines=$('kw').value.split('\n').map(function(s){return s.trim()}).filter(Boolean);
+    var broad=lines.filter(function(x){return !/^".*"$/.test(x)&&!/^\[.*\]$/.test(x)}).length;
+    var over=document.querySelectorAll('.fld.over').length;
+    var dup=hs.length!==new Set(hs.map(function(x){return x.toLowerCase()})).size;
+    var items=[
+      [over===0,'Ningún texto pasa el límite de caracteres'+(over?' ('+over+' se pasan)':''),'h'],
+      [hs.length>=3,'Al menos 3 títulos ('+hs.length+')','h'],
+      [hs.length>=8,'Recomendado: 8 o más títulos para que Google pueda combinar ('+hs.length+')','s'],
+      [ds.length>=2,'Al menos 2 descripciones ('+ds.length+')','h'],
+      [!dup,'Sin títulos repetidos','h'],
+      [!/[!¡]/.test(hs.join(' ')),'Sin signos de exclamación en los títulos (Google los rechaza)','h'],
+      [!/desde\s+(us\$|u\$s)?\s*3\.?000/i.test(all),'Derecho inicial sin “desde”','h'],
+      [!/10 locales en el pa[ií]s/i.test(all),'No dice “10 locales en el país” (sin verificar)','h'],
+      [!/modelo probado/i.test(all),'“Modelo probado” es una afirmación a validar con Kol','s'],
+      [!/buenos aires|caba|gba/i.test(all),'No menciona Buenos Aires como zona con locales','h'],
+      [broad===0,'Palabras clave sin concordancia amplia'+(broad?' ('+broad+' amplias: gastan más y traen menos)':''),'s']
+    ];
+    $('chk').innerHTML='<h3>Chequeo</h3>'+items.map(function(i){
+      return '<div class="'+(i[0]?'ok':(i[2]==='s'?'soft':'bad'))+'"><span>'+(i[0]?'✓':(i[2]==='s'?'!':'✕'))+'</span><span>'+i[1]+'</span></div>'}).join('');
+  }
+
+  document.addEventListener('input',function(e){if(e.target.matches('input,textarea'))render()});
+  $('addH').onclick=function(){read();H.push('');build();render();var e=document.querySelector('[data-k=h][data-i="'+(H.length-1)+'"]');e&&e.focus()};
+  $('addD').onclick=function(){read();D.push('');build();render()};
+  $('shuffle').onclick=function(){seed=seed+1+Math.floor(Math.random()*5);render()};
+  $('segDev').addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;dev=b.dataset.d;
+    document.querySelectorAll('#segDev button').forEach(function(x){x.setAttribute('aria-pressed',x===b)});render()});
+  build();render();
+})();
+</script>
+</body>
+</html>

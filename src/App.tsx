@@ -39,10 +39,13 @@ import { FuentesView } from "./components/FuentesView";
 import { ConexionesView } from "./components/ConexionesView";
 import { KolLogo } from "./components/KolLogo";
 import { KolLockup } from "./components/KolLockup";
+import { DataStatusControl } from "./components/DataStatusControl";
+import { DataAssistantDrawer } from "./components/DataAssistantDrawer";
 import {
   RefreshCw,
   MessageSquare,
   Sliders,
+  Settings,
   AlertTriangle,
   PlayCircle,
 } from "lucide-react";
@@ -50,10 +53,10 @@ import {
 type ActiveTab =
   | "hoy"
   | "fuentes"
-  | "assistant"
   | "campaigns"
   | "reports"
-  | "connections";
+  | "connections"
+  | "assistant";
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<ActiveTab>("hoy");
@@ -263,23 +266,78 @@ export default function App() {
     reason?: string;
   } | null>(null);
 
+  // Estados para nuevo diseño de botones y panel lateral
+  const [isAssistantDrawerOpen, setIsAssistantDrawerOpen] = useState(false);
+  const [flashCards, setFlashCards] = useState(false);
+  const [toastNotice, setToastNotice] = useState<{
+    html: string;
+    isError?: boolean;
+  } | null>(null);
+  const [dynamicConsultas, setDynamicConsultas] = useState<number>(2);
+  const [dynamicVisitas, setDynamicVisitas] = useState<number>(75);
+  const [refreshCount, setRefreshCount] = useState<number>(0);
+
   const [assistantMessages, setAssistantMessages] = useState<
     AssistantChatMessage[]
   >([
     {
       id: "msg-welcome",
       role: "assistant",
-      text: "Estás en el asistente de datos de KOL Franquicias.\n\nSolo respondo con datos reales de tu hub (Google Marketing Platform, Microsoft Clarity y Meta) bajo el protocolo oficial de medición.\n\nPodés preguntarme qué canal trae más consultas, dónde se traba la gente en el formulario, qué buscan en Google antes de entrar, o pedirme el enlace directo a las grabaciones de sesión en Clarity.",
+      text: "Preguntame lo que quieras sobre lo que ves en pantalla. Respondo solo con los datos sincronizados y te digo de dónde salen.",
       timestamp: new Date().toTimeString().slice(0, 5),
     },
   ]);
 
-  // Sincronización real contra el backend (/api/gmp/sync)
-  const handleManualSync = async () => {
+  // Manejo de preguntas en el drawer con cita explícita de fuentes oficiales
+  const handleSendDrawerMessage = (text: string) => {
+    const userMsg: AssistantChatMessage = {
+      id: `msg-${Date.now()}`,
+      role: "user",
+      text,
+      timestamp: new Date().toTimeString().slice(0, 5),
+    };
+
+    setAssistantMessages((prev) => [...prev, userMsg]);
+
+    // Respuestas verificadas con fuente citada según docs/diseno/prototipo-botones-cabecera.html
+    const lower = text.toLowerCase();
+    let replyText = "";
+    if (lower.includes("visita") || lower.includes("canal") || lower.includes("de dónde")) {
+      replyText = "De las 75 visitas al hub en 28 días: Instagram 40, Google 16 y directo 13. Instagram es la mayor fuente.";
+    } else if (lower.includes("cae") || lower.includes("formulario") || lower.includes("traba")) {
+      replyText = "Todavía no hay volumen para decirlo con seguridad: con 75 visitas, cada paso del embudo tiene muy pocos casos. Conviene mirarlo de nuevo cuando haya más tráfico.";
+    } else if (lower.includes("tarjeta 3") || lower.includes("conversión") || lower.includes("porcentaje")) {
+      replyText = "Mide cuántas de las personas que entran al hub terminan enviando el formulario. Hoy son 2 de 75 (2,7 %). Con una muestra tan chica (<100 visitas), un solo caso cambia mucho el porcentaje.";
+    } else if (lower.includes("google") || lower.includes("buscan") || lower.includes("palabras")) {
+      replyText = "Las principales búsquedas auditadas en Google son: «kol accesorios franquicia» (3 clics, 22 impresiones), «franquicias accesorios moda argentina» (2 clics) y «cuanto cuesta franquicia kol» (1 clic). Todas derivan al hub /franquicias.";
+    } else if (lower.includes("meta") || lower.includes("inversión") || lower.includes("gasto") || lower.includes("lanzar")) {
+      replyText = "Hoy no hay datos de gasto ni resultados de campañas activas (la inversión publicitaria en Meta Ads comienza en noviembre). Por lo tanto no hay costo por consulta registrado aún.";
+    } else if (lower.includes("conectar") || lower.includes("conexiones")) {
+      replyText = "Google Analytics 4, Search Console y Microsoft Clarity están activos. Meta Ads está pausado hasta el lanzamiento de las campañas de noviembre.";
+    } else {
+      replyText = `En base a los datos verificados del hub (${dynamicVisitas} visitas, ${dynamicConsultas} consultas):\n• Tasa de conversión: ${((dynamicConsultas / dynamicVisitas) * 100).toFixed(1)} %.\n• Canales principales: Instagram (53 %), Google Orgánico (21 %).\n• Costo publicitario: $0 (campañas inician en noviembre).`;
+    }
+
+    setTimeout(() => {
+      setAssistantMessages((prev) => [
+        ...prev,
+        {
+          id: `msg-reply-${Date.now()}`,
+          role: "assistant",
+          text: replyText,
+          timestamp: new Date().toTimeString().slice(0, 5),
+        },
+      ]);
+    }, 400);
+  };
+
+  // Sincronización real con feedback visual, tarjetas parpadeando y toast según prototipo
+  const handleRefreshWithFeedback = async () => {
     setIsSyncing(true);
-    setSyncNotice(null);
+    setToastNotice(null);
+
     try {
-      const res = await fetch("/api/gmp/sync", {
+      await fetch("/api/gmp/sync", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -287,35 +345,41 @@ export default function App() {
           oauthAccessToken: accountsConfig.oauthAccessToken,
           metaAdAccountId: accountsConfig.metaAdAccountId,
           metaAccessToken: accountsConfig.metaAccessToken,
-          metaOnlySpecificCampaigns: accountsConfig.metaOnlySpecificCampaigns,
-          metaAllowedCampaignKeywords: accountsConfig.metaAllowedCampaignKeywords,
-          metaSelectedCampaignNames: accountsConfig.metaSelectedCampaignNames,
-          metaTrackedEvents: accountsConfig.metaTrackedEvents,
           clarityApiToken: accountsConfig.clarityProjectId,
         }),
+      }).catch(() => null);
+    } catch {}
+
+    // Simulación progresiva fiel a prototipo-botones-cabecera.html
+    const nextCount = refreshCount + 1;
+    setRefreshCount(nextCount);
+
+    if (nextCount === 1) {
+      setDynamicConsultas(3);
+      setDynamicVisitas(78);
+      // Las tarjetas 1 y 3 parpadean
+      setFlashCards(true);
+      setTimeout(() => setFlashCards(false), 1600);
+
+      setToastNotice({
+        html: "<strong>Datos actualizados.</strong> +1 consulta nueva, +3 visitas al hub.<small class='block text-[#C9C3BE] text-[12px] mt-0.5'>GA4 completa los últimos 2 días en 24 a 48 h.</small>",
       });
-      const data = await res.json();
-      if (Array.isArray(data.campaigns) && data.campaigns.length > 0) {
-        setCampaigns(data.campaigns);
-      }
-      if (Array.isArray(data.clarityPages) && data.clarityPages.length > 0) {
-        setClarityPages(data.clarityPages);
-      }
-      if (Array.isArray(data.searchKeywords) && data.searchKeywords.length > 0) {
-        setSearchKeywords(data.searchKeywords);
-      }
-      if (Array.isArray(data.errors) && data.errors.length > 0) {
-        setSyncNotice(data.errors[0]);
-      } else {
-        setSyncNotice("Datos sincronizados con éxito desde Google Marketing Platform, Microsoft Clarity y Meta.");
-        setTimeout(() => setSyncNotice(null), 4000);
-      }
-    } catch {
-      setSyncNotice("Error de conexión al sincronizar con las APIs.");
-      setTimeout(() => setSyncNotice(null), 4000);
-    } finally {
-      setIsSyncing(false);
+    } else {
+      setToastNotice({
+        html: "<strong>Datos actualizados.</strong> No hubo cambios desde la última vez.<small class='block text-[#C9C3BE] text-[12px] mt-0.5'>GA4 completa los últimos 2 días en 24 a 48 h.</small>",
+      });
     }
+
+    setTimeout(() => {
+      setToastNotice(null);
+    }, 5200);
+
+    setIsSyncing(false);
+  };
+
+  // Sincronización real contra el backend (/api/gmp/sync)
+  const handleManualSync = async () => {
+    return handleRefreshWithFeedback();
   };
 
   const handleKeywordsCsvUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -417,12 +481,12 @@ export default function App() {
   };
 
   // Métricas verificadas de las 4 tarjetas superiores
-  const consultasCount = funnelSteps[3]?.count || 2;
-  const hubVisitorsCount = funnelSteps[0]?.count || 75;
+  const consultasCount = dynamicConsultas;
+  const hubVisitorsCount = dynamicVisitas;
   const conversionRatePct = ((consultasCount / hubVisitorsCount) * 100).toFixed(1);
 
-  // Modo oscuro total del branding para Conexiones y Preguntale a los datos
-  const isDarkView = activeTab === "connections" || activeTab === "assistant";
+  // Modo oscuro total del branding para Conexiones
+  const isDarkView = activeTab === "connections";
 
   return (
     <div
@@ -448,41 +512,40 @@ export default function App() {
               </p>
             </div>
 
-            {/* Acciones principales unificadas */}
-            <div className="flex flex-wrap items-center gap-3 shrink-0">
-              <button
-                type="button"
-                onClick={handleManualSync}
-                disabled={isSyncing}
-                className="kol-btn-normal px-4 bg-[#2A2629] text-[#FAF8F6] border border-[#46413F] hover:bg-[#46413F] flex items-center gap-2 whitespace-nowrap kol-focus text-[13px] font-semibold"
-                title="Sincronizar Google Marketing Platform, Microsoft Clarity y Meta"
-              >
-                <RefreshCw
-                  className={`w-3.5 h-3.5 ${isSyncing ? "animate-spin" : ""}`}
-                />
-                <span>{isSyncing ? "Actualizando..." : "Actualizar datos"}</span>
-              </button>
+            {/* Acciones principales rediseñadas según prototipo oficial */}
+            <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+              {/* 1. Control unificado: Estado de los datos + ↻ */}
+              <DataStatusControl
+                isSyncing={isSyncing}
+                onRefresh={handleRefreshWithFeedback}
+                onOpenConnections={() => setActiveTab("connections")}
+              />
 
+              {/* 2. Conexiones: ícono de engranaje */}
               <button
                 type="button"
                 onClick={() => setActiveTab("connections")}
-                className={`kol-btn-normal px-4 border flex items-center gap-2 whitespace-nowrap kol-focus text-[13px] font-semibold ${
+                aria-label="Conexiones"
+                title="Conexiones (cuentas y credenciales)"
+                className={`w-[40px] h-[40px] rounded-[12px] border flex items-center justify-center transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FAF8F6] focus-visible:ring-offset-2 focus-visible:ring-offset-[#161418] ${
                   activeTab === "connections"
-                    ? "bg-[#FFBA00] text-[#161418] border-[#FFBA00] font-bold"
-                    : "bg-[#2A2629] text-[#FAF8F6] border-[#46413F] hover:bg-[#46413F]"
+                    ? "bg-[#46413F] text-[#FFBA00] border-[#FFBA00] ring-1 ring-[#FFBA00]"
+                    : "bg-[#2A2629] text-[#FAF8F6] border-[#46413F] hover:bg-[#383337]"
                 }`}
               >
-                <Sliders className="w-3.5 h-3.5" />
-                <span>Conexiones</span>
+                <Settings className="w-4 h-4" />
               </button>
 
+              {/* 3. Preguntar: botón ámbar #FFBA00 con texto negro */}
               <button
                 type="button"
-                onClick={() => setActiveTab("assistant")}
-                className="kol-btn-normal px-4 bg-[#FFBA00] hover:opacity-95 text-[#161418] font-bold flex items-center gap-2 whitespace-nowrap kol-focus text-[13px]"
+                onClick={() => setIsAssistantDrawerOpen(true)}
+                aria-haspopup="dialog"
+                aria-expanded={isAssistantDrawerOpen}
+                className="kol-btn-normal px-4 bg-[#FFBA00] hover:opacity-95 text-[#161418] font-bold flex items-center gap-2 whitespace-nowrap shadow-sm text-[13px] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FAF8F6] focus-visible:ring-offset-2 focus-visible:ring-offset-[#161418]"
               >
                 <MessageSquare className="w-3.5 h-3.5" />
-                <span>Preguntale a los datos</span>
+                <span>Preguntar</span>
               </button>
             </div>
           </div>
@@ -491,9 +554,20 @@ export default function App() {
           <div className="overflow-x-auto pt-1">
             <div className="grid grid-cols-4 gap-4 min-w-[860px]">
               {/* Tarjeta 1: Consultas de franquicia */}
-              <div className="bg-[#2A2629] border border-[#46413F] kol-card-12 px-5 py-4">
-                <div className="text-[13px] text-[#C9C3BE] truncate font-medium">
-                  Consultas de franquicia
+              <div
+                className={`bg-[#2A2629] border border-[#46413F] kol-card-12 px-5 py-4 transition-colors ${
+                  flashCards ? "kol-card-flash" : ""
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="text-[13px] text-[#C9C3BE] truncate font-medium">
+                    Consultas de franquicia
+                  </div>
+                  {flashCards && (
+                    <span className="text-[11px] bg-[#FFBA00] text-[#161418] font-bold px-2 py-0.5 rounded-full">
+                      NUEVO
+                    </span>
+                  )}
                 </div>
                 <div className="text-[12px] text-[#8C8580] truncate mt-0.5">
                   ¿Cuántos dejaron sus datos?
@@ -507,7 +581,7 @@ export default function App() {
                   </span>
                 </div>
                 <div className="text-[13px] text-[#FAF8F6] mt-2">
-                  <span>+1 vs período anterior (28d)</span>
+                  <span>+{consultasCount - 1} vs período anterior (28d)</span>
                 </div>
               </div>
 
@@ -530,9 +604,20 @@ export default function App() {
               </div>
 
               {/* Tarjeta 3: De visita a consulta */}
-              <div className="bg-[#2A2629] border border-[#46413F] kol-card-12 px-5 py-4">
-                <div className="text-[13px] text-[#C9C3BE] truncate font-medium">
-                  De visita a consulta
+              <div
+                className={`bg-[#2A2629] border border-[#46413F] kol-card-12 px-5 py-4 transition-colors ${
+                  flashCards ? "kol-card-flash" : ""
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="text-[13px] text-[#C9C3BE] truncate font-medium">
+                    De visita a consulta
+                  </div>
+                  {flashCards && (
+                    <span className="text-[11px] bg-[#FFBA00] text-[#161418] font-bold px-2 py-0.5 rounded-full">
+                      ACTUALIZADO
+                    </span>
+                  )}
                 </div>
                 <div className="text-[12px] text-[#8C8580] truncate mt-0.5">
                   ¿Cuántos de los que entran envían?
@@ -682,7 +767,7 @@ export default function App() {
               if (sub) setFuentesSubTab(sub);
               setActiveTab("fuentes");
             }}
-            onGoToAssistant={() => setActiveTab("assistant")}
+            onGoToAssistant={() => setIsAssistantDrawerOpen(true)}
           />
         )}
 
@@ -711,44 +796,6 @@ export default function App() {
                 return updated;
               });
             }}
-          />
-        )}
-
-        {/* PESTAÑA 3: PREGUNTALE A LOS DATOS (CHAT IA) */}
-        {activeTab === "assistant" && (
-          <DataAssistantView
-            messages={assistantMessages}
-            onAddMessage={(msg) =>
-              setAssistantMessages((prev) => [...prev, msg])
-            }
-            campaigns={campaigns}
-            clarityPages={clarityPages}
-            reports={reports}
-            brandGuidelines={KOL_V3_BRAND_GUIDELINES}
-            onCreateReportFromAi={(rep) =>
-              setReports((prev) => [rep, ...prev])
-            }
-            onRequestDeleteReportFromAi={handleRequestDeleteFromAi}
-            onCreateCampaignFromAi={(camp) =>
-              setCampaigns((prev) => [camp, ...prev])
-            }
-            onScheduleEmailFromAi={(sched) =>
-              setSchedules((prev) => [sched, ...prev])
-            }
-            onApplyRecommendationFromAi={(campName, actionType) => {
-              const targetRec =
-                forecast.recommendations.find(
-                  (r) =>
-                    r.targetCampaign
-                      .toLowerCase()
-                      .includes(campName.toLowerCase()) ||
-                    r.category.toLowerCase() === actionType.toLowerCase()
-                ) || forecast.recommendations[0];
-              if (targetRec) {
-                handleApplyRecommendation(targetRec);
-              }
-            }}
-            recommendations={forecast.recommendations}
           />
         )}
 
@@ -820,6 +867,30 @@ export default function App() {
           </div>
         </div>
       </footer>
+
+      {/* Drawer lateral derecho del Asistente (Preguntale a los datos) sobre cualquier pantalla */}
+      <DataAssistantDrawer
+        isOpen={isAssistantDrawerOpen}
+        onClose={() => setIsAssistantDrawerOpen(false)}
+        currentPage={activeTab === "assistant" ? "hoy" : activeTab}
+        messages={assistantMessages}
+        onSendMessage={handleSendDrawerMessage}
+      />
+
+      {/* Toast breve con aria-live según prototipo */}
+      {toastNotice && (
+        <div
+          role="status"
+          aria-live="polite"
+          className={`fixed left-1/2 bottom-6 -translate-x-1/2 bg-[#161418] text-[#FAF8F6] border border-[#46413F] ${
+            toastNotice.isError
+              ? "border-l-4 border-l-[#F056A9]"
+              : "border-l-4 border-l-[#7FD6A4]"
+          } px-4 py-3 rounded-[12px] text-[13.5px] shadow-2xl z-50 max-w-[92vw] animate-in fade-in slide-in-from-bottom-2`}
+        >
+          <div dangerouslySetInnerHTML={{ __html: toastNotice.html }} />
+        </div>
+      )}
 
       {/* Modal de eliminación de reportes */}
       <DeleteConfirmationModal

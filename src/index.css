@@ -128,3 +128,26 @@
   outline: 2px solid #161418;
   outline-offset: 2px;
 }
+
+.kol-focus-dark:focus-visible {
+  outline: 2px solid #FAF8F6;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px #46413F;
+}
+
+/* Animación flash para tarjetas del encabezado al actualizar */
+@keyframes kol-card-flash {
+  0%, 40% {
+    background-color: #4a3b00;
+    border-color: #FFBA00;
+  }
+  100% {
+    background-color: #2A2629;
+    border-color: #46413F;
+  }
+}
+
+.kol-card-flash {
+  animation: kol-card-flash 1.6s ease;
+}
+

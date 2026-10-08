@@ -1,0 +1,413 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prototipo · botones de la cabecera</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --negro:#161418; --blanco-roto:#FAF8F6; --blanco:#FFFFFF;
+  --g50:#F3F0ED; --g100:#E7E3DF; --g300:#C9C3BE; --g500:#8C8580; --g600:#6A6460; --g700:#46413F; --g800:#2A2629;
+  --magenta:#C51172; --magenta-claro:#F056A9; --ambar:#FFBA00; --rosa:#FFD9E4;
+  --ok:#7FD6A4; --warn:#FFBA00; --err:#F056A9;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0}
+body{font-family:Roboto,system-ui,sans-serif;background:var(--blanco);color:var(--negro);min-height:100vh}
+h1,h2,h3,.disp{font-family:Montserrat,system-ui,sans-serif}
+button{font:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--blanco-roto);outline-offset:2px;box-shadow:0 0 0 4px var(--g700)}
+
+/* Panel de prueba (no es parte de la app) */
+.demo{background:#fff7d6;border-bottom:1px solid #e8d98a;padding:10px 20px;font-size:13px;display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;color:#4a4020}
+.demo b{font-weight:700}
+.seg{display:inline-flex;border:1px solid #b8a85a;border-radius:8px;overflow:hidden}
+.seg button{background:#fff;border:0;padding:6px 12px;color:#4a4020}
+.seg button[aria-pressed=true]{background:#4a4020;color:#fff}
+.demo .mini{background:#fff;border:1px solid #b8a85a;border-radius:8px;padding:6px 10px;color:#4a4020}
+
+/* Cabecera */
+header.app{background:var(--negro);color:var(--blanco-roto);border-bottom:1px solid var(--g800);padding:18px 24px 20px}
+.wrap{max-width:1280px;margin:0 auto}
+.top{display:flex;flex-wrap:wrap;gap:16px;justify-content:space-between;align-items:center}
+.brand{display:flex;align-items:center;gap:14px}
+.logo{width:34px;height:34px;border-radius:9px;background:var(--magenta);display:grid;place-items:center;font-family:Montserrat;font-weight:800;color:#fff;font-size:15px}
+.brand h1{margin:0;font-size:20px;font-weight:800}
+.brand p{margin:2px 0 0;font-size:12.5px;color:var(--g300)}
+.actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center;position:relative}
+
+/* Botones actuales */
+.btn{border:1px solid var(--g700);background:var(--g800);color:var(--blanco-roto);padding:10px 16px;border-radius:12px;font-size:13px;font-weight:600;display:inline-flex;gap:8px;align-items:center;min-height:40px}
+.btn:hover{background:var(--g700)}
+.btn.amb{background:var(--ambar);color:var(--negro);border-color:var(--ambar);font-weight:700}
+.btn.on{background:var(--ambar);color:var(--negro);border-color:var(--ambar)}
+.spin{animation:g 1s linear infinite;display:inline-block}
+@keyframes g{to{transform:rotate(360deg)}}
+
+/* Propuesta: chip de estado */
+.status{display:inline-flex;align-items:stretch;border:1px solid var(--g700);background:var(--g800);border-radius:12px;min-height:40px}
+.status .info{display:inline-flex;align-items:center;gap:9px;padding:0 14px;background:none;border:0;color:var(--blanco-roto);font-size:13px;border-radius:12px 0 0 12px}
+.status .info:hover{background:var(--g700)}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--ok);flex:none}
+.dot.updating{background:var(--g300);animation:p 1s ease-in-out infinite}
+.dot.error{background:var(--err)}
+.dot.stale{background:var(--warn)}
+@keyframes p{50%{opacity:.3}}
+.status .refresh{border:0;border-left:1px solid var(--g700);background:none;color:var(--blanco-roto);width:42px;display:grid;place-items:center;border-radius:0 12px 12px 0}
+.status .refresh:hover{background:var(--g700)}
+.status .refresh:disabled{cursor:progress;opacity:.8}
+.icon-btn{width:40px;height:40px;border-radius:12px;border:1px solid var(--g700);background:var(--g800);color:var(--blanco-roto);display:grid;place-items:center}
+.icon-btn:hover,.icon-btn.on{background:var(--g700)}
+.icon-btn.on{outline:2px solid var(--ambar)}
+.small-note{font-size:11.5px;color:var(--g300)}
+
+/* Popover */
+.pop{position:absolute;top:calc(100% + 8px);right:0;width:min(380px,92vw);background:var(--g800);border:1px solid var(--g700);border-radius:14px;padding:16px;box-shadow:0 14px 40px rgba(0,0,0,.45);z-index:30;display:none}
+.pop.open{display:block}
+.pop h3{margin:0 0 4px;font-size:14px}
+.pop .sub{font-size:12px;color:var(--g300);margin:0 0 12px}
+.src{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--g700);font-size:13px}
+.src .nm{flex:1}
+.src .tm{font-size:12px;color:var(--g300)}
+.src .tag{font-size:11px;color:var(--g300)}
+.src button.retry{background:none;border:1px solid var(--g500);color:var(--blanco-roto);border-radius:8px;padding:3px 9px;font-size:12px}
+.changes{margin:12px 0 0;padding:10px 12px;background:var(--negro);border-radius:10px;font-size:12.5px;line-height:1.5}
+.changes b{color:var(--ambar)}
+.pop .link{display:block;margin-top:12px;background:none;border:0;color:var(--blanco-roto);text-decoration:underline;font-size:13px;padding:0;text-align:left}
+
+/* Toast */
+.toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,30px);background:var(--negro);color:var(--blanco-roto);border:1px solid var(--g700);border-left:4px solid var(--ok);padding:12px 16px;border-radius:12px;font-size:13.5px;opacity:0;pointer-events:none;transition:.25s;z-index:60;max-width:92vw}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.toast.err{border-left-color:var(--err)}
+.toast small{display:block;color:var(--g300);margin-top:3px;font-size:12px}
+
+/* Tarjetas */
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:20px}
+@media(max-width:900px){.cards{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:520px){.cards{grid-template-columns:1fr}}
+.card{background:var(--g800);border:1px solid var(--g700);border-radius:12px;padding:14px 16px}
+.card .l{font-size:13px;color:var(--g300);font-weight:500}
+.card .q{font-size:12px;color:var(--g500);margin-top:2px}
+.card .v{display:inline-block;border-bottom:3px solid var(--ambar);margin-top:10px;font-family:Montserrat;font-weight:800;font-size:26px;color:var(--ambar);padding-bottom:2px}
+.card .v small{font-size:13px;color:var(--blanco-roto);font-weight:600;margin-left:6px;font-family:Roboto}
+.card .d{font-size:12.5px;margin-top:8px;color:var(--blanco-roto)}
+.card.flash{animation:fl 1.6s ease}
+@keyframes fl{0%,40%{background:#4a3b00;border-color:var(--ambar)}100%{}}
+.badge-new{font-size:11px;background:var(--ambar);color:var(--negro);border-radius:999px;padding:1px 8px;font-weight:700;margin-left:6px;vertical-align:middle}
+
+/* Navegación (páginas) */
+nav.tabs{display:flex;gap:6px;margin-top:20px;border-top:1px solid var(--g800);padding-top:14px;flex-wrap:wrap}
+nav.tabs button{background:none;border:0;color:var(--g300);padding:9px 14px;border-radius:10px;font-weight:600;font-size:13.5px}
+nav.tabs button:hover{background:var(--g800)}
+nav.tabs button[aria-current=page]{background:var(--blanco-roto);color:var(--negro)}
+
+/* Contenido */
+main{max-width:1280px;margin:0 auto;padding:28px 24px 80px}
+.page{display:none}.page.show{display:block}
+.page h2{margin:0 0 6px;font-size:22px;font-weight:800}
+.page .lead{color:var(--g600);margin:0 0 20px;font-size:14px}
+.ph{border:1px dashed var(--g300);border-radius:14px;padding:30px;background:var(--g50);color:var(--g600);font-size:14px}
+.row{display:flex;align-items:center;gap:12px;background:var(--g50);border:1px solid var(--g100);border-radius:12px;padding:14px 16px;margin-bottom:10px}
+.row .nm{flex:1;font-weight:600}
+.row .st{font-size:13px;color:var(--g600)}
+.row .dot{background:#2e9e63}.row .dot.error{background:var(--magenta)}.row .dot.off{background:var(--g500)}
+.row button{background:var(--negro);color:var(--blanco-roto);border:0;border-radius:10px;padding:8px 14px;font-size:13px}
+
+/* Página completa de asistente (versión actual) */
+.dark-page{background:var(--negro);color:var(--blanco-roto);border-radius:16px;padding:24px;min-height:300px}
+
+/* Drawer asistente */
+.scrim{position:fixed;inset:0;background:rgba(22,20,24,.45);opacity:0;pointer-events:none;transition:.2s;z-index:40}
+.scrim.show{opacity:1;pointer-events:auto}
+.drawer{position:fixed;top:0;right:0;height:100%;width:min(440px,100vw);background:var(--negro);color:var(--blanco-roto);border-left:1px solid var(--g700);transform:translateX(100%);transition:.25s;z-index:50;display:flex;flex-direction:column}
+.drawer.show{transform:none}
+.drawer header{padding:16px 18px;border-bottom:1px solid var(--g800);display:flex;align-items:center;gap:10px}
+.drawer header h3{margin:0;font-size:16px;flex:1}
+.drawer header button{background:none;border:0;color:var(--blanco-roto);font-size:22px;line-height:1;width:36px;height:36px;border-radius:8px}
+.drawer header button:hover{background:var(--g800)}
+.ctx{margin:12px 18px 0;font-size:12.5px;color:var(--g300);background:var(--g800);border:1px solid var(--g700);border-radius:999px;padding:6px 12px;align-self:flex-start}
+.ctx b{color:var(--blanco-roto)}
+.chat{flex:1;overflow:auto;padding:14px 18px;display:flex;flex-direction:column;gap:12px}
+.msg{max-width:92%;padding:10px 13px;border-radius:12px;font-size:13.5px;line-height:1.5}
+.msg.u{align-self:flex-end;background:var(--ambar);color:var(--negro)}
+.msg.a{align-self:flex-start;background:var(--g800);border:1px solid var(--g700)}
+.msg .src-line{display:block;margin-top:6px;font-size:11.5px;color:var(--g300)}
+.sugs{display:flex;flex-wrap:wrap;gap:8px;padding:0 18px 10px}
+.sugs button{background:var(--g800);border:1px solid var(--g700);color:var(--blanco-roto);border-radius:999px;padding:7px 12px;font-size:12.5px}
+.sugs button:hover{background:var(--g700)}
+.ask{display:flex;gap:8px;padding:12px 18px 18px;border-top:1px solid var(--g800)}
+.ask input{flex:1;background:var(--g800);border:1px solid var(--g700);color:var(--blanco-roto);border-radius:12px;padding:11px 13px;font:inherit;font-size:14px}
+.ask button{background:var(--ambar);border:0;border-radius:12px;padding:0 16px;font-weight:700;color:var(--negro)}
+.proto-note{font-size:11.5px;color:var(--g500);padding:0 18px 8px}
+</style>
+</head>
+<body>
+
+<!-- Panel de prueba: no es parte de la app -->
+<div class="demo" role="region" aria-label="Panel de prueba">
+  <b>Prototipo para probar.</b>
+  <span>Versión:</span>
+  <span class="seg" id="segVer">
+    <button type="button" data-v="actual" aria-pressed="false">Actual (3 botones)</button>
+    <button type="button" data-v="nueva" aria-pressed="true">Propuesta</button>
+  </span>
+  <span>Probar que pasa si…</span>
+  <span class="seg" id="segSim">
+    <button type="button" data-s="ok" aria-pressed="true">todo anda</button>
+    <button type="button" data-s="err" aria-pressed="false">falla GA4</button>
+    <button type="button" data-s="stale" aria-pressed="false">datos viejos (+24 h)</button>
+  </span>
+  <span class="mini">Datos de ejemplo del prototipo, no son datos reales de Kol.</span>
+</div>
+
+<header class="app">
+  <div class="wrap">
+    <div class="top">
+      <div class="brand">
+        <div class="logo" aria-hidden="true">K</div>
+        <div>
+          <h1>KOL Marketing Suite</h1>
+          <p>Medición del embudo de franquicia</p>
+        </div>
+      </div>
+
+      <!-- VERSIÓN ACTUAL -->
+      <div class="actions" id="actActual" hidden>
+        <button class="btn" id="oldRefresh" type="button"><span id="oldIc">↻</span><span id="oldTx">Actualizar datos</span></button>
+        <button class="btn" id="oldConn" type="button">⚙ Conexiones</button>
+        <button class="btn amb" id="oldAsk" type="button">💬 Preguntale a los datos</button>
+      </div>
+
+      <!-- PROPUESTA -->
+      <div class="actions" id="actNueva">
+        <div class="status" id="status">
+          <button class="info" id="statusInfo" type="button" aria-haspopup="dialog" aria-expanded="false" aria-controls="pop">
+            <span class="dot" id="dot"></span>
+            <span id="statusTxt" aria-live="polite">Datos al día · hace 12 min</span>
+          </button>
+          <button class="refresh" id="refreshBtn" type="button" aria-label="Actualizar datos ahora" title="Actualizar datos ahora"><span id="refIc">↻</span></button>
+        </div>
+        <button class="icon-btn" id="connBtn" type="button" aria-label="Conexiones" title="Conexiones (cuentas y permisos)">⚙</button>
+        <button class="btn amb" id="askBtn" type="button" aria-haspopup="dialog">💬 Preguntar</button>
+
+        <div class="pop" id="pop" role="dialog" aria-label="Estado de los datos">
+          <h3 id="popTitle">Los datos están al día</h3>
+          <p class="sub" id="popSub">Última actualización hace 12 min. Se actualiza sola cada hora.</p>
+          <div id="srcList"></div>
+          <div class="changes" id="changes" hidden></div>
+          <button class="link" id="goConn" type="button">Administrar conexiones →</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="cards" id="cards">
+      <div class="card" id="c1"><div class="l">Consultas de franquicia</div><div class="q">¿Cuántos dejaron sus datos?</div><div class="v"><span id="v1">2</span><small>consultas</small></div><div class="d" id="d1">+1 vs período anterior (28 d)</div></div>
+      <div class="card" id="c2"><div class="l">Costo por consulta</div><div class="q">¿Cuánto cuesta cada una?</div><div class="v" style="font-size:18px;padding-top:6px">Sin inversión</div><div class="d">Empieza con las campañas de noviembre</div></div>
+      <div class="card" id="c3"><div class="l">De visita a consulta</div><div class="q">¿Cuántos terminan enviando?</div><div class="v"><span id="v3">2,7</span><small>%</small></div><div class="d" id="d3">2 de 75 · muestra chica</div></div>
+      <div class="card" id="c4"><div class="l">Fricción de la página</div><div class="q">¿La gente se traba?</div><div class="v" style="font-size:18px;padding-top:6px">Juntando sesiones</div><div class="d">Clarity todavía no tiene muestra</div></div>
+    </div>
+
+    <nav class="tabs" id="tabs" aria-label="Secciones">
+      <button type="button" data-p="hoy" aria-current="page">Hoy</button>
+      <button type="button" data-p="fuentes">Fuentes</button>
+      <button type="button" data-p="campanas">Campañas</button>
+      <button type="button" data-p="informes">Informes</button>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section class="page show" id="p-hoy"><h2>Hoy</h2><p class="lead">Acá va el embudo y de dónde vienen las visitas.</p><div class="ph">Contenido de la pantalla “Hoy” (simulado). Probá actualizar los datos y mirá cómo cambian las tarjetas de arriba.</div></section>
+  <section class="page" id="p-fuentes"><h2>Fuentes</h2><p class="lead">Google, Search Console, Meta y Clarity, una por una.</p><div class="ph">Contenido de “Fuentes” (simulado).</div></section>
+  <section class="page" id="p-campanas"><h2>Campañas</h2><p class="lead">Tablero, nueva campaña y paquete de publicación.</p><div class="ph">Contenido de “Campañas” (simulado).</div></section>
+  <section class="page" id="p-informes"><h2>Informes</h2><p class="lead">Resumen semanal.</p><div class="ph">Contenido de “Informes” (simulado).</div></section>
+  <section class="page" id="p-conexiones"><h2>Conexiones</h2><p class="lead">Acá se conectan las cuentas. Es configuración: se usa poco, por eso no necesita un botón grande todo el tiempo.</p><div id="connList"></div><p><button class="small-note" type="button" id="backBtn" style="background:none;border:0;color:var(--g600);text-decoration:underline;font-size:13px;cursor:pointer;padding:0">← Volver</button></p></section>
+  <section class="page" id="p-asistente"><h2>Preguntale a los datos</h2><p class="lead">En la versión actual esto reemplaza toda la pantalla: no podés ver los números mientras preguntás.</p><div class="dark-page">
+    <div class="chat" id="chatOld" style="padding:0"></div>
+    <div class="ask" style="padding:14px 0 0;border:0"><input id="inOld" placeholder="Escribí tu pregunta" aria-label="Pregunta"><button id="sendOld" type="button">Enviar</button></div>
+  </div><p><button type="button" id="backBtn2" style="background:none;border:0;color:var(--g600);text-decoration:underline;font-size:13px;cursor:pointer;padding:0">← Volver</button></p></section>
+</main>
+
+<!-- Drawer del asistente (propuesta) -->
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer" role="dialog" aria-label="Preguntale a los datos" aria-hidden="true">
+  <header><h3>Preguntale a los datos</h3><button type="button" id="closeDrawer" aria-label="Cerrar">×</button></header>
+  <div class="ctx">Estás viendo: <b id="ctxPage">Hoy</b></div>
+  <div class="chat" id="chat" aria-live="polite">
+    <div class="msg a">Preguntame lo que quieras sobre lo que ves en pantalla. Respondo solo con los datos sincronizados y te digo de dónde salen.</div>
+  </div>
+  <div class="proto-note">Prototipo: respuestas de ejemplo.</div>
+  <div class="sugs" id="sugs"></div>
+  <form class="ask" id="askForm"><input id="askIn" placeholder="Escribí tu pregunta" aria-label="Pregunta"><button type="submit">Enviar</button></form>
+</aside>
+
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+(function(){
+  var state={ver:'nueva',sim:'ok',status:'ok',page:'hoy',prev:'hoy',
+    lastTs:Date.now()-12*60000,updateCount:0,
+    data:{consultas:2,visitas:75},
+    src:{ga4:{ts:Date.now()-12*60000,ok:true},gsc:{ts:Date.now()-12*60000,ok:true},clarity:{ts:Date.now()-12*60000,ok:true}}};
+  var $=function(id){return document.getElementById(id)};
+  var names={hoy:'Hoy',fuentes:'Fuentes',campanas:'Campañas',informes:'Informes',conexiones:'Conexiones',asistente:'Preguntale a los datos'};
+
+  function ago(ts){var m=Math.round((Date.now()-ts)/60000);
+    if(m<1)return 'ahora';if(m<60)return 'hace '+m+' min';var h=Math.floor(m/60);if(h<24)return 'hace '+h+' h';return 'hace '+Math.floor(h/24)+' d';}
+
+  function toast(html,err){var t=$('toast');t.innerHTML=html;t.className='toast show'+(err?' err':'');clearTimeout(toast.t);toast.t=setTimeout(function(){t.className='toast'+(err?' err':'')},5200)}
+
+  /* ---------- páginas ---------- */
+  function go(p){
+    if(p!=='conexiones'&&p!=='asistente')state.prev=p;
+    state.page=p;
+    document.querySelectorAll('.page').forEach(function(s){s.classList.toggle('show',s.id==='p-'+p)});
+    document.querySelectorAll('#tabs button').forEach(function(b){
+      if(b.dataset.p===p)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')});
+    $('connBtn').classList.toggle('on',p==='conexiones');
+    $('oldConn').classList.toggle('on',p==='conexiones');
+    $('ctxPage').textContent=names[state.prev];
+  }
+  $('tabs').addEventListener('click',function(e){var b=e.target.closest('button');if(b)go(b.dataset.p)});
+  $('backBtn').onclick=$('backBtn2').onclick=function(){go(state.prev)};
+
+  /* ---------- versión ---------- */
+  function setVer(v){state.ver=v;
+    $('actActual').hidden=v!=='actual';$('actNueva').hidden=v!=='nueva';
+    document.querySelectorAll('#segVer button').forEach(function(b){b.setAttribute('aria-pressed',b.dataset.v===v)});
+    closePop();closeDrawer();
+    if(state.page==='asistente'&&v==='nueva')go(state.prev);
+  }
+  $('segVer').addEventListener('click',function(e){var b=e.target.closest('button');if(b)setVer(b.dataset.v)});
+  $('segSim').addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;
+    state.sim=b.dataset.s;
+    document.querySelectorAll('#segSim button').forEach(function(x){x.setAttribute('aria-pressed',x===b)});
+    if(state.sim==='stale'){var old=Date.now()-26*3600000;state.lastTs=old;['ga4','gsc','clarity'].forEach(function(k){state.src[k]={ts:old,ok:true}});state.status='stale'}
+    else if(state.sim==='ok'){state.status='ok';var t=Date.now()-12*60000;state.lastTs=t;['ga4','gsc','clarity'].forEach(function(k){state.src[k]={ts:t,ok:true}})}
+    else{state.status='error';state.src.ga4={ts:Date.now()-3*3600000,ok:false}}
+    render();
+  });
+
+  /* ---------- render del estado ---------- */
+  function render(){
+    var d=$('dot'),tx=$('statusTxt'),pt=$('popTitle'),ps=$('popSub');
+    d.className='dot '+(state.status==='ok'?'':state.status);
+    var u=state.status==='updating';
+    $('refreshBtn').disabled=u;
+    $('refIc').className=u?'spin':'';
+    if(state.status==='ok'){tx.textContent='Datos al día · '+ago(state.lastTs);pt.textContent='Los datos están al día';ps.textContent='Última actualización '+ago(state.lastTs)+'. Se actualiza sola cada hora.'}
+    if(state.status==='updating'){tx.textContent='Actualizando…';pt.textContent='Actualizando ahora';ps.textContent='Puede tardar unos segundos.'}
+    if(state.status==='error'){tx.textContent='Falta GA4 · tocá para ver';pt.textContent='Una fuente no respondió';ps.textContent='Los números de GA4 son de '+ago(state.src.ga4.ts)+'. El resto está al día.'}
+    if(state.status==='stale'){tx.textContent='Datos de '+ago(state.lastTs)+' · actualizar';pt.textContent='Los datos están viejos';ps.textContent='La última actualización fue '+ago(state.lastTs)+'. Conviene actualizar antes de decidir algo.'}
+    var rows=[['ga4','GA4 (consultas y visitas)'],['gsc','Search Console (búsquedas)'],['clarity','Clarity (fricción)']];
+    var h='';
+    rows.forEach(function(r){var s=state.src[r[0]];var cls=u?'updating':(s.ok?'':'error');
+      h+='<div class="src"><span class="dot '+cls+'"></span><span class="nm">'+r[1]+'</span>'+
+        (u?'<span class="tm">actualizando…</span>':(s.ok?'<span class="tm">'+ago(s.ts)+'</span>':'<span class="tm">sin conexión</span><button class="retry" type="button" data-retry="'+r[0]+'">Reintentar</button>'))+'</div>'});
+    h+='<div class="src"><span class="dot" style="background:var(--g500)"></span><span class="nm">Meta Ads</span><span class="tag">Se activa en noviembre</span></div>';
+    $('srcList').innerHTML=h;
+    // versión actual
+    $('oldTx').textContent=u?'Actualizando...':'Actualizar datos';$('oldIc').className=u?'spin':'';
+    $('oldRefresh').disabled=u;
+    // tarjetas
+    var c=state.data.consultas,v=state.data.visitas;
+    $('v1').textContent=c;$('v3').textContent=(c/v*100).toFixed(1).replace('.',',');
+    $('d3').textContent=c+' de '+v+' · muestra chica';
+    $('d1').textContent=(c-1>=0?'+':'')+(c-1)+' vs período anterior (28 d)';
+    renderConn();
+  }
+  function renderConn(){
+    var gOk=state.src.ga4.ok;
+    $('connList').innerHTML=
+      '<div class="row"><span class="dot '+(gOk?'':'error')+'"></span><span class="nm">Google Analytics 4</span><span class="st">'+(gOk?'Conectado':'Sin conexión')+'</span><button type="button">'+(gOk?'Administrar':'Reconectar')+'</button></div>'+
+      '<div class="row"><span class="dot"></span><span class="nm">Search Console</span><span class="st">Conectado</span><button type="button">Administrar</button></div>'+
+      '<div class="row"><span class="dot"></span><span class="nm">Microsoft Clarity</span><span class="st">Conectado</span><button type="button">Administrar</button></div>'+
+      '<div class="row"><span class="dot off"></span><span class="nm">Meta Ads</span><span class="st">Pausado hasta noviembre</span><button type="button">Conectar</button></div>';
+  }
+
+  /* ---------- actualizar ---------- */
+  var busy=false;
+  function refresh(){
+    if(busy)return;busy=true;state.status='updating';render();
+    setTimeout(function(){
+      busy=false;state.updateCount++;
+      var now=Date.now();
+      if(state.sim==='err'){
+        state.src.gsc={ts:now,ok:true};state.src.clarity={ts:now,ok:true};state.src.ga4={ts:state.src.ga4.ts,ok:false};
+        state.lastTs=now;state.status='error';render();
+        toast('<b>Se actualizó casi todo.</b> GA4 no respondió.<small>Los números de consultas y visitas siguen siendo los de antes. Tocá el estado de arriba para reintentar.</small>',true);
+        showChanges(null,true);return;
+      }
+      var chg=[];
+      if(state.updateCount===1){state.data.consultas+=1;state.data.visitas+=3;chg=['<b>+1 consulta nueva</b> (ahora 3)','<b>+3 visitas</b> al hub (ahora 78)','Clarity: 3 sesiones nuevas'];flash()}
+      state.sim==='ok';
+      ['ga4','gsc','clarity'].forEach(function(k){state.src[k]={ts:now,ok:true}});
+      state.lastTs=now;state.status='ok';render();
+      if(chg.length){toast('<b>Datos actualizados.</b> '+chg[0].replace(/<\/?b>/g,'')+'.<small>GA4 completa los últimos 2 días en 24 a 48 h.</small>');showChanges(chg)}
+      else{toast('<b>Datos actualizados.</b> No hubo cambios desde la última vez.<small>GA4 completa los últimos 2 días en 24 a 48 h.</small>');showChanges([])}
+    },2200);
+  }
+  function flash(){['c1','c3'].forEach(function(id){var e=$(id);e.classList.remove('flash');void e.offsetWidth;e.classList.add('flash')})}
+  function showChanges(list,err){var c=$('changes');
+    if(err){c.hidden=false;c.innerHTML='Qué pasó: Search Console y Clarity se actualizaron. GA4 quedó con los datos anteriores.';return}
+    c.hidden=false;c.innerHTML=list.length?('<b>Qué cambió:</b><br>'+list.join('<br>')):'Sin cambios desde la última actualización.'}
+  $('refreshBtn').onclick=refresh;
+  $('oldRefresh').onclick=refresh;
+
+  /* ---------- popover ---------- */
+  function openPop(){$('pop').classList.add('open');$('statusInfo').setAttribute('aria-expanded','true')}
+  function closePop(){$('pop').classList.remove('open');$('statusInfo').setAttribute('aria-expanded','false')}
+  $('statusInfo').onclick=function(e){e.stopPropagation();$('pop').classList.contains('open')?closePop():openPop()};
+  document.addEventListener('click',function(e){if(!$('pop').contains(e.target)&&!$('status').contains(e.target))closePop()});
+  document.addEventListener('keydown',function(e){if(e.key==='Escape'){closePop();closeDrawer()}});
+  $('srcList').addEventListener('click',function(e){var b=e.target.closest('[data-retry]');if(!b)return;
+    state.sim='ok';document.querySelectorAll('#segSim button').forEach(function(x){x.setAttribute('aria-pressed',x.dataset.s==='ok')});refresh()});
+  $('goConn').onclick=function(){closePop();go('conexiones')};
+
+  /* ---------- botones ---------- */
+  $('connBtn').onclick=function(){go('conexiones')};
+  $('oldConn').onclick=function(){go('conexiones')};
+  $('oldAsk').onclick=function(){go('asistente')};
+
+  /* ---------- asistente ---------- */
+  var sugsByPage={
+    hoy:['¿De dónde vienen las visitas?','¿Dónde se cae la gente?','Explicame la tarjeta 3'],
+    fuentes:['¿Qué buscan en Google antes de entrar?','¿Qué canal conviene probar?'],
+    campanas:['¿Conviene lanzar en Instagram o en Google?','¿Qué tope de gasto me sugerís para una prueba?'],
+    informes:['Resumime la semana en 5 líneas'],
+    conexiones:['¿Qué me falta conectar?']
+  };
+  var answers={
+    '¿De dónde vienen las visitas?':'De las 75 visitas al hub en 28 días: Instagram 40, Google 16 y directo 13. Instagram es la mayor fuente.|GA4 · últimos 28 días',
+    '¿Dónde se cae la gente?':'Todavía no hay volumen para decirlo con seguridad: con 75 visitas, cada paso del embudo tiene muy pocos casos. Conviene mirarlo de nuevo cuando haya más tráfico.|GA4 · embudo, muestra chica',
+    'Explicame la tarjeta 3':'Mide cuántas de las personas que entran al hub terminan enviando el formulario. Hoy son 2 de 75. Con una muestra tan chica, un solo caso cambia mucho el porcentaje.|GA4 · lead_franquicia',
+    '¿Qué buscan en Google antes de entrar?':'Eso sale de Search Console. En este prototipo no hay consultas cargadas.|Search Console',
+    '¿Qué canal conviene probar?':'Instagram trae la mayor parte de las visitas hoy. Es una pista, no una conclusión: la muestra es chica.|GA4 · canales',
+    '¿Conviene lanzar en Instagram o en Google?':'Hoy no tengo datos de gasto ni resultados de campañas, así que no puedo comparar. Sí sé que Instagram es la mayor fuente de visitas.|GA4 · canales',
+    '¿Qué tope de gasto me sugerís para una prueba?':'No hay un monto por defecto: lo define Kol con contabilidad. Te sugiero una prueba corta, de 14 días, con un tope total chico.|Criterio de trabajo',
+    'Resumime la semana en 5 líneas':'En este prototipo no hay informes generados.|—',
+    '¿Qué me falta conectar?':'Meta Ads está pausado hasta noviembre. El resto está conectado.|Conexiones'
+  };
+  function addMsg(box,txt,who,src){var m=document.createElement('div');m.className='msg '+who;m.textContent=txt;
+    if(src){var s=document.createElement('span');s.className='src-line';s.textContent='Fuente: '+src;m.appendChild(s)}
+    box.appendChild(m);box.scrollTop=box.scrollHeight}
+  function ask(box,q){addMsg(box,q,'u');
+    var r=answers[q]||'En este prototipo solo tengo respuestas de ejemplo para las preguntas sugeridas.|—';
+    var p=r.split('|');setTimeout(function(){addMsg(box,p[0],'a',p[1]!=='—'?p[1]:null)},500)}
+  function renderSugs(){var l=sugsByPage[state.prev]||sugsByPage.hoy;$('sugs').innerHTML=l.map(function(q){return '<button type="button">'+q+'</button>'}).join('')}
+  $('sugs').addEventListener('click',function(e){var b=e.target.closest('button');if(b)ask($('chat'),b.textContent)});
+  $('askForm').onsubmit=function(e){e.preventDefault();var v=$('askIn').value.trim();if(v){ask($('chat'),v);$('askIn').value=''}};
+  $('sendOld').onclick=function(){var v=$('inOld').value.trim();if(v){ask($('chatOld'),v);$('inOld').value=''}};
+  function openDrawer(){renderSugs();$('ctxPage').textContent=names[state.prev];$('drawer').classList.add('show');$('scrim').classList.add('show');$('drawer').setAttribute('aria-hidden','false');setTimeout(function(){$('askIn').focus()},250)}
+  function closeDrawer(){$('drawer').classList.remove('show');$('scrim').classList.remove('show');$('drawer').setAttribute('aria-hidden','true')}
+  $('askBtn').onclick=openDrawer;$('closeDrawer').onclick=closeDrawer;$('scrim').onclick=closeDrawer;
+
+  setInterval(render,30000);
+  render();setVer('nueva');
+})();
+</script>
+</body>
+</html>
