@@ -2,6 +2,8 @@ import React from "react";
 import { Globe, Heart, MessageCircle, Send, Bookmark, ThumbsUp, Share2, MoreHorizontal, ChevronRight } from "lucide-react";
 import { KolLockup } from "../KolLockup";
 import { GOOGLE_LIMITS, META_PRIMARY_VISIBLE_CHARS } from "./adChecks";
+import { MetaFormat } from "../../types/marketing";
+import { metaFormatInfo } from "../campaigns/assetLibrary";
 
 /** Foto de perfil circular: solo la hoja (isotipo) de KOL. El lockup ancho no entra en un círculo. */
 export const KolAvatar: React.FC<{ theme: "claro" | "oscuro"; size?: number }> = ({ theme, size = 36 }) => {
@@ -39,6 +41,7 @@ function cut(text: string, n: number) {
 
 export interface MetaPreviewProps {
   placement: "instagram" | "facebook";
+  format?: MetaFormat;
   pageName: string;
   avatarTheme: "claro" | "oscuro";
   primaryText: string;
@@ -71,6 +74,38 @@ const Media: React.FC<{ url: string; ratio: string; seal: boolean; sealVariant: 
 export const MetaAdPreview: React.FC<MetaPreviewProps> = (p) => {
   const text = cut(p.primaryText, META_PRIMARY_VISIBLE_CHARS);
   const name = p.pageName || "Nombre de la página";
+  const ratio = metaFormatInfo(p.format).ratio;
+
+  if (p.format === "stories_9x16") {
+    return (
+      <div className="relative w-[270px] max-w-full mx-auto rounded-[14px] overflow-hidden bg-[#161418] text-white" style={{ aspectRatio: "9 / 16", fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" }}>
+        {p.mediaUrl ? (
+          <img src={p.mediaUrl} alt="Imagen del anuncio" className="absolute inset-0 w-full h-full object-cover" />
+        ) : (
+          <div className="absolute inset-0 grid place-items-center text-[12px] text-[#C9C3BE] text-center p-6">Elegí o subí una imagen vertical 9:16</div>
+        )}
+        <div className="absolute top-0 inset-x-0 p-3 bg-gradient-to-b from-black/50 to-transparent">
+          <div className="h-[2px] bg-white/40 rounded mb-2"><div className="h-full w-1/3 bg-white rounded" /></div>
+          <div className="flex items-center gap-2">
+            <KolAvatar theme={p.avatarTheme} size={28} />
+            <div className="leading-tight">
+              <div className="text-[13px] font-semibold">{name}</div>
+              <div className="text-[11px] text-white/80">Publicidad</div>
+            </div>
+          </div>
+        </div>
+        {p.showSeal && (
+          <div className="absolute left-3 top-1/2 -translate-y-1/2 drop-shadow-md">
+            <KolLockup variant={p.sealVariant} compact />
+          </div>
+        )}
+        <div className="absolute bottom-0 inset-x-0 p-3 pt-10 bg-gradient-to-t from-black/60 to-transparent text-center">
+          <div className="text-[11px] mb-1">⌃</div>
+          <div className="inline-block bg-white text-[#161418] text-[12.5px] font-semibold rounded-full px-4 py-1.5">{p.callToAction}</div>
+        </div>
+      </div>
+    );
+  }
 
   if (p.placement === "instagram") {
     return (
@@ -86,7 +121,7 @@ export const MetaAdPreview: React.FC<MetaPreviewProps> = (p) => {
           </div>
           <MoreHorizontal className="w-5 h-5 ml-auto" aria-hidden="true" />
         </div>
-        <Media url={p.mediaUrl} ratio="1 / 1" seal={p.showSeal} sealVariant={p.sealVariant} />
+        <Media url={p.mediaUrl} ratio={ratio} seal={p.showSeal} sealVariant={p.sealVariant} />
         <div className="flex items-center justify-between bg-[#0095f6] text-white text-[14px] font-semibold px-3 py-2.5">
           <span>{p.callToAction}</span>
           <ChevronRight className="w-4 h-4" aria-hidden="true" />
@@ -124,7 +159,7 @@ export const MetaAdPreview: React.FC<MetaPreviewProps> = (p) => {
         {text.shown}
         {text.cut && <span className="text-[#65676b] font-semibold"> Ver más</span>}
       </p>
-      <Media url={p.mediaUrl} ratio="1.91 / 1" seal={p.showSeal} sealVariant={p.sealVariant} />
+      <Media url={p.mediaUrl} ratio={ratio} seal={p.showSeal} sealVariant={p.sealVariant} />
       <div className="flex items-center gap-3 bg-[#f0f2f5] px-4 py-2.5">
         <div className="flex-1 min-w-0">
           <div className="text-[12.5px] text-[#65676b] uppercase truncate">{p.domain}</div>

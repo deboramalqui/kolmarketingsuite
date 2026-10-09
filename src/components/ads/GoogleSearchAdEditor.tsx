@@ -19,6 +19,8 @@ interface Props {
   value: GoogleAdFields;
   onChange: (patch: Partial<GoogleAdFields>) => void;
   readOnly?: boolean;
+  /** Las palabras clave son del grupo de anuncios: se editan solo en el primer anuncio */
+  showKeywords?: boolean;
 }
 
 const L = GOOGLE_LIMITS;
@@ -61,7 +63,7 @@ const Field: React.FC<{
   );
 };
 
-export const GoogleSearchAdEditor: React.FC<Props> = ({ value, onChange, readOnly }) => {
+export const GoogleSearchAdEditor: React.FC<Props> = ({ value, onChange, readOnly, showKeywords = true }) => {
   const [device, setDevice] = useState<"desktop" | "mobile">("desktop");
   const [seed, setSeed] = useState(0);
   const checks = checkGoogleAd(value);
@@ -150,6 +152,7 @@ export const GoogleSearchAdEditor: React.FC<Props> = ({ value, onChange, readOnl
           </div>
         </div>
 
+        {showKeywords ? (
         <div>
           <label className="block text-[13px] font-bold text-[#161418] mb-1" htmlFor="g-kw">
             Palabras clave (una por línea: "frase", [exacta], amplia)
@@ -177,6 +180,9 @@ export const GoogleSearchAdEditor: React.FC<Props> = ({ value, onChange, readOnl
             className="w-full p-2.5 border border-[#8C8580] rounded-[6px] text-[13px] font-mono kol-focus disabled:bg-[#F3F0ED]"
           />
         </div>
+        ) : (
+          <p className="text-[12.5px] text-[#46413F] p-3 bg-[#FAF8F6] border border-[#E7E3DF] rounded-[8px]">Las palabras clave y las negativas son las mismas para todos los anuncios de la campaña. Se editan en el Anuncio A.</p>
+        )}
       </div>
 
       <div className="space-y-4 lg:sticky lg:top-4 self-start">

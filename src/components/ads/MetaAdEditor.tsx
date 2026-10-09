@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { GalleryAsset } from "../../types/marketing";
 import { AssetPicker } from "./AssetPicker";
 import { MetaAdPreview } from "./AdPreviews";
+import { MetaFormat } from "../../types/marketing";
+import { assetFits, META_FORMATS, metaFormatInfo } from "../campaigns/assetLibrary";
 import { AdChecklist } from "./AdChecklist";
 import { checkMetaAd, META_PRIMARY_VISIBLE_CHARS } from "./adChecks";
 import { SITE_DOMAIN } from "../../data/initialMarketingData";
@@ -16,6 +18,7 @@ export interface MetaAdFields {
   description: string;
   callToAction: string;
   mediaAssetId?: string;
+  format: MetaFormat;
 }
 
 interface Props {
@@ -62,6 +65,7 @@ export const MetaAdEditor: React.FC<Props> = ({ value, onChange, assets, onGoToF
     description: value.description,
     mediaUrl: chosen?.url || "",
     imagePermission: chosen ? chosen.permission : undefined,
+    imageFit: chosen ? assetFits(chosen, metaFormatInfo(value.format).slot) : undefined,
   });
   const len = value.primaryText.length;
 
@@ -127,10 +131,19 @@ export const MetaAdEditor: React.FC<Props> = ({ value, onChange, assets, onGoToF
         </div>
 
         <div className="space-y-2">
+          <div>
+            <label className="block text-[13px] font-bold text-[#161418] mb-1" htmlFor="meta-format">Formato del anuncio</label>
+            <select id="meta-format" disabled={readOnly} value={value.format} onChange={(e) => onChange({ format: e.target.value as MetaFormat })} className="w-full h-[38px] px-3 border border-[#8C8580] rounded-[6px] text-[13px] bg-white text-[#161418] kol-focus disabled:bg-[#F3F0ED]">
+              {META_FORMATS.map((f) => (
+                <option key={f.id} value={f.id}>{f.label}</option>
+              ))}
+            </select>
+            <p className="text-[11.5px] text-[#6A6460] mt-1">{metaFormatInfo(value.format).hint}</p>
+          </div>
           <AssetPicker
             label="Imagen del anuncio"
-            hint="Cuadrada 1:1 o vertical 4:5, mín. 600 px"
-            slot="meta"
+            hint={metaFormatInfo(value.format).label}
+            slot={metaFormatInfo(value.format).slot}
             kind="foto"
             assets={assets}
             value={value.mediaAssetId}
@@ -181,6 +194,7 @@ export const MetaAdEditor: React.FC<Props> = ({ value, onChange, assets, onGoToF
           callToAction={value.callToAction}
           domain={SITE_DOMAIN}
           mediaUrl={chosen?.url || ""}
+          format={value.format}
           showSeal={value.showSeal}
           sealVariant={value.sealVariant}
         />

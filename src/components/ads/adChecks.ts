@@ -79,6 +79,7 @@ export function checkMetaAd(v: {
   mediaUrl: string;
   /** undefined = la imagen no está en la galería (no se sabe) */
   imagePermission?: boolean;
+  imageFit?: { ok: boolean; reason: string };
 }): AdCheck[] {
   const all = `${v.primaryText} ${v.headline} ${v.description}`;
   return [
@@ -95,6 +96,7 @@ export function checkMetaAd(v: {
       label: "El anuncio tiene imagen",
       severity: "error",
     },
+    ...(v.imageFit ? [{ id: "fit", ok: v.imageFit.ok, label: `Imagen: ${v.imageFit.reason}`, severity: "error" as const }] : []),
     ...(v.imagePermission === undefined
       ? []
       : [

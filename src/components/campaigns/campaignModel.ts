@@ -1,4 +1,4 @@
-import { CampaignPlatform, FranchiseCampaignItem, CampaignLifecycleStatus, GalleryAsset } from "../../types/marketing";
+import { CampaignAd, CampaignPlatform, FranchiseCampaignItem, CampaignLifecycleStatus, GalleryAsset } from "../../types/marketing";
 import { SITE_FRANQUICIA_URL } from "../../data/initialMarketingData";
 
 export const PLATFORM_INFO: Array<{ id: CampaignPlatform; label: string; short: string; description: string }> = [
@@ -32,8 +32,25 @@ export const statusLabel: Record<CampaignLifecycleStatus, string> = {
   devuelta: "Devuelta",
 };
 
+/** Anuncios de la campaña. Si es una campaña vieja con un solo anuncio, se lo convierte en "Anuncio A". */
+export function getAds(c: FranchiseCampaignItem): CampaignAd[] {
+  if (c.ads && c.ads.length) return c.ads;
+  if (!c.googleAdData && !c.displayAdData && !c.metaAdData) return [];
+  return [{ id: `${c.id}-a`, label: "Anuncio A", utmContent: "anuncio-a", googleAdData: c.googleAdData, displayAdData: c.displayAdData, metaAdData: c.metaAdData }];
+}
+
 export function metaPlacementOf(c: FranchiseCampaignItem): "instagram" | "facebook" {
-  return /facebook/i.test(c.metaAdData?.feedPlacement || "") ? "facebook" : "instagram";
+  const first = getAds(c)[0]?.metaAdData;
+  return /facebook/i.test(first?.feedPlacement || "") ? "facebook" : "instagram";
+}
+
+/** utm_content único dentro de la campaña, a partir del nombre del anuncio */
+export function uniqueUtmContent(label: string, taken: string[]): string {
+  const base = utmSlug(label) || "anuncio";
+  let out = base;
+  let n = 2;
+  while (taken.includes(out)) out = `${base}-${n++}`;
+  return out;
 }
 
 export function platformLabel(c: FranchiseCampaignItem): string {
@@ -65,7 +82,7 @@ export interface UtmBuild {
 }
 
 /** Convención de guia-utm-campanas.md */
-export function buildUtm(platform: CampaignPlatform, name: string): UtmBuild {
+export function buildUtm(platform: CampaignPlatform, name: string, contentOverride?: string): UtmBuild {
   const campaign = utmSlug(name) || "franquicia-campana";
   let source = "google";
   let medium = "cpc";
@@ -80,6 +97,7 @@ export function buildUtm(platform: CampaignPlatform, name: string): UtmBuild {
     term = "{{adset.name}}";
     content = "{{ad.name}}";
   }
+  if (contentOverride) content = contentOverride;
   const parts = [
     `utm_source=${source}`,
     `utm_medium=${medium}`,
@@ -101,6 +119,10 @@ export const dayNumber = (fromISO: string) => Math.max(1, Math.round((Date.parse
 export function normalizeCampaign(c: FranchiseCampaignItem): FranchiseCampaignItem {
   return {
     ...c,
+    ads: getAds(c),
+    googleAdData: undefined,
+    displayAdData: undefined,
+    metaAdData: undefined,
     approvalHistory: c.approvalHistory ?? [],
     targetLocations: c.targetLocations ?? [],
     budget: { ...(c.budget ?? {}), currency: c.budget?.currency ?? "ARS", totalCap: c.budget?.totalCap ?? 0 },

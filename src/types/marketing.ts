@@ -224,6 +224,61 @@ export interface CampaignApprovalRecord {
   comment?: string;
 }
 
+export interface GoogleAdData {
+  headlines: string[];
+  descriptions: string[];
+  keywords: Array<{ keyword: string; matchType: "exact" | "phrase" | "broad" }>;
+  finalUrlSuffix: string;
+  displayPath?: [string, string];
+  sitelinks?: Array<{ title: string; line1: string; line2: string }>;
+  callouts?: string[];
+  negativeKeywords?: string[];
+}
+
+export interface DisplayAdData {
+  businessName: string;
+  shortHeadlines: string[];
+  longHeadline: string;
+  descriptions: string[];
+  callToAction: string;
+  landscapeAssetId?: string;
+  squareAssetId?: string;
+  logoSquareAssetId?: string;
+  logoWideAssetId?: string;
+  finalUrlSuffix?: string;
+}
+
+/** Formato del anuncio de Meta: define la proporción de la imagen y dónde se ve */
+export type MetaFormat = "feed_191" | "feed_1x1" | "feed_4x5" | "stories_9x16";
+
+export interface MetaAdData {
+  primaryText: string;
+  headline: string;
+  description: string;
+  callToAction: string;
+  mediaUrl: string;
+  /** Imagen elegida de la galería (tiene prioridad sobre mediaUrl) */
+  mediaAssetId?: string;
+  feedPlacement: string;
+  format?: MetaFormat;
+  pageName?: string;
+  avatarTheme?: "claro" | "oscuro";
+  showSeal?: boolean;
+  sealVariant?: "claro" | "oscuro";
+}
+
+/** Un anuncio dentro de una campaña. Cada uno lleva su propio utm_content para medir cuál trae más consultas. */
+export interface CampaignAd {
+  id: string;
+  /** Nombre visible: "Anuncio A" */
+  label: string;
+  /** utm_content: "anuncio-a" */
+  utmContent: string;
+  googleAdData?: GoogleAdData;
+  displayAdData?: DisplayAdData;
+  metaAdData?: MetaAdData;
+}
+
 export type CampaignPlatform = "google_search" | "google_display" | "meta_instagram";
 
 /** Foto o logo de la galería de "Datos y archivos" */
@@ -276,44 +331,12 @@ export interface FranchiseCampaignItem {
     content?: string;
     finalUrlWithUtm: string;
   };
-  googleAdData?: {
-    headlines: string[];
-    descriptions: string[];
-    keywords: Array<{ keyword: string; matchType: "exact" | "phrase" | "broad" }>;
-    finalUrlSuffix: string;
-    // Opcionales (vista previa realista de Google Búsqueda)
-    displayPath?: [string, string];
-    sitelinks?: Array<{ title: string; line1: string; line2: string }>;
-    callouts?: string[];
-    negativeKeywords?: string[];
-  };
-  displayAdData?: {
-    businessName: string;
-    shortHeadlines: string[];
-    longHeadline: string;
-    descriptions: string[];
-    callToAction: string;
-    landscapeAssetId?: string;
-    squareAssetId?: string;
-    logoSquareAssetId?: string;
-    logoWideAssetId?: string;
-    finalUrlSuffix?: string;
-  };
-  metaAdData?: {
-    primaryText: string;
-    headline: string;
-    description: string;
-    callToAction: string;
-    mediaUrl: string;
-    /** Imagen elegida de la galería (tiene prioridad sobre mediaUrl) */
-    mediaAssetId?: string;
-    feedPlacement: string;
-    // Opcionales (vista previa realista de Instagram / Facebook)
-    pageName?: string;
-    avatarTheme?: "claro" | "oscuro";
-    showSeal?: boolean;
-    sealVariant?: "claro" | "oscuro";
-  };
+  /** Anuncios de la campaña (variantes A, B, C…). Las campañas viejas se convierten al abrirlas. */
+  ads?: CampaignAd[];
+  /** Campos de versiones anteriores (un solo anuncio): se migran a `ads` */
+  googleAdData?: GoogleAdData;
+  displayAdData?: DisplayAdData;
+  metaAdData?: MetaAdData;
   /** Obsoleto: el chequeo ahora se calcula en vivo; no se guarda */
   qualityChecklist?: FranchiseCampaignQualityChecklist;
   approvalHistory: CampaignApprovalRecord[];

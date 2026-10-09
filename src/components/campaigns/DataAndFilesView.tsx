@@ -2,7 +2,7 @@ import React, { useRef, useState } from "react";
 import { ShieldCheck, Upload, Trash2, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { GalleryAsset } from "../../types/marketing";
 import { VERIFIED_BRAND_FACTS, VERIFIED_LOCATIONS, SITE_FRANQUICIA_URL } from "../../data/initialMarketingData";
-import { assetFits, fileToAsset, ratioLabel } from "./assetLibrary";
+import { assetFits, fileToAsset, META_FORMATS, ratioLabel } from "./assetLibrary";
 import { useCopy } from "./useCopy";
 import { CopyButton } from "./CopyButton";
 
@@ -142,7 +142,9 @@ export const DataAndFilesView: React.FC<Props> = ({ assets, onChange }) => {
                       <>
                         <Fit ok={assetFits(a, "landscape").ok} label="Display horizontal" />
                         <Fit ok={assetFits(a, "square").ok} label="Display cuadrada" />
-                        <Fit ok={assetFits(a, "meta").ok} label="Meta" />
+                        {META_FORMATS.map((f) => (
+                          <Fit key={f.id} ok={assetFits(a, f.slot).ok} label={`Meta ${f.ratio.replace(" / ", ":").replace("1.91", "1,91")}`} />
+                        ))}
                       </>
                     ) : (
                       <>

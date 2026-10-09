@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { ArrowLeft, Check, Send } from "lucide-react";
 import { FranchiseCampaignItem, GalleryAsset, CampaignApprovalRecord } from "../../types/marketing";
-import { formatMoney, platformLabel, todayISO, dayNumber } from "./campaignModel";
+import { formatMoney, platformLabel, todayISO, dayNumber, getAds, buildUtm } from "./campaignModel";
 import { checkCampaign, hasErrors } from "./campaignChecks";
 import { buildPackage, PRE_ACTIVATION } from "./publishPackage";
 import { StatusBadge } from "./StatusBadge";
@@ -157,6 +157,7 @@ export const CampaignDetail: React.FC<Props> = ({ campaign: c, assets, initialTa
             <Row k="Costo máx. por consulta" v={formatMoney(c.budget.maxCpaTarget, c.budget.currency)} />
             <Row k="Dónde se muestra" v={c.targetLocations.join(", ") || "—"} />
             {c.geo?.excluded?.length ? <Row k="Excluye" v={c.geo.excluded.join(", ")} /> : null}
+            <Row k="Anuncios" v={getAds(c).map((a) => a.label).join(", ") || "—"} />
             <Row k="Objetivo medido" v={<code>lead_franquicia</code>} />
           </div>
           <div className="p-4 bg-[#FAF8F6] border border-[#C9C3BE] rounded-[10px] space-y-3">
@@ -173,16 +174,33 @@ export const CampaignDetail: React.FC<Props> = ({ campaign: c, assets, initialTa
       {tab === "anuncios" && <CampaignAdsTab key={`${c.id}-${c.status}`} campaign={c} assets={assets} onGoToFiles={onGoToFiles} onSaveCampaign={onSave} />}
 
       {tab === "medicion" && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-2 text-[13px]">
-            {([["utm_source", utm.source], ["utm_medium", utm.medium], ["utm_campaign", utm.campaign], ...(utm.term ? [["utm_term", utm.term]] : []), ["utm_content", utm.content || ""]] as Array<[string, string]>).map(([k, v]) => (
-              <div key={k} className="p-2.5 bg-white border border-[#C9C3BE] rounded-[6px] flex justify-between gap-3"><span className="text-[#8C8580]">{k}</span><strong className="font-mono break-all text-right">{v}</strong></div>
-            ))}
+        <div className="space-y-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2 text-[13px]">
+              <span className="text-[12px] font-bold text-[#46413F] block">Igual para toda la campaña</span>
+              {([["utm_source", utm.source], ["utm_medium", utm.medium], ["utm_campaign", utm.campaign]] as Array<[string, string]>).map(([k, v]) => (
+                <div key={k} className="p-2.5 bg-white border border-[#C9C3BE] rounded-[6px] flex justify-between gap-3"><span className="text-[#8C8580]">{k}</span><strong className="font-mono break-all text-right">{v}</strong></div>
+              ))}
+            </div>
+            <p className="text-[12.5px] text-[#46413F] self-start p-3 bg-[#FAF8F6] border border-[#E7E3DF] rounded-[8px]">
+              Cada consulta llega al mail con su origen (campaña, fuente y anuncio) y a GA4 con el evento <code>lead_franquicia</code>. GA4 tarda 24 a 48 h en mostrarlo.
+              Lo que está entre llaves ({"{ }"}) lo reemplaza la plataforma.
+            </p>
           </div>
           <div className="space-y-3">
-            <div className="flex items-center justify-between"><span className="text-[12px] font-bold text-[#46413F]">Enlace final de ejemplo</span><CopyButton text={utm.finalUrlWithUtm} id="utm-full" copiedKey={copiedKey} onCopy={copy} /></div>
-            <div className="p-2.5 bg-[#F3F0ED] border border-[#C9C3BE] rounded-[6px] text-[12px] font-mono break-all">{utm.finalUrlWithUtm}</div>
-            <p className="text-[12px] text-[#6A6460]">Cada consulta llega al mail con su origen (campaña, fuente y palabra clave) y a GA4 con el evento <code>lead_franquicia</code>. GA4 tarda 24 a 48 h en mostrarlo.</p>
+            <span className="text-[12px] font-bold text-[#46413F] block">Enlace de cada anuncio</span>
+            {getAds(c).map((ad) => {
+              const u = buildUtm(c.platform, c.name, ad.utmContent);
+              return (
+                <div key={ad.id} className="p-3 bg-white border border-[#C9C3BE] rounded-[8px] space-y-1.5">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-[13px] font-bold text-[#161418]">{ad.label} <span className="font-mono font-normal text-[#6A6460]">utm_content={ad.utmContent}</span></span>
+                    <CopyButton text={u.finalUrl} id={`utm-${ad.id}`} copiedKey={copiedKey} onCopy={copy} />
+                  </div>
+                  <div className="p-2 bg-[#F3F0ED] border border-[#E7E3DF] rounded-[6px] text-[12px] font-mono break-all">{u.finalUrl}</div>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}

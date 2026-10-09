@@ -73,7 +73,8 @@ export async function fileToAsset(file: File, kind: "foto" | "logo"): Promise<Ga
   };
 }
 
-export type AssetSlot = "landscape" | "square" | "logoSquare" | "logoWide" | "meta";
+export type MetaSlot = "meta_191" | "meta_1x1" | "meta_4x5" | "meta_9x16";
+export type AssetSlot = "landscape" | "square" | "logoSquare" | "logoWide" | MetaSlot;
 
 interface Fit {
   ok: boolean;
@@ -102,9 +103,22 @@ export function assetFits(a: GalleryAsset, slot: AssetSlot): Fit {
       if (!near(r, 4, 0.06)) return { ok: false, reason: "No es 4:1" };
       if (a.width < 512 || a.height < 128) return { ok: false, reason: "Menor a 512×128" };
       return { ok: true, reason: "Logo 4:1 correcto" };
-    case "meta":
-      if (Math.min(a.width, a.height) < 600) return { ok: false, reason: "Conviene al menos 600 px de lado" };
-      return { ok: true, reason: "Tamaño suficiente" };
+    case "meta_191":
+      if (!near(r, 1.91, 0.06)) return { ok: false, reason: "No es horizontal 1,91:1" };
+      if (a.width < 600) return { ok: false, reason: "Conviene al menos 600 px de ancho" };
+      return { ok: true, reason: "Horizontal 1,91:1 correcta" };
+    case "meta_1x1":
+      if (!near(r, 1, 0.04)) return { ok: false, reason: "No es cuadrada 1:1" };
+      if (a.width < 600) return { ok: false, reason: "Conviene al menos 600×600" };
+      return { ok: true, reason: "Cuadrada 1:1 correcta" };
+    case "meta_4x5":
+      if (!near(r, 0.8, 0.04)) return { ok: false, reason: "No es vertical 4:5" };
+      if (a.width < 600) return { ok: false, reason: "Conviene al menos 600 px de ancho" };
+      return { ok: true, reason: "Vertical 4:5 correcta" };
+    case "meta_9x16":
+      if (!near(r, 0.5625, 0.04)) return { ok: false, reason: "No es vertical 9:16" };
+      if (a.width < 500) return { ok: false, reason: "Conviene al menos 500 px de ancho" };
+      return { ok: true, reason: "Vertical 9:16 correcta" };
   }
 }
 
@@ -117,3 +131,12 @@ export function ratioLabel(a: GalleryAsset): string {
   if (near(r, 0.5625, 0.04)) return "9:16";
   return `${r.toFixed(2).replace(".", ",")}:1`;
 }
+
+export const META_FORMATS: Array<{ id: "feed_191" | "feed_1x1" | "feed_4x5" | "stories_9x16"; label: string; slot: MetaSlot; ratio: string; hint: string }> = [
+  { id: "feed_1x1", label: "Feed cuadrado 1:1", slot: "meta_1x1", ratio: "1 / 1", hint: "Instagram y Facebook · 1080×1080 recomendado" },
+  { id: "feed_4x5", label: "Feed vertical 4:5", slot: "meta_4x5", ratio: "4 / 5", hint: "Ocupa más pantalla en el celular · 1080×1350" },
+  { id: "feed_191", label: "Feed horizontal 1,91:1", slot: "meta_191", ratio: "1.91 / 1", hint: "Típico de Facebook con enlace · 1200×628" },
+  { id: "stories_9x16", label: "Historias y reels 9:16", slot: "meta_9x16", ratio: "9 / 16", hint: "Pantalla completa · 1080×1920" },
+];
+
+export const metaFormatInfo = (id?: string) => META_FORMATS.find((f) => f.id === id) ?? META_FORMATS[0];

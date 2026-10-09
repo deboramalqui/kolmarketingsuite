@@ -1,15 +1,13 @@
 import React, { useMemo, useState } from "react";
 import { ArrowLeft, ChevronRight, Check, Target, Search, Image as ImageIcon, Instagram } from "lucide-react";
-import { CampaignLifecycleMode, CampaignPlatform, FranchiseCampaignItem, GalleryAsset } from "../../types/marketing";
+import { CampaignAd, CampaignLifecycleMode, CampaignPlatform, FranchiseCampaignItem, GalleryAsset } from "../../types/marketing";
 import { SITE_FRANQUICIA_URL, VERIFIED_BRAND_FACTS } from "../../data/initialMarketingData";
 import { buildUtm, PLATFORM_INFO, todayISO, platformLabel, EMPTY_GEO, GeoValue, geoToLocations, hasGeoTarget } from "./campaignModel";
 import { GeoTargeting } from "./GeoTargeting";
 import { checkCampaign, hasErrors } from "./campaignChecks";
 import { AdChecklist } from "../ads/AdChecklist";
-import { MetaAdEditor, MetaAdFields } from "../ads/MetaAdEditor";
-import { GoogleSearchAdEditor, GoogleAdFields } from "../ads/GoogleSearchAdEditor";
-import { DisplayAdEditor, DisplayAdFields } from "../ads/DisplayAdEditor";
-import { parseKeywords } from "../ads/adChecks";
+import { AdVariantsEditor } from "../ads/AdVariantsEditor";
+import { createDefaultAd } from "../ads/adDefaults";
 import { useCopy } from "./useCopy";
 import { CopyButton } from "./CopyButton";
 
@@ -23,45 +21,17 @@ interface Props {
 
 const STEPS = ["Tipo y presupuesto", "Mensaje y anuncios", "Medición", "Revisión"];
 
-const defaultMeta: MetaAdFields = {
-  pageName: "kol.franquicias",
-  avatarTheme: "claro",
-  showSeal: true,
-  sealVariant: "oscuro",
-  primaryText: "¿Buscás una franquicia con bajo costo fijo en tecnología? KOL cuenta con 10 locales. Derecho inicial de US$ 3.000, 0 % de regalías y 0 % de canon publicitario.",
-  headline: "Franquicia KOL · Formato Isla",
-  description: "Recupero estimado de 18 a 24 meses (casos en 12)",
-  callToAction: "Más información",
-  mediaAssetId: undefined,
-};
-
-const defaultGoogle: GoogleAdFields = {
-  headlines: ["Franquicia KOL Accesorios", "Derecho inicial US$ 3.000", "0 % regalías · 10 locales"],
-  descriptions: [
-    "Abrí tu local KOL. Derecho inicial US$ 3.000, 0 % de regalías y 0 % de canon publicitario.",
-    "10 locales en funcionamiento. Recupero estimado de 18 a 24 meses, con casos en 12.",
-  ],
-  displayPath: ["franquicia", ""],
-  sitelinks: [],
-  callouts: [],
-  keywordsText: '"franquicia kol accesorios"',
-  negativeKeywordsText: "",
-};
-
-const defaultDisplay: DisplayAdFields = {
-  businessName: "KOL Accesorios",
-  shortHeadlines: ["Franquicia KOL Accesorios"],
-  longHeadline: "Abrí tu franquicia KOL: derecho inicial de US$ 3.000 y 0 % de regalías",
-  descriptions: ["Derecho inicial US$ 3.000, 0 % regalías y 0 % de canon de publicidad. Consultá."],
-  callToAction: "Automático",
-};
-
 export const NewCampaignWizard: React.FC<Props> = ({ assets, suggested, onCancel, onGoToFiles, onSave }) => {
   const { copiedKey, copy } = useCopy();
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [chosen, setChosen] = useState<CampaignPlatform | null>(suggested ? "meta_instagram" : null);
   const platform: CampaignPlatform = chosen ?? "google_search";
-  const setPlatform = (p: CampaignPlatform) => setChosen(p);
+  const newAds = (p: CampaignPlatform): CampaignAd[] => [createDefaultAd(p, `ad-${Date.now().toString(36)}`, "Anuncio A", "anuncio-a")];
+  const [ads, setAds] = useState<CampaignAd[]>(() => (suggested ? newAds("meta_instagram") : []));
+  const setPlatform = (p: CampaignPlatform) => {
+    if (p !== chosen) setAds(newAds(p));
+    setChosen(p);
+  };
   const [placement, setPlacement] = useState<"instagram" | "facebook">("instagram");
   const [name, setName] = useState(suggested ? "Franquicia Nov · Instagram (prueba)" : "");
   const [mode, setMode] = useState<CampaignLifecycleMode>("prueba");
@@ -73,11 +43,7 @@ export const NewCampaignWizard: React.FC<Props> = ({ assets, suggested, onCancel
   const [geo, setGeo] = useState<GeoValue>(EMPTY_GEO);
   const locations = geoToLocations(geo);
   const [format, setFormat] = useState<"isla" | "estandar" | "ambos">("isla");
-  const [meta, setMeta] = useState<MetaAdFields>(defaultMeta);
-  const [google, setGoogle] = useState<GoogleAdFields>(defaultGoogle);
-  const [display, setDisplay] = useState<DisplayAdFields>(defaultDisplay);
-
-  const utm = useMemo(() => buildUtm(platform, name), [platform, name]);
+  const utm = useMemo(() => buildUtm(platform, name, ads[0]?.utmContent), [platform, name, ads]);
 
   const draft: FranchiseCampaignItem = useMemo(() => {
     const id = `cmp-${Date.now().toString(36)}`;
@@ -97,28 +63,16 @@ export const NewCampaignWizard: React.FC<Props> = ({ assets, suggested, onCancel
       objective: "lead_franquicia",
       landingPageUrl: SITE_FRANQUICIA_URL,
       utmParams: { source: utm.source, medium: utm.medium, campaign: utm.campaign, term: utm.term, content: utm.content, finalUrlWithUtm: utm.finalUrl },
-      googleAdData:
-        platform === "google_search"
-          ? {
-              headlines: google.headlines,
-              descriptions: google.descriptions,
-              keywords: parseKeywords(google.keywordsText),
-              displayPath: google.displayPath,
-              sitelinks: google.sitelinks.filter((s) => s.title.trim()),
-              callouts: google.callouts.filter((c) => c.trim()),
-              negativeKeywords: google.negativeKeywordsText.split("\n").map((k) => k.trim()).filter(Boolean),
-              finalUrlSuffix: utm.suffix,
-            }
-          : undefined,
-      displayAdData: platform === "google_display" ? { ...display, finalUrlSuffix: utm.suffix } : undefined,
-      metaAdData:
-        platform === "meta_instagram"
-          ? { ...meta, mediaUrl: "", feedPlacement: placement === "facebook" ? "Facebook Feed" : "Instagram Feed & Explorar" }
-          : undefined,
+      ads: ads.map((a) => ({
+        ...a,
+        metaAdData: a.metaAdData ? { ...a.metaAdData, feedPlacement: placement === "facebook" ? "Facebook Feed" : "Instagram Feed & Explorar" } : undefined,
+        googleAdData: a.googleAdData ? { ...a.googleAdData, finalUrlSuffix: buildUtm(platform, name, a.utmContent).suffix } : undefined,
+        displayAdData: a.displayAdData ? { ...a.displayAdData, finalUrlSuffix: buildUtm(platform, name, a.utmContent).suffix } : undefined,
+      })),
       approvalHistory: [],
       learningsNotes: "",
     };
-  }, [name, platform, placement, mode, start, end, daily, cap, maxCpa, geo, format, utm, google, display, meta]);
+  }, [name, platform, placement, mode, start, end, daily, cap, maxCpa, geo, format, utm, ads]);
 
   const checks = useMemo(() => checkCampaign(draft, assets), [draft, assets]);
   const step1Ok = !!chosen && name.trim().length > 0 && Number(cap) > 0 && hasGeoTarget(geo);
@@ -290,9 +244,7 @@ export const NewCampaignWizard: React.FC<Props> = ({ assets, suggested, onCancel
               ))}
             </div>
           </div>
-          {platform === "google_search" && <GoogleSearchAdEditor value={google} onChange={(p) => setGoogle({ ...google, ...p })} />}
-          {platform === "google_display" && <DisplayAdEditor value={display} assets={assets} onGoToFiles={onGoToFiles} onChange={(p) => setDisplay({ ...display, ...p })} />}
-          {platform === "meta_instagram" && <MetaAdEditor defaultPlacement={placement} value={meta} assets={assets} onGoToFiles={onGoToFiles} onChange={(p) => setMeta({ ...meta, ...p })} />}
+          <AdVariantsEditor platform={platform} ads={ads} assets={assets} onGoToFiles={onGoToFiles} defaultPlacement={placement} onChange={setAds} />
           <div className="flex justify-between border-t border-[#C9C3BE] pt-4">
             <button type="button" onClick={() => setStep(1)} className="kol-btn-normal px-5 py-2 bg-[#FAF8F6] border border-[#C9C3BE] text-[#161418] font-bold text-[13px]">← Volver al paso 1</button>
             <button type="button" onClick={() => setStep(3)} className="kol-btn-normal px-6 py-2 bg-[#161418] text-[#FAF8F6] font-bold text-[13px] flex items-center gap-2">Siguiente: Medición <ChevronRight className="w-4 h-4" /></button>
@@ -317,12 +269,20 @@ export const NewCampaignWizard: React.FC<Props> = ({ assets, suggested, onCancel
               <p className="text-[11.5px] text-[#6A6460]">Lo que está entre llaves ({"{ }"}) lo reemplaza la plataforma al publicar el anuncio.</p>
             </div>
             <div className="space-y-3">
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-[12px] font-bold text-[#46413F]">Enlace final de ejemplo</span>
-                  <CopyButton text={utm.finalUrl} id="w-url" copiedKey={copiedKey} onCopy={copy} />
-                </div>
-                <div className="p-2.5 bg-[#F3F0ED] border border-[#C9C3BE] rounded-[6px] text-[12px] font-mono break-all text-[#161418]">{utm.finalUrl}</div>
+              <div className="space-y-2.5">
+                <span className="text-[12px] font-bold text-[#46413F] block">Enlace de cada anuncio</span>
+                {ads.map((ad) => {
+                  const u = buildUtm(platform, name, ad.utmContent);
+                  return (
+                    <div key={ad.id}>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-[12px] text-[#161418] font-bold">{ad.label}</span>
+                        <CopyButton text={u.finalUrl} id={`w-url-${ad.id}`} copiedKey={copiedKey} onCopy={copy} />
+                      </div>
+                      <div className="p-2.5 bg-[#F3F0ED] border border-[#C9C3BE] rounded-[6px] text-[12px] font-mono break-all text-[#161418]">{u.finalUrl}</div>
+                    </div>
+                  );
+                })}
               </div>
               <div className="p-4 bg-[#2A2629] text-[#FAF8F6] rounded-[10px] space-y-2 font-mono text-[12px]">
                 <div className="font-bold">Así llega el origen en el mail de cada consulta (ejemplo)</div>
@@ -345,7 +305,7 @@ export const NewCampaignWizard: React.FC<Props> = ({ assets, suggested, onCancel
       {step === 4 && (
         <div className="space-y-6 max-w-3xl">
           <div className="space-y-2 p-4 bg-[#FAF8F6] border border-[#C9C3BE] rounded-[10px] text-[13px]">
-            {[["Nombre", draft.name], ["Tipo", platformLabel(draft)], ["Modo", draft.mode], ["Fechas", `${draft.dates.startDate} al ${draft.dates.endDate || "sin corte"}`], ["Tope total", `$ ${draft.budget.totalCap.toLocaleString("es-AR")} (ARS)`], ["Dónde", draft.targetLocations.join(", ")], ["Excluye", (draft.geo?.excluded ?? []).join(", ") || "Nada"]].map(([k, v]) => (
+            {[["Nombre", draft.name], ["Tipo", platformLabel(draft)], ["Anuncios", ads.map((a) => a.label).join(", ")], ["Modo", draft.mode], ["Fechas", `${draft.dates.startDate} al ${draft.dates.endDate || "sin corte"}`], ["Tope total", `$ ${draft.budget.totalCap.toLocaleString("es-AR")} (ARS)`], ["Dónde", draft.targetLocations.join(", ")], ["Excluye", (draft.geo?.excluded ?? []).join(", ") || "Nada"]].map(([k, v]) => (
               <div key={k} className="flex justify-between gap-4 border-b border-[#E7E3DF] pb-1.5 last:border-0"><span className="text-[#46413F]">{k}</span><strong className="text-right capitalize-first">{v}</strong></div>
             ))}
           </div>
