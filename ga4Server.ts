@@ -1,4 +1,7 @@
 import crypto from "crypto";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 
 /**
  * Lectura de resultados de campañas desde Google Analytics 4 (Data API).
@@ -52,10 +55,118 @@ export function buildJwt(cred: Credentials, nowSec = Math.floor(Date.now() / 100
   return `${unsigned}.${b64url(signature)}`;
 }
 
+/* ---------- Opción B: autorización con la cuenta de Google de una persona (OAuth) ---------- */
+
+const OAUTH_FILE = path.join(path.dirname(fileURLToPath(import.meta.url)), ".kol_ga4_oauth.json");
+const OAUTH_SCOPE = "https://www.googleapis.com/auth/analytics.readonly openid email";
+
+export const oauthClientConfigured = () => !!(process.env.GOOGLE_OAUTH_CLIENT_ID && process.env.GOOGLE_OAUTH_CLIENT_SECRET);
+
+interface SavedOauth {
+  refreshToken: string;
+  email?: string;
+  savedAt?: string;
+}
+
+function readSavedOauth(): SavedOauth | null {
+  if (process.env.GA4_REFRESH_TOKEN) return { refreshToken: process.env.GA4_REFRESH_TOKEN, email: process.env.GA4_OAUTH_EMAIL };
+  try {
+    if (fs.existsSync(OAUTH_FILE)) return JSON.parse(fs.readFileSync(OAUTH_FILE, "utf-8"));
+  } catch {}
+  return null;
+}
+
+// "state" de cada intento de autorización: de un solo uso y vence a los 10 minutos
+const pendingStates = new Map<string, number>();
+export function newOauthState(): string {
+  const st = crypto.randomBytes(16).toString("hex");
+  pendingStates.set(st, Date.now() + 10 * 60_000);
+  return st;
+}
+export function consumeOauthState(st: string | undefined): boolean {
+  if (!st) return false;
+  const exp = pendingStates.get(st);
+  pendingStates.delete(st);
+  return !!exp && exp > Date.now();
+}
+
+export function oauthAuthUrl(redirectUri: string, state: string): string {
+  const q = new URLSearchParams({
+    client_id: process.env.GOOGLE_OAUTH_CLIENT_ID || "",
+    redirect_uri: redirectUri,
+    response_type: "code",
+    scope: OAUTH_SCOPE,
+    access_type: "offline",
+    prompt: "consent",
+    include_granted_scopes: "true",
+    state,
+  });
+  return `https://accounts.google.com/o/oauth2/v2/auth?${q.toString()}`;
+}
+
+/** Canjea el código de Google por el "refresh token" y lo guarda (solo en el servidor). */
+export async function oauthExchange(code: string, redirectUri: string): Promise<{ refreshToken: string; email?: string }> {
+  const res = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      code,
+      client_id: process.env.GOOGLE_OAUTH_CLIENT_ID || "",
+      client_secret: process.env.GOOGLE_OAUTH_CLIENT_SECRET || "",
+      redirect_uri: redirectUri,
+      grant_type: "authorization_code",
+    }),
+  });
+  const body = (await res.json()) as { refresh_token?: string; id_token?: string; error_description?: string; error?: string };
+  if (!res.ok) throw new Error(`Google rechazó la autorización: ${body.error_description || body.error || res.status}`);
+  if (!body.refresh_token) throw new Error("Google no devolvió el permiso permanente. Volvé a autorizar y aceptá todos los permisos.");
+  let email: string | undefined;
+  try {
+    email = JSON.parse(Buffer.from((body.id_token || "").split(".")[1] || "", "base64").toString()).email;
+  } catch {}
+  try {
+    fs.writeFileSync(OAUTH_FILE, JSON.stringify({ refreshToken: body.refresh_token, email, savedAt: new Date().toISOString() }), { mode: 0o600 });
+  } catch {}
+  cached = null;
+  return { refreshToken: body.refresh_token, email };
+}
+
+async function accessTokenFromRefresh(saved: SavedOauth): Promise<string> {
+  const res = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      client_id: process.env.GOOGLE_OAUTH_CLIENT_ID || "",
+      client_secret: process.env.GOOGLE_OAUTH_CLIENT_SECRET || "",
+      refresh_token: saved.refreshToken,
+      grant_type: "refresh_token",
+    }),
+  });
+  const body = (await res.json()) as { access_token?: string; expires_in?: number; error?: string; error_description?: string };
+  if (!res.ok || !body.access_token) {
+    const expired = body.error === "invalid_grant";
+    throw new Error(expired ? "La autorización de Google venció o fue revocada: volvé a tocar “Autorizar con Google”." : `Google no aceptó la autorización: ${body.error_description || res.status}`);
+  }
+  cached = { token: body.access_token, exp: Date.now() + (body.expires_in ?? 3600) * 1000 };
+  return cached.token;
+}
+
+type Mode = { kind: "service"; cred: Credentials } | { kind: "oauth"; saved: SavedOauth } | null;
+
+function currentMode(): Mode {
+  const cred = readCredentials();
+  if (cred) return { kind: "service", cred };
+  const saved = readSavedOauth();
+  if (saved && oauthClientConfigured()) return { kind: "oauth", saved };
+  return null;
+}
+
 let cached: { token: string; exp: number } | null = null;
 
-async function accessToken(cred: Credentials): Promise<string> {
+async function accessToken(mode: NonNullable<Mode>): Promise<string> {
   if (cached && cached.exp > Date.now() + 60_000) return cached.token;
+  if (mode.kind === "oauth") return accessTokenFromRefresh(mode.saved);
+  const cred = mode.cred;
   const res = await fetch("https://oauth2.googleapis.com/token", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -135,23 +246,41 @@ export function mergeReports(traffic: RawRow[], events: RawRow[]): CampaignRow[]
 const baseDims = ["sessionCampaignName", "sessionSource", "sessionMedium", "sessionManualAdContent"].map((name) => ({ name }));
 const mediumFilter = { filter: { fieldName: "sessionMedium", inListFilter: { values: PAID_MEDIUMS } } };
 
-export async function ga4Status(test: boolean): Promise<{ configured: boolean; propertyId: string; ok?: boolean; message: string }> {
-  const cred = readCredentials();
-  if (!cred) return { configured: false, propertyId: propertyId(), message: "Todavía no está conectado: falta cargar la cuenta de servicio de Google en el servidor." };
-  if (!test) return { configured: true, propertyId: propertyId(), message: `Cuenta de servicio cargada (${cred.clientEmail}). Falta probar la conexión.` };
+export interface Ga4StatusInfo {
+  configured: boolean;
+  propertyId: string;
+  ok?: boolean;
+  message: string;
+  mode?: "service" | "oauth";
+  oauthClient: boolean;
+}
+
+export async function ga4Status(test: boolean): Promise<Ga4StatusInfo> {
+  const mode = currentMode();
+  const oauthClient = oauthClientConfigured();
+  if (!mode) {
+    return {
+      configured: false,
+      propertyId: propertyId(),
+      oauthClient,
+      message: oauthClient ? "Todavía no está autorizado: tocá “Autorizar con Google” e iniciá sesión con la cuenta que tiene acceso a GA4." : "Todavía no está conectado: falta la cuenta de servicio o la autorización de Google.",
+    };
+  }
+  const who = mode.kind === "service" ? `cuenta de servicio ${mode.cred.clientEmail}` : `autorización de ${mode.saved.email || "una cuenta de Google"}`;
+  if (!test) return { configured: true, mode: mode.kind, propertyId: propertyId(), oauthClient, message: `Credenciales cargadas (${who}). Falta probar la conexión.` };
   try {
-    const token = await accessToken(cred);
+    const token = await accessToken(mode);
     await runReport(token, { dateRanges: [{ startDate: "7daysAgo", endDate: "today" }], metrics: [{ name: "sessions" }], limit: 1 });
-    return { configured: true, propertyId: propertyId(), ok: true, message: "Conexión correcta: se pudo leer la propiedad de GA4." };
+    return { configured: true, mode: mode.kind, propertyId: propertyId(), oauthClient, ok: true, message: `Conexión correcta con ${who}: se pudo leer la propiedad de GA4.` };
   } catch (e) {
-    return { configured: true, propertyId: propertyId(), ok: false, message: e instanceof Error ? e.message : "No se pudo conectar" };
+    return { configured: true, mode: mode.kind, propertyId: propertyId(), oauthClient, ok: false, message: e instanceof Error ? e.message : "No se pudo conectar" };
   }
 }
 
 export async function ga4CampaignRows(startDate: string, endDate: string): Promise<CampaignRow[]> {
-  const cred = readCredentials();
-  if (!cred) throw new Error("GA4 no está conectado todavía");
-  const token = await accessToken(cred);
+  const mode = currentMode();
+  if (!mode) throw new Error("GA4 no está conectado todavía");
+  const token = await accessToken(mode);
   const dateRanges = [{ startDate, endDate }];
   const [traffic, events] = await Promise.all([
     runReport(token, {

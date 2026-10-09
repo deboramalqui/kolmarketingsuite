@@ -4,7 +4,7 @@ import fs from "fs";
 import { fileURLToPath } from "url";
 import dotenv from "dotenv";
 import { GoogleGenAI, Type, type FunctionDeclaration } from "@google/genai";
-import { ga4Status, ga4CampaignRows } from "./ga4Server";
+import { ga4Status, ga4CampaignRows, oauthClientConfigured, oauthAuthUrl, oauthExchange, newOauthState, consumeOauthState } from "./ga4Server";
 
 dotenv.config();
 
@@ -222,6 +222,43 @@ async function startServer() {
   // Resultados de campañas desde GA4 (las credenciales viven solo en el servidor)
   app.get("/api/ga4/status", async (req, res) => {
     res.json(await ga4Status(req.query.test === "1"));
+  });
+
+  // Autorización de GA4 con una cuenta de Google (opción B: no requiere ser administrador de GA4)
+  const redirectUriOf = (req: express.Request) => {
+    if (process.env.GA4_OAUTH_REDIRECT_URI) return process.env.GA4_OAUTH_REDIRECT_URI;
+    const proto = String(req.headers["x-forwarded-proto"] || req.protocol).split(",")[0];
+    const host = String(req.headers["x-forwarded-host"] || req.get("host")).split(",")[0];
+    return `${proto}://${host}/api/ga4/oauth/callback`;
+  };
+
+  app.get("/api/ga4/oauth/info", (req, res) => {
+    res.json({ clientConfigured: oauthClientConfigured(), redirectUri: redirectUriOf(req) });
+  });
+
+  app.get("/api/ga4/oauth/start", (req, res) => {
+    if (!oauthClientConfigured()) {
+      return res.status(400).send("Falta cargar GOOGLE_OAUTH_CLIENT_ID y GOOGLE_OAUTH_CLIENT_SECRET en los Secrets del servidor.");
+    }
+    res.redirect(oauthAuthUrl(redirectUriOf(req), newOauthState()));
+  });
+
+  app.get("/api/ga4/oauth/callback", async (req, res) => {
+    const page = (title: string, body: string) =>
+      res.type("html").send(`<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${title}</title><body style="font-family:Roboto,system-ui,sans-serif;max-width:640px;margin:48px auto;padding:0 20px;color:#161418"><h1 style="font-size:22px">${title}</h1>${body}<p><a href="/" style="color:#C51172;font-weight:700">Volver a la app</a></p></body></html>`);
+    try {
+      if (req.query.error) return page("No se autorizó", `<p>Google informó: ${String(req.query.error).replace(/[<>&]/g, "")}. Podés volver a intentarlo desde Campañas → Datos y archivos.</p>`);
+      if (!consumeOauthState(String(req.query.state || ""))) return page("Intento no válido", "<p>El pedido de autorización venció o no corresponde a esta app. Volvé a tocar “Autorizar con Google” desde la app.</p>");
+      const { refreshToken, email } = await oauthExchange(String(req.query.code || ""), redirectUriOf(req));
+      return page(
+        "Listo: GA4 quedó autorizado",
+        `<p>Autorizaste con <strong>${(email || "tu cuenta de Google").replace(/[<>&]/g, "")}</strong>. La app ya puede leer los resultados de GA4.</p>
+         <p><strong>Un paso más, para que no se pierda cuando el servidor se reinicie:</strong> copiá este código y guardalo en el panel <em>Secrets</em> de AI Studio con el nombre <code>GA4_REFRESH_TOKEN</code>. Es una llave: no la compartas ni la subas a GitHub.</p>
+         <textarea readonly rows="4" style="width:100%;font-family:monospace;padding:10px;border:1px solid #8C8580;border-radius:8px" onclick="this.select()">${refreshToken}</textarea>`
+      );
+    } catch (e) {
+      return page("No se pudo autorizar", `<p>${(e instanceof Error ? e.message : "Error desconocido").replace(/[<>&]/g, "")}</p>`);
+    }
   });
 
   app.post("/api/ga4/campaign-results", async (req, res) => {

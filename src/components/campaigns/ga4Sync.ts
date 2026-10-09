@@ -6,6 +6,16 @@ export interface Ga4Status {
   propertyId: string;
   ok?: boolean;
   message: string;
+  mode?: "service" | "oauth";
+  oauthClient?: boolean;
+}
+
+export async function fetchOauthInfo(): Promise<{ clientConfigured: boolean; redirectUri: string }> {
+  try {
+    return await (await fetch("/api/ga4/oauth/info")).json();
+  } catch {
+    return { clientConfigured: false, redirectUri: "" };
+  }
 }
 
 export interface Ga4Row {
