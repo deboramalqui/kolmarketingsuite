@@ -644,6 +644,17 @@ export const CampaignStudioView: React.FC<CampaignStudioViewProps> = ({
                             type="button"
                             onClick={() => {
                               setSelectedCampaignId(camp.id);
+                              setActiveTabDetail("anuncios");
+                            }}
+                            className="px-3 py-1 bg-[#FAF8F6] border border-[#161418] hover:bg-[#E7E3DF] text-[#161418] rounded-[6px] text-[12px] font-bold"
+                            title="Ver y editar los anuncios con la vista previa de Instagram, Facebook o Google"
+                          >
+                            Editar anuncios
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedCampaignId(camp.id);
                               setActiveTabDetail("paquete");
                             }}
                             className="px-3 py-1 bg-[#161418] text-[#FAF8F6] hover:bg-[#2A2629] rounded-[6px] text-[12px] font-bold"
