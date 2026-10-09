@@ -69,10 +69,16 @@ interface SavedOauth {
 }
 
 function readSavedOauth(): SavedOauth | null {
-  if (process.env.GA4_REFRESH_TOKEN) return { refreshToken: process.env.GA4_REFRESH_TOKEN, email: process.env.GA4_OAUTH_EMAIL };
+  // Primero el permiso guardado al autorizar; si no está (por ejemplo, el servidor se reinició), el que se cargó en Secrets.
   try {
-    if (fs.existsSync(OAUTH_FILE)) return JSON.parse(fs.readFileSync(OAUTH_FILE, "utf-8"));
+    if (fs.existsSync(OAUTH_FILE)) {
+      const j = JSON.parse(fs.readFileSync(OAUTH_FILE, "utf-8"));
+      if (j?.refreshToken) return j;
+    }
   } catch {}
+  const env = (process.env.GA4_REFRESH_TOKEN || "").trim();
+  // Un valor corto es un marcador de posición (por ejemplo "pendiente"), no un permiso real
+  if (env.length >= 30) return { refreshToken: env, email: process.env.GA4_OAUTH_EMAIL };
   return null;
 }
 
