@@ -7,6 +7,7 @@ import { NewCampaignWizard } from "./NewCampaignWizard";
 import { CampaignDetail } from "./CampaignDetail";
 import { DataAndFilesView } from "./DataAndFilesView";
 import { normalizeCampaign } from "./campaignModel";
+import { buildSampleCampaigns, isSampleCampaign } from "./sampleCampaigns";
 
 interface Props {
   franchiseCampaigns: FranchiseCampaignItem[];
@@ -99,6 +100,11 @@ export const CampaignsSection: React.FC<Props> = ({ franchiseCampaigns, onSaveCa
           onNewSuggested={() => { setSuggested(true); setCreating(true); }}
           onOpen={(id, tab) => { setSelectedId(id); setInitialTab(tab || "resumen"); }}
           onDelete={onDeleteCampaign}
+          hasSamples={campaigns.some(isSampleCampaign)}
+          onLoadSamples={() => buildSampleCampaigns().filter((c) => !campaigns.some((x) => x.id === c.id)).forEach(onSaveCampaign)}
+          onRemoveSamples={() => {
+            if (window.confirm("¿Borrar las campañas de prueba?")) campaigns.filter(isSampleCampaign).forEach((c) => onDeleteCampaign(c.id));
+          }}
         />
       )}
     </div>

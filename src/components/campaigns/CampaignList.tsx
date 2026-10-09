@@ -10,6 +10,9 @@ interface Props {
   onNewSuggested: () => void;
   onOpen: (id: string, tab?: "resumen" | "anuncios" | "paquete") => void;
   onDelete: (id: string) => void;
+  onLoadSamples: () => void;
+  onRemoveSamples: () => void;
+  hasSamples: boolean;
 }
 
 const STATUS_FILTERS: Array<"todas" | CampaignLifecycleStatus> = ["todas", "borrador", "en_revision", "lista_para_publicar", "en_vivo", "cerrada"];
@@ -22,7 +25,7 @@ const Kpi: React.FC<{ label: string; value: string; note: string }> = ({ label, 
   </div>
 );
 
-export const CampaignList: React.FC<Props> = ({ campaigns, onNew, onNewSuggested, onOpen, onDelete }) => {
+export const CampaignList: React.FC<Props> = ({ campaigns, onNew, onNewSuggested, onOpen, onDelete, onLoadSamples, onRemoveSamples, hasSamples }) => {
   const [query, setQuery] = useState("");
   const [type, setType] = useState<"todas" | CampaignPlatform>("todas");
   const [status, setStatus] = useState<"todas" | CampaignLifecycleStatus>("todas");
@@ -58,7 +61,11 @@ export const CampaignList: React.FC<Props> = ({ campaigns, onNew, onNewSuggested
             <button type="button" onClick={onNewSuggested} className="kol-btn-normal px-5 py-2.5 bg-white border border-[#161418] text-[#161418] font-bold text-[13px] flex items-center gap-2">
               <Sparkles className="w-4 h-4" /> Empezar con la sugerencia de arranque
             </button>
+            <button type="button" onClick={onLoadSamples} className="kol-btn-normal px-5 py-2.5 bg-[#FAF8F6] border border-[#C9C3BE] text-[#161418] font-bold text-[13px]">
+              Cargar 3 campañas de prueba
+            </button>
           </div>
+          <p className="text-[12px] text-[#6A6460]">Las de prueba quedan en borrador, dicen [PRUEBA] en el nombre y se borran todas juntas.</p>
         </div>
         <div className="p-4 bg-white border border-[#C9C3BE] rounded-[12px] flex gap-3 text-[13px] text-[#46413F]">
           <Info className="w-4 h-4 mt-0.5 shrink-0" />
@@ -179,6 +186,14 @@ export const CampaignList: React.FC<Props> = ({ campaigns, onNew, onNewSuggested
             )}
           </tbody>
         </table>
+      </div>
+
+      <div className="flex items-center justify-end gap-4 text-[12.5px]">
+        {hasSamples ? (
+          <button type="button" onClick={onRemoveSamples} className="text-[#6A6460] hover:text-[#A40F5F] underline kol-focus rounded">Borrar las campañas de prueba</button>
+        ) : (
+          <button type="button" onClick={onLoadSamples} className="text-[#6A6460] hover:text-[#161418] underline kol-focus rounded">Cargar campañas de prueba</button>
+        )}
       </div>
     </div>
   );
