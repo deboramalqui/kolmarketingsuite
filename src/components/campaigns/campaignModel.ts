@@ -128,3 +128,62 @@ export const NEXT_STATUS: Record<CampaignLifecycleStatus, CampaignLifecycleStatu
   en_vivo: ["cerrada"],
   cerrada: [],
 };
+
+export type GeoScope = "pais" | "provincias" | "ciudades";
+export interface GeoValue {
+  scope: GeoScope;
+  provinces: string[];
+  cities: string[];
+  excluded: string[];
+}
+
+export const EMPTY_GEO: GeoValue = { scope: "pais", provinces: [], cities: [], excluded: [] };
+
+export const PROVINCES = [
+  "Ciudad de Buenos Aires",
+  "Buenos Aires",
+  "Catamarca",
+  "Chaco",
+  "Chubut",
+  "Córdoba",
+  "Corrientes",
+  "Entre Ríos",
+  "Formosa",
+  "Jujuy",
+  "La Pampa",
+  "La Rioja",
+  "Mendoza",
+  "Misiones",
+  "Neuquén",
+  "Río Negro",
+  "Salta",
+  "San Juan",
+  "San Luis",
+  "Santa Cruz",
+  "Santa Fe",
+  "Santiago del Estero",
+  "Tierra del Fuego",
+  "Tucumán",
+];
+
+export const REGIONS: Array<{ id: string; label: string; provinces: string[] }> = [
+  { id: "amba", label: "Buenos Aires y CABA", provinces: ["Ciudad de Buenos Aires", "Buenos Aires"] },
+  { id: "centro", label: "Centro", provinces: ["Córdoba", "Santa Fe", "Entre Ríos"] },
+  { id: "cuyo", label: "Cuyo", provinces: ["Mendoza", "San Juan", "San Luis"] },
+  { id: "noa", label: "Noroeste", provinces: ["Jujuy", "Salta", "Tucumán", "Catamarca", "La Rioja", "Santiago del Estero"] },
+  { id: "nea", label: "Noreste", provinces: ["Formosa", "Chaco", "Corrientes", "Misiones"] },
+  { id: "patagonia", label: "Patagonia", provinces: ["La Pampa", "Neuquén", "Río Negro", "Chubut", "Santa Cruz", "Tierra del Fuego"] },
+];
+
+/** Lugares donde Kol ya tiene locales: sirven para excluirlos si no se quiere captar inversores ahí */
+export const PLACES_WITH_STORES = ["Santa Fe (ciudad)", "Santo Tomé", "Córdoba (ciudad)"];
+
+/** Lista legible de ubicaciones para mostrar y copiar */
+export function geoToLocations(g: GeoValue): string[] {
+  if (g.scope === "pais") return ["Toda Argentina"];
+  return g.scope === "provincias" ? g.provinces : g.cities;
+}
+
+export function hasGeoTarget(g: GeoValue): boolean {
+  return g.scope === "pais" || (g.scope === "provincias" ? g.provinces.length > 0 : g.cities.length > 0);
+}

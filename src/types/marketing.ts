@@ -258,6 +258,13 @@ export interface FranchiseCampaignItem {
     maxCpaTarget?: number;
   };
   targetLocations: string[];
+  /** A quién se dirige la campaña (de dónde queremos captar inversores) */
+  geo?: {
+    scope: "pais" | "provincias" | "ciudades";
+    provinces: string[];
+    cities: string[];
+    excluded: string[];
+  };
   format: "isla" | "estandar" | "ambos";
   objective: "lead_franquicia";
   landingPageUrl: string;

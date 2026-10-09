@@ -1,8 +1,9 @@
 import React, { useMemo, useState } from "react";
 import { ArrowLeft, ChevronRight, Check, Target, Search, Image as ImageIcon, Instagram } from "lucide-react";
 import { CampaignLifecycleMode, CampaignPlatform, FranchiseCampaignItem, GalleryAsset } from "../../types/marketing";
-import { VERIFIED_LOCATIONS, SITE_FRANQUICIA_URL, VERIFIED_BRAND_FACTS } from "../../data/initialMarketingData";
-import { buildUtm, PLATFORM_INFO, todayISO, platformLabel } from "./campaignModel";
+import { SITE_FRANQUICIA_URL, VERIFIED_BRAND_FACTS } from "../../data/initialMarketingData";
+import { buildUtm, PLATFORM_INFO, todayISO, platformLabel, EMPTY_GEO, GeoValue, geoToLocations, hasGeoTarget } from "./campaignModel";
+import { GeoTargeting } from "./GeoTargeting";
 import { checkCampaign, hasErrors } from "./campaignChecks";
 import { AdChecklist } from "../ads/AdChecklist";
 import { MetaAdEditor, MetaAdFields } from "../ads/MetaAdEditor";
@@ -58,16 +59,19 @@ const defaultDisplay: DisplayAdFields = {
 export const NewCampaignWizard: React.FC<Props> = ({ assets, suggested, onCancel, onGoToFiles, onSave }) => {
   const { copiedKey, copy } = useCopy();
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
-  const [platform, setPlatform] = useState<CampaignPlatform>(suggested ? "meta_instagram" : "google_search");
+  const [chosen, setChosen] = useState<CampaignPlatform | null>(suggested ? "meta_instagram" : null);
+  const platform: CampaignPlatform = chosen ?? "google_search";
+  const setPlatform = (p: CampaignPlatform) => setChosen(p);
   const [placement, setPlacement] = useState<"instagram" | "facebook">("instagram");
-  const [name, setName] = useState(suggested ? "Franquicia Nov · Instagram (prueba Santa Fe y Córdoba)" : "");
+  const [name, setName] = useState(suggested ? "Franquicia Nov · Instagram (prueba)" : "");
   const [mode, setMode] = useState<CampaignLifecycleMode>("prueba");
   const [start, setStart] = useState("2026-11-01");
   const [end, setEnd] = useState("2026-11-15");
   const [daily, setDaily] = useState<number | "">("");
   const [cap, setCap] = useState<number | "">("");
   const [maxCpa, setMaxCpa] = useState<number | "">("");
-  const [locations, setLocations] = useState<string[]>(suggested ? ["Santa Fe", "Córdoba Capital"] : []);
+  const [geo, setGeo] = useState<GeoValue>(EMPTY_GEO);
+  const locations = geoToLocations(geo);
   const [format, setFormat] = useState<"isla" | "estandar" | "ambos">("isla");
   const [meta, setMeta] = useState<MetaAdFields>(defaultMeta);
   const [google, setGoogle] = useState<GoogleAdFields>(defaultGoogle);
@@ -88,6 +92,7 @@ export const NewCampaignWizard: React.FC<Props> = ({ assets, suggested, onCancel
       dates: { startDate: start, endDate: end || undefined },
       budget: { currency: "ARS", dailyBudget: Number(daily) || undefined, totalCap: Number(cap) || 0, maxCpaTarget: Number(maxCpa) || undefined },
       targetLocations: locations,
+      geo,
       format,
       objective: "lead_franquicia",
       landingPageUrl: SITE_FRANQUICIA_URL,
@@ -113,11 +118,10 @@ export const NewCampaignWizard: React.FC<Props> = ({ assets, suggested, onCancel
       approvalHistory: [],
       learningsNotes: "",
     };
-  }, [name, platform, placement, mode, start, end, daily, cap, maxCpa, locations, format, utm, google, display, meta]);
+  }, [name, platform, placement, mode, start, end, daily, cap, maxCpa, geo, format, utm, google, display, meta]);
 
   const checks = useMemo(() => checkCampaign(draft, assets), [draft, assets]);
-  const step1Ok = name.trim().length > 0 && Number(cap) > 0 && locations.length > 0;
-  const toggleLoc = (l: string) => setLocations((cur) => (cur.includes(l) ? cur.filter((x) => x !== l) : [...cur, l]));
+  const step1Ok = !!chosen && name.trim().length > 0 && Number(cap) > 0 && hasGeoTarget(geo);
   const info = PLATFORM_INFO.find((p) => p.id === platform)!;
 
   const inputCls = "w-full h-[40px] px-3 border border-[#8C8580] rounded-[8px] text-[14px] text-[#161418] bg-white kol-focus";
@@ -190,6 +194,13 @@ export const NewCampaignWizard: React.FC<Props> = ({ assets, suggested, onCancel
             )}
           </div>
 
+          {!chosen && (
+            <p className="text-[13px] text-[#6A6460] border border-dashed border-[#C9C3BE] rounded-[10px] p-4 bg-[#FAF8F6]">
+              Elegí un tipo de campaña para seguir: después te pedimos el nombre, el presupuesto y dónde querés llegar.
+            </p>
+          )}
+
+          {chosen && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 space-y-5">
               <div>
@@ -236,18 +247,7 @@ export const NewCampaignWizard: React.FC<Props> = ({ assets, suggested, onCancel
                 </div>
               </div>
 
-              <div>
-                <span className={labelCls}>Ciudades objetivo (solo las plazas verificadas)</span>
-                <div className="flex flex-wrap gap-2">
-                  {VERIFIED_LOCATIONS.map((l) => (
-                    <button key={l} type="button" aria-pressed={locations.includes(l)} onClick={() => toggleLoc(l)} className={`px-3.5 py-2 rounded-[8px] text-[13px] font-bold border kol-focus ${locations.includes(l) ? "bg-[#161418] text-[#FAF8F6] border-[#161418]" : "bg-white text-[#161418] border-[#C9C3BE]"}`}>
-                      {locations.includes(l) ? "✓ " : "+ "}
-                      {l}
-                    </button>
-                  ))}
-                </div>
-                <p className="text-[11.5px] text-[#6A6460] mt-1.5">Buenos Aires no tiene locales de Kol Franquicias.</p>
-              </div>
+              <GeoTargeting value={geo} onChange={setGeo} />
             </div>
 
             <aside className="p-4 bg-[#FAF8F6] border border-[#C9C3BE] rounded-[12px] space-y-3 h-fit">
@@ -257,7 +257,7 @@ export const NewCampaignWizard: React.FC<Props> = ({ assets, suggested, onCancel
                 <div className="flex justify-between gap-3"><span className="text-[#46413F]">Tipo</span><strong>{info.label}</strong></div>
                 <div className="flex justify-between gap-3"><span className="text-[#46413F]">Moneda</span><strong>Pesos argentinos</strong></div>
                 <div className="flex justify-between gap-3"><span className="text-[#46413F]">Tope total</span><strong className="tabular-nums">{cap ? `$ ${Number(cap).toLocaleString("es-AR")}` : "—"}</strong></div>
-                <div className="flex justify-between gap-3"><span className="text-[#46413F]">Ciudades</span><strong className="text-right">{locations.join(", ") || "—"}</strong></div>
+                <div className="flex justify-between gap-3"><span className="text-[#46413F]">Dónde</span><strong className="text-right">{hasGeoTarget(geo) ? locations.join(", ") : "—"}</strong></div>
               </div>
               <p className="text-[12px] text-[#46413F] bg-white border border-[#E7E3DF] rounded-[8px] p-2.5 leading-relaxed">
                 <Target className="inline w-3.5 h-3.5 mr-1" />
@@ -265,13 +265,16 @@ export const NewCampaignWizard: React.FC<Props> = ({ assets, suggested, onCancel
               </p>
             </aside>
           </div>
+          )}
 
+          {chosen && (
           <div className="flex justify-end pt-2">
             <button type="button" disabled={!step1Ok} onClick={() => setStep(2)} className="kol-btn-normal px-6 py-2.5 bg-[#161418] text-[#FAF8F6] font-bold text-[13px] disabled:opacity-40 flex items-center gap-2">
               Siguiente: Mensaje y anuncios <ChevronRight className="w-4 h-4" />
             </button>
           </div>
-          {!step1Ok && <p className="text-[12px] text-[#6A6460] text-right">Faltan: {[!name.trim() && "el nombre", !(Number(cap) > 0) && "el tope total", locations.length === 0 && "al menos una ciudad"].filter(Boolean).join(", ")}.</p>}
+          )}
+          {chosen && !step1Ok && <p className="text-[12px] text-[#6A6460] text-right">Faltan: {[!name.trim() && "el nombre", !(Number(cap) > 0) && "el tope total", !hasGeoTarget(geo) && "dónde querés llegar"].filter(Boolean).join(", ")}.</p>}
         </div>
       )}
 
@@ -342,7 +345,7 @@ export const NewCampaignWizard: React.FC<Props> = ({ assets, suggested, onCancel
       {step === 4 && (
         <div className="space-y-6 max-w-3xl">
           <div className="space-y-2 p-4 bg-[#FAF8F6] border border-[#C9C3BE] rounded-[10px] text-[13px]">
-            {[["Nombre", draft.name], ["Tipo", platformLabel(draft)], ["Modo", draft.mode], ["Fechas", `${draft.dates.startDate} al ${draft.dates.endDate || "sin corte"}`], ["Tope total", `$ ${draft.budget.totalCap.toLocaleString("es-AR")} (ARS)`], ["Ciudades", draft.targetLocations.join(", ")]].map(([k, v]) => (
+            {[["Nombre", draft.name], ["Tipo", platformLabel(draft)], ["Modo", draft.mode], ["Fechas", `${draft.dates.startDate} al ${draft.dates.endDate || "sin corte"}`], ["Tope total", `$ ${draft.budget.totalCap.toLocaleString("es-AR")} (ARS)`], ["Dónde", draft.targetLocations.join(", ")], ["Excluye", (draft.geo?.excluded ?? []).join(", ") || "Nada"]].map(([k, v]) => (
               <div key={k} className="flex justify-between gap-4 border-b border-[#E7E3DF] pb-1.5 last:border-0"><span className="text-[#46413F]">{k}</span><strong className="text-right capitalize-first">{v}</strong></div>
             ))}
           </div>

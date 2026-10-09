@@ -1,5 +1,5 @@
 import { FranchiseCampaignItem, GalleryAsset } from "../../types/marketing";
-import { VERIFIED_LOCATIONS, SITE_FRANQUICIA_URL } from "../../data/initialMarketingData";
+import { SITE_FRANQUICIA_URL } from "../../data/initialMarketingData";
 import { AdCheck, checkDisplayAd, checkGoogleAd, checkMetaAd, stringifyKeywords } from "../ads/adChecks";
 import { displayAssetState } from "../ads/DisplayAdEditor";
 
@@ -48,17 +48,13 @@ export function checkCampaign(c: FranchiseCampaignItem, assets: GalleryAsset[]):
     out.push({ id: "sin-anuncio", ok: false, label: "La campaña no tiene anuncio cargado", severity: "error" });
   }
 
-  const badLocations = c.targetLocations.filter((l) => !VERIFIED_LOCATIONS.includes(l));
+  const g = c.geo;
+  const hasTarget = g ? g.scope === "pais" || (g.scope === "provincias" ? g.provinces.length > 0 : g.cities.length > 0) : c.targetLocations.length > 0;
   out.push(
     {
-      id: "ciudades",
-      ok: c.targetLocations.length > 0 && badLocations.length === 0,
-      label:
-        c.targetLocations.length === 0
-          ? "Elegí al menos una ciudad objetivo"
-          : badLocations.length
-          ? `Ciudades no verificadas: ${badLocations.join(", ")}`
-          : "Ciudades objetivo verificadas",
+      id: "ubicacion",
+      ok: hasTarget,
+      label: hasTarget ? "Tiene definido dónde se muestra la campaña" : "Falta definir dónde se muestra la campaña (todo el país, provincias o ciudades)",
       severity: "error",
     },
     {

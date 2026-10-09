@@ -53,7 +53,7 @@ export const DataAndFilesView: React.FC<Props> = ({ assets, onChange }) => {
   };
 
   const extra = [
-    { id: "ciudades", label: "Ciudades con locales", text: VERIFIED_LOCATIONS.join(", "), rule: "Solo se puede dirigir a estas plazas. No nombrar Buenos Aires como zona con locales." },
+    { id: "ciudades", label: "Dónde ya hay locales", text: VERIFIED_LOCATIONS.join(", "), rule: "Sirve para tenerlo presente o para excluir esos lugares de una campaña. No se limita la campaña a estos lugares." },
     { id: "utm", label: "Convención de UTM", text: "minúsculas, sin tildes ni espacios, con guiones", rule: "Se arma sola al crear la campaña, según la guía de UTM." },
   ];
 

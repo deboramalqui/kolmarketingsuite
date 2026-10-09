@@ -155,7 +155,8 @@ export const CampaignDetail: React.FC<Props> = ({ campaign: c, assets, initialTa
             <Row k="Presupuesto diario" v={formatMoney(c.budget.dailyBudget, c.budget.currency)} />
             <Row k="Tope total" v={formatMoney(c.budget.totalCap, c.budget.currency)} />
             <Row k="Costo máx. por consulta" v={formatMoney(c.budget.maxCpaTarget, c.budget.currency)} />
-            <Row k="Ciudades" v={c.targetLocations.join(", ") || "—"} />
+            <Row k="Dónde se muestra" v={c.targetLocations.join(", ") || "—"} />
+            {c.geo?.excluded?.length ? <Row k="Excluye" v={c.geo.excluded.join(", ")} /> : null}
             <Row k="Objetivo medido" v={<code>lead_franquicia</code>} />
           </div>
           <div className="p-4 bg-[#FAF8F6] border border-[#C9C3BE] rounded-[10px] space-y-3">
