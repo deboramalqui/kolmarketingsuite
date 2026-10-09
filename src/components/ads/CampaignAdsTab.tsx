@@ -2,18 +2,19 @@ import React, { useState } from "react";
 import { CampaignAd, FranchiseCampaignItem, GalleryAsset } from "../../types/marketing";
 import { AdVariantsEditor } from "./AdVariantsEditor";
 import { getAds, metaPlacementOf, todayISO } from "../campaigns/campaignModel";
+import { AssetActions } from "../campaigns/assetLibrary";
 
 const EDITABLE: FranchiseCampaignItem["status"][] = ["idea", "borrador", "devuelta"];
 
 interface Props {
   campaign: FranchiseCampaignItem;
   assets: GalleryAsset[];
-  onGoToFiles: () => void;
+  actions: AssetActions;
   onSaveCampaign: (c: FranchiseCampaignItem) => void;
 }
 
 /** Pestaña "Anuncios y creativos" de la ficha: varios anuncios, editables en el lugar, con vista previa realista. */
-export const CampaignAdsTab: React.FC<Props> = ({ campaign, assets, onGoToFiles, onSaveCampaign }) => {
+export const CampaignAdsTab: React.FC<Props> = ({ campaign, assets, actions, onSaveCampaign }) => {
   const [ads, setAds] = useState<CampaignAd[]>(() => getAds(campaign));
   const [dirty, setDirty] = useState(false);
   const [savedMsg, setSavedMsg] = useState(false);
@@ -61,7 +62,7 @@ export const CampaignAdsTab: React.FC<Props> = ({ campaign, assets, onGoToFiles,
         ads={ads}
         readOnly={!editable}
         assets={assets}
-        onGoToFiles={onGoToFiles}
+        actions={actions}
         defaultPlacement={metaPlacementOf(campaign)}
         onChange={(next) => {
           setAds(next);

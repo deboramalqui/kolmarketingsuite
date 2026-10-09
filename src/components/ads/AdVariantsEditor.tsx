@@ -6,6 +6,7 @@ import { GoogleSearchAdEditor, GoogleAdFields } from "./GoogleSearchAdEditor";
 import { DisplayAdEditor, DisplayAdFields } from "./DisplayAdEditor";
 import { parseKeywords, stringifyKeywords } from "./adChecks";
 import { uniqueUtmContent } from "../campaigns/campaignModel";
+import { AssetActions } from "../campaigns/assetLibrary";
 
 /* ---- conversión entre el anuncio guardado y los campos del editor ---- */
 const metaFields = (ad: CampaignAd): MetaAdFields => {
@@ -59,14 +60,14 @@ interface Props {
   onChange: (ads: CampaignAd[]) => void;
   assets: GalleryAsset[];
   readOnly?: boolean;
-  onGoToFiles?: () => void;
+  actions?: AssetActions;
   defaultPlacement?: "instagram" | "facebook";
 }
 
 const MAX_ADS = 5;
 
 /** Varios anuncios (variantes A, B, C) dentro de la misma campaña. Cada uno con su propio utm_content. */
-export const AdVariantsEditor: React.FC<Props> = ({ platform, ads, onChange, assets, readOnly, onGoToFiles, defaultPlacement }) => {
+export const AdVariantsEditor: React.FC<Props> = ({ platform, ads, onChange, assets, readOnly, actions, defaultPlacement }) => {
   const [activeId, setActiveId] = useState(ads[0]?.id);
   const index = Math.max(0, ads.findIndex((a) => a.id === activeId));
   const ad = ads[index];
@@ -141,7 +142,7 @@ export const AdVariantsEditor: React.FC<Props> = ({ platform, ads, onChange, ass
       </div>
 
       {platform === "meta_instagram" && ad.metaAdData && (
-        <MetaAdEditor key={ad.id} defaultPlacement={defaultPlacement} value={metaFields(ad)} readOnly={readOnly} assets={assets} onGoToFiles={onGoToFiles} onChange={(p) => replace(applyMeta(ad, { ...metaFields(ad), ...p }))} />
+        <MetaAdEditor key={ad.id} defaultPlacement={defaultPlacement} value={metaFields(ad)} readOnly={readOnly} assets={assets} actions={actions} onChange={(p) => replace(applyMeta(ad, { ...metaFields(ad), ...p }))} />
       )}
       {platform === "google_search" && ad.googleAdData && (
         <GoogleSearchAdEditor
@@ -159,7 +160,7 @@ export const AdVariantsEditor: React.FC<Props> = ({ platform, ads, onChange, ass
         />
       )}
       {platform === "google_display" && ad.displayAdData && (
-        <DisplayAdEditor key={ad.id} value={displayFields(ad)} readOnly={readOnly} assets={assets} onGoToFiles={onGoToFiles} onChange={(p) => replace(applyDisplay(ad, { ...displayFields(ad), ...p }))} />
+        <DisplayAdEditor key={ad.id} value={displayFields(ad)} readOnly={readOnly} assets={assets} actions={actions} onChange={(p) => replace(applyDisplay(ad, { ...displayFields(ad), ...p }))} />
       )}
     </div>
   );

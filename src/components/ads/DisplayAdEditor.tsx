@@ -5,7 +5,7 @@ import { DisplayAdPreview } from "./DisplayAdPreview";
 import { AdChecklist } from "./AdChecklist";
 import { AssetPicker } from "./AssetPicker";
 import { checkDisplayAd, DISPLAY_LIMITS, DisplayAssetState } from "./adChecks";
-import { assetFits } from "../campaigns/assetLibrary";
+import { assetFits, AssetActions } from "../campaigns/assetLibrary";
 
 export interface DisplayAdFields {
   businessName: string;
@@ -24,7 +24,7 @@ interface Props {
   onChange: (patch: Partial<DisplayAdFields>) => void;
   assets: GalleryAsset[];
   readOnly?: boolean;
-  onGoToFiles?: () => void;
+  actions?: AssetActions;
 }
 
 const L = DISPLAY_LIMITS;
@@ -73,7 +73,7 @@ const Field: React.FC<{
   );
 };
 
-export const DisplayAdEditor: React.FC<Props> = ({ value, onChange, assets, readOnly, onGoToFiles }) => {
+export const DisplayAdEditor: React.FC<Props> = ({ value, onChange, assets, readOnly, actions }) => {
   const [format, setFormat] = useState<"nativo" | "rectangulo" | "banner">("nativo");
   const urlOf = (id?: string) => assets.find((a) => a.id === id)?.url;
   const setAt = (arr: string[], i: number, v: string) => arr.map((x, j) => (j === i ? v : x));
@@ -157,16 +157,11 @@ export const DisplayAdEditor: React.FC<Props> = ({ value, onChange, assets, read
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <span className="font-bold text-[14px] text-[#161418]">Imágenes y logos (de la galería)</span>
-            {onGoToFiles && (
-              <button type="button" onClick={onGoToFiles} className="text-[12.5px] font-bold text-[#C51172] hover:underline">
-                Subir imágenes en Datos y archivos →
-              </button>
-            )}
           </div>
-          <AssetPicker label="Imagen horizontal" hint="1,91:1 · mín. 600×314 · recomendada 1200×628" slot="landscape" kind="foto" assets={assets} value={value.landscapeAssetId} onChange={(id) => onChange({ landscapeAssetId: id })} disabled={readOnly} required />
-          <AssetPicker label="Imagen cuadrada" hint="1:1 · mín. 300×300" slot="square" kind="foto" assets={assets} value={value.squareAssetId} onChange={(id) => onChange({ squareAssetId: id })} disabled={readOnly} required />
-          <AssetPicker label="Logo cuadrado" hint="1:1 · mín. 128×128 · recomendado 1200×1200" slot="logoSquare" kind="logo" assets={assets} value={value.logoSquareAssetId} onChange={(id) => onChange({ logoSquareAssetId: id })} disabled={readOnly} />
-          <AssetPicker label="Logo horizontal" hint="4:1 · mín. 512×128 · recomendado 1200×300" slot="logoWide" kind="logo" assets={assets} value={value.logoWideAssetId} onChange={(id) => onChange({ logoWideAssetId: id })} disabled={readOnly} />
+          <AssetPicker label="Imagen horizontal" hint="1,91:1 · mín. 600×314 · recomendada 1200×628" slot="landscape" kind="foto" assets={assets} value={value.landscapeAssetId} onChange={(id) => onChange({ landscapeAssetId: id })} disabled={readOnly} actions={actions} required />
+          <AssetPicker label="Imagen cuadrada" hint="1:1 · mín. 300×300" slot="square" kind="foto" assets={assets} value={value.squareAssetId} onChange={(id) => onChange({ squareAssetId: id })} disabled={readOnly} actions={actions} required />
+          <AssetPicker label="Logo cuadrado" hint="1:1 · mín. 128×128 · recomendado 1200×1200" slot="logoSquare" kind="logo" assets={assets} value={value.logoSquareAssetId} onChange={(id) => onChange({ logoSquareAssetId: id })} disabled={readOnly} actions={actions} />
+          <AssetPicker label="Logo horizontal" hint="4:1 · mín. 512×128 · recomendado 1200×300" slot="logoWide" kind="logo" assets={assets} value={value.logoWideAssetId} onChange={(id) => onChange({ logoWideAssetId: id })} disabled={readOnly} actions={actions} />
           <p className="text-[11.5px] text-[#6A6460]">Google acepta hasta 15 imágenes y 5 logos por anuncio. Acá se carga uno de cada tipo para empezar; las imágenes pesan hasta 5 MB.</p>
         </div>
       </div>

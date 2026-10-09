@@ -1,13 +1,13 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useRef, useState } from "react";
 import { Plus } from "lucide-react";
 import { FranchiseCampaignItem, GalleryAsset } from "../../types/marketing";
-import { loadAssets, saveAssets } from "./assetLibrary";
+import { loadAssets, saveAssets, fileToAsset, AssetActions } from "./assetLibrary";
 import { CampaignList } from "./CampaignList";
 import { NewCampaignWizard } from "./NewCampaignWizard";
 import { CampaignDetail } from "./CampaignDetail";
 import { DataAndFilesView } from "./DataAndFilesView";
-import { normalizeCampaign } from "./campaignModel";
-import { buildSampleCampaigns, isSampleCampaign } from "./sampleCampaigns";
+import { normalizeCampaign, loadEventStatus, saveEventStatus, EventStatus } from "./campaignModel";
+import { buildDemoCampaigns, buildSampleCampaigns, isDemoCampaign, isSampleCampaign } from "./sampleCampaigns";
 
 interface Props {
   franchiseCampaigns: FranchiseCampaignItem[];
@@ -24,19 +24,38 @@ export const CampaignsSection: React.FC<Props> = ({ franchiseCampaigns, onSaveCa
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [initialTab, setInitialTab] = useState<"resumen" | "anuncios" | "paquete">("resumen");
   const [assets, setAssets] = useState<GalleryAsset[]>(() => loadAssets());
+  const [events, setEvents] = useState<EventStatus>(() => loadEventStatus());
+  const updateEvents = (next: EventStatus) => {
+    setEvents(next);
+    saveEventStatus(next);
+  };
 
   const campaigns = franchiseCampaigns.map(normalizeCampaign);
   const selected = campaigns.find((c) => c.id === selectedId);
 
+  const assetsRef = useRef<GalleryAsset[]>(assets);
+  assetsRef.current = assets;
   const updateAssets = useCallback((next: GalleryAsset[]) => {
     setAssets(next);
     return saveAssets(next);
   }, []);
 
-  const goFiles = () => {
-    setSub("datos");
-    setCreating(false);
-    setSelectedId(null);
+  // Subir o ajustar imágenes sin salir de lo que se está haciendo
+  const actions: AssetActions = {
+    add: async (file, kind) => {
+      const asset = await fileToAsset(file, kind);
+      const next = [asset, ...assetsRef.current];
+      const saved = saveAssets(next);
+      assetsRef.current = next;
+      setAssets(next);
+      return { asset, saved };
+    },
+    update: (id, patch) => {
+      const next = assetsRef.current.map((a) => (a.id === id ? { ...a, ...patch } : a));
+      saveAssets(next);
+      assetsRef.current = next;
+      setAssets(next);
+    },
   };
 
   return (
@@ -64,14 +83,17 @@ export const CampaignsSection: React.FC<Props> = ({ franchiseCampaigns, onSaveCa
         ))}
       </div>
 
-      {sub === "datos" && <DataAndFilesView assets={assets} onChange={updateAssets} />}
+      {sub === "datos" && <DataAndFilesView assets={assets} onChange={updateAssets} events={events} onEventsChange={updateEvents} />}
 
-      {sub === "campanas" && creating && (
+      {creating && (
+        <div hidden={sub !== "campanas"}>
         <NewCampaignWizard
           assets={assets}
+          events={events}
+          initiatives={Array.from(new Set(campaigns.map((c) => c.initiative).filter(Boolean) as string[]))}
           suggested={suggested}
           onCancel={() => setCreating(false)}
-          onGoToFiles={goFiles}
+          actions={actions}
           onSave={(c) => {
             onSaveCampaign(c);
             setCreating(false);
@@ -79,6 +101,7 @@ export const CampaignsSection: React.FC<Props> = ({ franchiseCampaigns, onSaveCa
             setInitialTab("resumen");
           }}
         />
+        </div>
       )}
 
       {sub === "campanas" && !creating && selected && (
@@ -86,9 +109,10 @@ export const CampaignsSection: React.FC<Props> = ({ franchiseCampaigns, onSaveCa
           key={selected.id}
           campaign={selected}
           assets={assets}
+          events={events}
           initialTab={initialTab}
           onBack={() => setSelectedId(null)}
-          onGoToFiles={goFiles}
+          actions={actions}
           onSave={onSaveCampaign}
         />
       )}
@@ -102,6 +126,11 @@ export const CampaignsSection: React.FC<Props> = ({ franchiseCampaigns, onSaveCa
           onDelete={onDeleteCampaign}
           hasSamples={campaigns.some(isSampleCampaign)}
           onLoadSamples={() => buildSampleCampaigns().filter((c) => !campaigns.some((x) => x.id === c.id)).forEach(onSaveCampaign)}
+          hasDemo={campaigns.some(isDemoCampaign)}
+          onLoadDemo={() => buildDemoCampaigns().filter((c) => !campaigns.some((x) => x.id === c.id)).forEach(onSaveCampaign)}
+          onRemoveDemo={() => {
+            if (window.confirm("¿Borrar la demo?")) campaigns.filter(isDemoCampaign).forEach((c) => onDeleteCampaign(c.id));
+          }}
           onRemoveSamples={() => {
             if (window.confirm("¿Borrar las campañas de prueba?")) campaigns.filter(isSampleCampaign).forEach((c) => onDeleteCampaign(c.id));
           }}

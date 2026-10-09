@@ -2,7 +2,7 @@ import { CampaignAd, FranchiseCampaignItem } from "../../types/marketing";
 import { stringifyKeywords } from "../ads/adChecks";
 import { GalleryAsset } from "../../types/marketing";
 import { SITE_FRANQUICIA_URL } from "../../data/initialMarketingData";
-import { buildUtm, getAds } from "./campaignModel";
+import { buildUtm, getAds, getConversions, eventLabel, utmNameOf, REMARKETING_SEGMENTS } from "./campaignModel";
 import { metaFormatInfo } from "./assetLibrary";
 
 export interface PackageItem {
@@ -39,15 +39,29 @@ export function buildPackage(c: FranchiseCampaignItem, assets: GalleryAsset[]): 
       { label: "Idioma", value: "Español" },
     ],
   };
+  const conv = getConversions(c);
   const conversion: PackageStep = {
-    title: "Conversión",
-    note: "Optimizar solo por el formulario de franquicia. No importar generate_lead ni purchase para esta campaña.",
-    items: [{ label: "Único evento de conversión", value: "lead_franquicia" }],
+    title: "Conversiones",
+    note: "Las principales son las que la plataforma usa para optimizar. Las secundarias solo se miran, no guían el gasto (en Google Ads: acción secundaria). Nunca importar generate_lead ni purchase.",
+    items: [
+      { label: "Principal (optimizar)", value: conv.primary.map((e) => `${eventLabel(e)} · ${e}`).join("\n"), copy: conv.primary.join("\n"), multiline: true },
+      ...(conv.secondary.length ? [{ label: "Secundarias (solo observar)", value: conv.secondary.map((e) => `${eventLabel(e)} · ${e}`).join("\n"), copy: conv.secondary.join("\n"), multiline: true }] : []),
+    ],
   };
+  const audience: PackageStep[] =
+    c.audience?.type === "remarketing"
+      ? [
+          {
+            title: "Público de remarketing",
+            note: "La lista se arma en Google Analytics 4 (Audiencias) y se comparte con Google Ads. Tiene que tener al menos 100 personas activas en 30 días para que el anuncio se muestre.",
+            items: [{ label: "Quiénes entran en la lista", value: (c.audience.segments ?? []).map((id) => REMARKETING_SEGMENTS.find((x) => x.id === id)?.label ?? id).join("\n"), multiline: true }],
+          },
+        ]
+      : [];
   const urls: PackageStep = {
     title: c.platform === "meta_instagram" ? "Parámetros de URL de cada anuncio" : "Sufijo de URL final de cada anuncio",
     note: `Cada anuncio lleva su propio utm_content, así en GA4 se ve cuál trajo más consultas. Pegalo en ${c.platform === "meta_instagram" ? "“Parámetros de URL” de cada anuncio" : "“Sufijo de URL final” de cada anuncio (no de la campaña)"}. Lo que va entre llaves lo reemplaza la plataforma.`,
-    items: [...ads.map((ad) => ({ label: `${ad.label}`, value: buildUtm(c.platform, c.name, ad.utmContent).suffix })), { label: "Página de destino", value: SITE_FRANQUICIA_URL }],
+    items: [...ads.map((ad) => ({ label: `${ad.label}`, value: buildUtm(c.platform, utmNameOf(c), ad.utmContent).suffix })), { label: "Página de destino", value: SITE_FRANQUICIA_URL }],
   };
 
   if (c.platform === "google_search") {
@@ -55,6 +69,7 @@ export function buildPackage(c: FranchiseCampaignItem, assets: GalleryAsset[]): 
     return [
       { title: "Crear la campaña en Google Ads", items: [{ label: "Nombre", value: c.name }, { label: "Objetivo", value: "Clientes potenciales (leads)" }, { label: "Tipo de campaña", value: "Búsqueda" }] },
       conversion,
+      ...audience,
       common,
       {
         title: "Palabras clave (las mismas para todos los anuncios)",
@@ -95,6 +110,7 @@ export function buildPackage(c: FranchiseCampaignItem, assets: GalleryAsset[]): 
     return [
       { title: "Crear la campaña en Google Ads", items: [{ label: "Nombre", value: c.name }, { label: "Objetivo", value: "Clientes potenciales (leads)" }, { label: "Tipo de campaña", value: "Display" }] },
       conversion,
+      ...audience,
       common,
       ...ads.flatMap((ad): PackageStep[] => {
         const d = ad.displayAdData;
@@ -133,6 +149,7 @@ export function buildPackage(c: FranchiseCampaignItem, assets: GalleryAsset[]): 
       note: "Meta no mide conversiones por ahora: el resultado se mide en GA4 con lead_franquicia. Elegí el objetivo que prefieran (por ejemplo, Tráfico hacia el sitio) y confirmalo con Kol.",
       items: [{ label: "Nombre", value: c.name }, { label: "Ubicaciones del anuncio", value: "Instagram y Facebook (feed e historias, según el formato de cada anuncio)" }],
     },
+    ...audience,
     common,
     ...ads.flatMap((ad): PackageStep[] => {
       const m = ad.metaAdData;

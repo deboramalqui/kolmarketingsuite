@@ -3,6 +3,7 @@ import { Plus, Search as SearchIcon, Sparkles, Trash2, Info } from "lucide-react
 import { CampaignLifecycleStatus, CampaignPlatform, FranchiseCampaignItem } from "../../types/marketing";
 import { formatMoney, PLATFORM_INFO, platformLabel, statusLabel } from "./campaignModel";
 import { StatusBadge } from "./StatusBadge";
+import { InitiativesView } from "./InitiativesView";
 
 interface Props {
   campaigns: FranchiseCampaignItem[];
@@ -13,6 +14,9 @@ interface Props {
   onLoadSamples: () => void;
   onRemoveSamples: () => void;
   hasSamples: boolean;
+  onLoadDemo: () => void;
+  onRemoveDemo: () => void;
+  hasDemo: boolean;
 }
 
 const STATUS_FILTERS: Array<"todas" | CampaignLifecycleStatus> = ["todas", "borrador", "en_revision", "lista_para_publicar", "en_vivo", "cerrada"];
@@ -25,7 +29,8 @@ const Kpi: React.FC<{ label: string; value: string; note: string }> = ({ label, 
   </div>
 );
 
-export const CampaignList: React.FC<Props> = ({ campaigns, onNew, onNewSuggested, onOpen, onDelete, onLoadSamples, onRemoveSamples, hasSamples }) => {
+export const CampaignList: React.FC<Props> = ({ campaigns, onNew, onNewSuggested, onOpen, onDelete, onLoadSamples, onRemoveSamples, hasSamples, onLoadDemo, onRemoveDemo, hasDemo }) => {
+  const [view, setView] = useState<"lista" | "paraguas">("lista");
   const [query, setQuery] = useState("");
   const [type, setType] = useState<"todas" | CampaignPlatform>("todas");
   const [status, setStatus] = useState<"todas" | CampaignLifecycleStatus>("todas");
@@ -41,9 +46,11 @@ export const CampaignList: React.FC<Props> = ({ campaigns, onNew, onNewSuggested
     [campaigns, type, status, query]
   );
 
-  const live = campaigns.filter((c) => c.status === "en_vivo");
-  const committed = campaigns.filter((c) => c.status === "lista_para_publicar" || c.status === "en_vivo").reduce((s, c) => s + (c.budget.totalCap || 0), 0);
-  const withResults = campaigns.filter((c) => c.livePerformance && c.livePerformance.source === "manual");
+  // Las tarjetas cuentan solo campañas reales: la demo tiene números inventados
+  const real = campaigns.filter((c) => !c.id.startsWith("demo-"));
+  const live = real.filter((c) => c.status === "en_vivo");
+  const committed = real.filter((c) => c.status === "lista_para_publicar" || c.status === "en_vivo").reduce((s, c) => s + (c.budget.totalCap || 0), 0);
+  const withResults = real.filter((c) => c.livePerformance && c.livePerformance.source === "manual");
   const consultas = withResults.reduce((s, c) => s + (c.livePerformance?.consultas || 0), 0);
 
   if (campaigns.length === 0) {
@@ -62,10 +69,13 @@ export const CampaignList: React.FC<Props> = ({ campaigns, onNew, onNewSuggested
               <Sparkles className="w-4 h-4" /> Empezar con la sugerencia de arranque
             </button>
             <button type="button" onClick={onLoadSamples} className="kol-btn-normal px-5 py-2.5 bg-[#FAF8F6] border border-[#C9C3BE] text-[#161418] font-bold text-[13px]">
-              Cargar 3 campañas de prueba
+              Cargar campañas de prueba (borradores)
+            </button>
+            <button type="button" onClick={onLoadDemo} className="kol-btn-normal px-5 py-2.5 bg-[#FAF8F6] border border-dashed border-[#A40F5F] text-[#161418] font-bold text-[13px]">
+              Ver demo con datos inventados
             </button>
           </div>
-          <p className="text-[12px] text-[#6A6460]">Las de prueba quedan en borrador, dicen [PRUEBA] en el nombre y se borran todas juntas.</p>
+          <p className="text-[12px] text-[#6A6460]">Las de prueba quedan en borrador y dicen [PRUEBA]. La demo muestra resultados con números inventados y dice [DEMO]. Se borran todas juntas.</p>
         </div>
         <div className="p-4 bg-white border border-[#C9C3BE] rounded-[12px] flex gap-3 text-[13px] text-[#46413F]">
           <Info className="w-4 h-4 mt-0.5 shrink-0" />
@@ -81,12 +91,22 @@ export const CampaignList: React.FC<Props> = ({ campaigns, onNew, onNewSuggested
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Kpi label="Campañas" value={String(campaigns.length)} note={`${campaigns.filter((c) => c.status === "borrador").length} en borrador`} />
+        <Kpi label="Campañas" value={String(real.length)} note={`${real.filter((c) => c.status === "borrador").length} en borrador${real.length !== campaigns.length ? " · la demo no se cuenta" : ""}`} />
         <Kpi label="En vivo" value={String(live.length)} note={live.length ? "Publicadas en la plataforma" : "Ninguna publicada todavía"} />
         <Kpi label="Tope comprometido" value={committed ? formatMoney(committed) : "—"} note="Suma de topes de las listas y en vivo (ARS)" />
         <Kpi label="Consultas cargadas" value={withResults.length ? String(consultas) : "—"} note="Las cargás a mano en Resultados hasta conectar GA4" />
       </div>
 
+      <div role="tablist" aria-label="Vista" className="flex gap-2">
+        {([["lista", "Lista de campañas"], ["paraguas", "Por campaña paraguas"]] as const).map(([id, label]) => (
+          <button key={id} type="button" role="tab" aria-selected={view === id} onClick={() => setView(id)} className={`px-3.5 py-1.5 rounded-[8px] text-[13px] font-bold border kol-focus ${view === id ? "bg-[#161418] text-[#FAF8F6] border-[#161418]" : "bg-white text-[#46413F] border-[#C9C3BE] hover:bg-[#FAF8F6]"}`}>{label}</button>
+        ))}
+      </div>
+
+      {view === "paraguas" && <InitiativesView campaigns={campaigns} onOpen={onOpen} />}
+
+      {view === "lista" && (
+      <>
       <div className="flex flex-col lg:flex-row gap-3 lg:items-center justify-between">
         <div className="relative lg:w-80">
           <SearchIcon className="w-4 h-4 text-[#8C8580] absolute left-3 top-1/2 -translate-y-1/2" aria-hidden="true" />
@@ -188,7 +208,15 @@ export const CampaignList: React.FC<Props> = ({ campaigns, onNew, onNewSuggested
         </table>
       </div>
 
+      </>
+      )}
+
       <div className="flex items-center justify-end gap-4 text-[12.5px]">
+        {hasDemo ? (
+          <button type="button" onClick={onRemoveDemo} className="text-[#6A6460] hover:text-[#A40F5F] underline kol-focus rounded">Borrar la demo</button>
+        ) : (
+          <button type="button" onClick={onLoadDemo} className="text-[#6A6460] hover:text-[#161418] underline kol-focus rounded">Ver demo con datos inventados</button>
+        )}
         {hasSamples ? (
           <button type="button" onClick={onRemoveSamples} className="text-[#6A6460] hover:text-[#A40F5F] underline kol-focus rounded">Borrar las campañas de prueba</button>
         ) : (

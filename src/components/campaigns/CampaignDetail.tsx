@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { ArrowLeft, Check, Send } from "lucide-react";
 import { FranchiseCampaignItem, GalleryAsset, CampaignApprovalRecord } from "../../types/marketing";
-import { formatMoney, platformLabel, todayISO, dayNumber, getAds, buildUtm } from "./campaignModel";
+import { formatMoney, platformLabel, todayISO, dayNumber, getAds, buildUtm, utmNameOf, EventStatus, getConversions, eventLabel, REMARKETING_SEGMENTS } from "./campaignModel";
 import { checkCampaign, hasErrors } from "./campaignChecks";
 import { buildPackage, PRE_ACTIVATION } from "./publishPackage";
 import { StatusBadge } from "./StatusBadge";
@@ -9,15 +9,17 @@ import { useCopy } from "./useCopy";
 import { CopyButton } from "./CopyButton";
 import { AdChecklist } from "../ads/AdChecklist";
 import { CampaignAdsTab } from "../ads/CampaignAdsTab";
+import { AssetActions } from "./assetLibrary";
 
 type Tab = "resumen" | "anuncios" | "medicion" | "revision" | "paquete" | "resultados";
 
 interface Props {
   campaign: FranchiseCampaignItem;
   assets: GalleryAsset[];
+  events: EventStatus;
   initialTab?: Tab;
   onBack: () => void;
-  onGoToFiles: () => void;
+  actions: AssetActions;
   onSave: (c: FranchiseCampaignItem) => void;
 }
 
@@ -37,12 +39,13 @@ const Row: React.FC<{ k: string; v: React.ReactNode }> = ({ k, v }) => (
   </div>
 );
 
-export const CampaignDetail: React.FC<Props> = ({ campaign: c, assets, initialTab = "resumen", onBack, onGoToFiles, onSave }) => {
+export const CampaignDetail: React.FC<Props> = ({ campaign: c, assets, events, initialTab = "resumen", onBack, actions, onSave }) => {
   const [tab, setTab] = useState<Tab>(initialTab);
   const { copiedKey, copy } = useCopy();
-  const checks = useMemo(() => checkCampaign(c, assets), [c, assets]);
+  const checks = useMemo(() => checkCampaign(c, assets, events), [c, assets, events]);
   const errors = checks.filter((x) => !x.ok && x.severity === "error").length;
   const pkg = useMemo(() => buildPackage(c, assets), [c, assets]);
+  const conv = getConversions(c);
   const utm = c.utmParams;
 
   // revisión
@@ -53,9 +56,16 @@ export const CampaignDetail: React.FC<Props> = ({ campaign: c, assets, initialTa
   const [ticked, setTicked] = useState<boolean[]>(PRE_ACTIVATION[c.platform].map(() => false));
   const [platformId, setPlatformId] = useState(c.publication?.platformCampaignId || "");
   // resultados
-  const [spend, setSpend] = useState<number | "">(c.livePerformance?.spend ?? "");
-  const [clicks, setClicks] = useState<number | "">(c.livePerformance?.clicks ?? "");
-  const [consultas, setConsultas] = useState<number | "">(c.livePerformance?.consultas ?? "");
+  type Row = { spend: number | ""; clicks: number | ""; visits: number | ""; consultas: number | ""; citas: number | "" };
+  const emptyRow: Row = { spend: "", clicks: "", visits: "", consultas: "", citas: "" };
+  const [rows, setRows] = useState<Record<string, Row>>(() => {
+    const out: Record<string, Row> = {};
+    getAds(c).forEach((ad) => {
+      const r = c.livePerformance?.byAd?.find((x) => x.adId === ad.id);
+      out[ad.id] = r ? { spend: r.spend, clicks: r.clicks, visits: r.visits, consultas: r.consultas, citas: r.citas } : { ...emptyRow };
+    });
+    return out;
+  });
   const [notes, setNotes] = useState(c.learningsNotes || "");
   const [savedNote, setSavedNote] = useState(false);
 
@@ -75,19 +85,26 @@ export const CampaignDetail: React.FC<Props> = ({ campaign: c, assets, initialTa
       publication: { platformCampaignId: platformId.trim() || undefined, publishedAt: todayISO(), publishedBy: undefined },
     });
 
+  const num = (v: number | "") => Number(v) || 0;
+  type Totals = { spend: number; clicks: number; visits: number; consultas: number; citas: number };
+  const totals = Object.values(rows).reduce<Totals>(
+    (t, r) => ({ spend: t.spend + num(r.spend), clicks: t.clicks + num(r.clicks), visits: t.visits + num(r.visits), consultas: t.consultas + num(r.consultas), citas: t.citas + num(r.citas) }),
+    { spend: 0, clicks: 0, visits: 0, consultas: 0, citas: 0 }
+  );
   const saveResults = () => {
-    const sp = Number(spend) || 0;
-    const cons = Number(consultas) || 0;
     const days = c.publication?.publishedAt ? dayNumber(c.publication.publishedAt) : 0;
     set({
       livePerformance: {
-        spend: sp,
-        clicks: Number(clicks) || 0,
-        consultas: cons,
-        costPerConsulta: cons > 0 ? Math.round(sp / cons) : 0,
+        spend: totals.spend,
+        clicks: totals.clicks,
+        visits: totals.visits,
+        consultas: totals.consultas,
+        citas: totals.citas,
+        costPerConsulta: totals.consultas > 0 ? Math.round(totals.spend / totals.consultas) : 0,
         daysRunning: days,
         source: "manual",
         updatedAt: todayISO(),
+        byAd: getAds(c).map((ad) => ({ adId: ad.id, spend: num(rows[ad.id]?.spend ?? ""), clicks: num(rows[ad.id]?.clicks ?? ""), visits: num(rows[ad.id]?.visits ?? ""), consultas: num(rows[ad.id]?.consultas ?? ""), citas: num(rows[ad.id]?.citas ?? "") })),
       },
     });
   };
@@ -158,7 +175,10 @@ export const CampaignDetail: React.FC<Props> = ({ campaign: c, assets, initialTa
             <Row k="Dónde se muestra" v={c.targetLocations.join(", ") || "—"} />
             {c.geo?.excluded?.length ? <Row k="Excluye" v={c.geo.excluded.join(", ")} /> : null}
             <Row k="Anuncios" v={getAds(c).map((a) => a.label).join(", ") || "—"} />
-            <Row k="Objetivo medido" v={<code>lead_franquicia</code>} />
+            {c.initiative && <Row k="Campaña paraguas" v={c.initiative} />}
+            <Row k="Público" v={c.audience?.type === "remarketing" ? `Remarketing (${(c.audience.segments ?? []).map((id) => REMARKETING_SEGMENTS.find((x) => x.id === id)?.label.split(" (")[0] ?? id).join("; ")})` : "Gente nueva"} />
+            <Row k="Conversión principal" v={conv.primary.map(eventLabel).join(" + ")} />
+            <Row k="Se mira también" v={conv.secondary.map(eventLabel).join(", ") || "—"} />
           </div>
           <div className="p-4 bg-[#FAF8F6] border border-[#C9C3BE] rounded-[10px] space-y-3">
             <span className="text-[12px] uppercase font-bold text-[#8C8580] tracking-wider block">Estado del control de calidad</span>
@@ -171,7 +191,10 @@ export const CampaignDetail: React.FC<Props> = ({ campaign: c, assets, initialTa
         </div>
       )}
 
-      {tab === "anuncios" && <CampaignAdsTab key={`${c.id}-${c.status}`} campaign={c} assets={assets} onGoToFiles={onGoToFiles} onSaveCampaign={onSave} />}
+      {/* se mantiene montada para no perder lo que se está editando al cambiar de pestaña */}
+      <div hidden={tab !== "anuncios"}>
+        <CampaignAdsTab key={`${c.id}-${c.status}`} campaign={c} assets={assets} actions={actions} onSaveCampaign={onSave} />
+      </div>
 
       {tab === "medicion" && (
         <div className="space-y-5">
@@ -190,7 +213,7 @@ export const CampaignDetail: React.FC<Props> = ({ campaign: c, assets, initialTa
           <div className="space-y-3">
             <span className="text-[12px] font-bold text-[#46413F] block">Enlace de cada anuncio</span>
             {getAds(c).map((ad) => {
-              const u = buildUtm(c.platform, c.name, ad.utmContent);
+              const u = buildUtm(c.platform, utmNameOf(c), ad.utmContent);
               return (
                 <div key={ad.id} className="p-3 bg-white border border-[#C9C3BE] rounded-[8px] space-y-1.5">
                   <div className="flex items-center justify-between gap-3">
@@ -326,13 +349,46 @@ export const CampaignDetail: React.FC<Props> = ({ campaign: c, assets, initialTa
               <div className="p-4 bg-white border border-[#C9C3BE] rounded-[10px] space-y-3">
                 <span className="font-bold text-[14px] block">Números (los cargás a mano desde Google Ads o Meta y GA4)</span>
                 <p className="text-[12.5px] text-[#6A6460]">Cuando se conecte GA4, las consultas se van a leer solas con el nombre de campaña del UTM: <code>{utm.campaign}</code>.</p>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  {([["Gasto (ARS)", spend, setSpend], ["Clics", clicks, setClicks], ["Consultas (lead_franquicia)", consultas, setConsultas]] as Array<[string, number | "", (v: number | "") => void]>).map(([l, v, setter]) => (
-                    <div key={l}>
-                      <label className="block text-[12.5px] font-bold mb-1">{l}</label>
-                      <input type="number" min={0} value={v} onChange={(e) => setter(e.target.value === "" ? "" : Number(e.target.value))} className="w-full h-[38px] px-3 border border-[#8C8580] rounded-[6px] text-[13px] kol-focus" />
-                    </div>
-                  ))}
+                <div className="overflow-x-auto">
+                  <table className="w-full text-[13px] border-collapse min-w-[560px]">
+                    <thead>
+                      <tr className="bg-[#E7E3DF] text-left text-[12px]">
+                        <th className="py-2 px-3">Anuncio</th>
+                        <th className="py-2 px-2">Gasto (ARS)</th>
+                        <th className="py-2 px-2">Clics</th>
+                        {conv.secondary.includes("visita_franquicia") && <th className="py-2 px-2">Llegaron a franquicias</th>}
+                        <th className="py-2 px-2">Consultas</th>
+                        {[...conv.primary, ...conv.secondary].includes("cita_agendada") && <th className="py-2 px-2">Citas</th>}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {getAds(c).map((ad) => (
+                        <tr key={ad.id} className="border-t border-[#E7E3DF]">
+                          <td className="py-2 px-3 font-bold">{ad.label}</td>
+                          {(["spend", "clicks", ...(conv.secondary.includes("visita_franquicia") ? ["visits"] : []), "consultas", ...([...conv.primary, ...conv.secondary].includes("cita_agendada") ? ["citas"] : [])] as Array<keyof Row>).map((k) => (
+                            <td key={k} className="py-1.5 px-2">
+                              <input
+                                type="number"
+                                min={0}
+                                aria-label={`${ad.label}: ${k}`}
+                                value={rows[ad.id]?.[k] ?? ""}
+                                onChange={(e) => setRows({ ...rows, [ad.id]: { ...(rows[ad.id] ?? emptyRow), [k]: e.target.value === "" ? "" : Number(e.target.value) } })}
+                                className="w-24 h-[34px] px-2 border border-[#8C8580] rounded-[6px] text-[13px] kol-focus"
+                              />
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                      <tr className="border-t-2 border-[#161418] font-bold">
+                        <td className="py-2 px-3">Total de la campaña</td>
+                        <td className="py-2 px-2 tabular-nums">{formatMoney(totals.spend)}</td>
+                        <td className="py-2 px-2 tabular-nums">{totals.clicks}</td>
+                        {conv.secondary.includes("visita_franquicia") && <td className="py-2 px-2 tabular-nums">{totals.visits}</td>}
+                        <td className="py-2 px-2 tabular-nums">{totals.consultas}</td>
+                        {[...conv.primary, ...conv.secondary].includes("cita_agendada") && <td className="py-2 px-2 tabular-nums">{totals.citas}</td>}
+                      </tr>
+                    </tbody>
+                  </table>
                 </div>
                 <div className="flex items-center gap-4 flex-wrap">
                   <button type="button" onClick={saveResults} className="kol-btn-normal px-4 py-2 bg-[#161418] text-[#FAF8F6] font-bold text-[12.5px]">Guardar números</button>

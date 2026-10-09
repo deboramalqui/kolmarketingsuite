@@ -2,8 +2,9 @@ import React, { useMemo, useState } from "react";
 import { ArrowLeft, ChevronRight, Check, Target, Search, Image as ImageIcon, Instagram } from "lucide-react";
 import { CampaignAd, CampaignLifecycleMode, CampaignPlatform, FranchiseCampaignItem, GalleryAsset } from "../../types/marketing";
 import { SITE_FRANQUICIA_URL, VERIFIED_BRAND_FACTS } from "../../data/initialMarketingData";
-import { buildUtm, PLATFORM_INFO, todayISO, platformLabel, EMPTY_GEO, GeoValue, geoToLocations, hasGeoTarget } from "./campaignModel";
+import { buildUtm, PLATFORM_INFO, todayISO, platformLabel, EMPTY_GEO, GeoValue, geoToLocations, hasGeoTarget, MEASUREMENT_EVENTS, EventStatus, REMARKETING_SEGMENTS, defaultConversions, eventLabel } from "./campaignModel";
 import { GeoTargeting } from "./GeoTargeting";
+import { AssetActions } from "./assetLibrary";
 import { checkCampaign, hasErrors } from "./campaignChecks";
 import { AdChecklist } from "../ads/AdChecklist";
 import { AdVariantsEditor } from "../ads/AdVariantsEditor";
@@ -13,15 +14,17 @@ import { CopyButton } from "./CopyButton";
 
 interface Props {
   assets: GalleryAsset[];
+  events: EventStatus;
+  initiatives: string[];
   suggested?: boolean;
   onCancel: () => void;
-  onGoToFiles: () => void;
+  actions: AssetActions;
   onSave: (c: FranchiseCampaignItem) => void;
 }
 
 const STEPS = ["Tipo y presupuesto", "Mensaje y anuncios", "Medición", "Revisión"];
 
-export const NewCampaignWizard: React.FC<Props> = ({ assets, suggested, onCancel, onGoToFiles, onSave }) => {
+export const NewCampaignWizard: React.FC<Props> = ({ assets, events, initiatives, suggested, onCancel, actions, onSave }) => {
   const { copiedKey, copy } = useCopy();
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [chosen, setChosen] = useState<CampaignPlatform | null>(suggested ? "meta_instagram" : null);
@@ -40,10 +43,17 @@ export const NewCampaignWizard: React.FC<Props> = ({ assets, suggested, onCancel
   const [daily, setDaily] = useState<number | "">("");
   const [cap, setCap] = useState<number | "">("");
   const [maxCpa, setMaxCpa] = useState<number | "">("");
+  const [initiative, setInitiative] = useState("");
+  const [audienceType, setAudienceType] = useState<"nuevos" | "remarketing">("nuevos");
+  const [segments, setSegments] = useState<string[]>([]);
+  const [secondary, setSecondary] = useState<string[]>(["visita_franquicia"]);
   const [geo, setGeo] = useState<GeoValue>(EMPTY_GEO);
   const locations = geoToLocations(geo);
   const [format, setFormat] = useState<"isla" | "estandar" | "ambos">("isla");
-  const utm = useMemo(() => buildUtm(platform, name, ads[0]?.utmContent), [platform, name, ads]);
+  const utmName = initiative.trim() || name;
+  const rmk = audienceType === "remarketing" && platform !== "google_search";
+  const conversions = useMemo(() => ({ primary: defaultConversions(rmk ? "remarketing" : "nuevos").primary, secondary }), [rmk, secondary]);
+  const utm = useMemo(() => buildUtm(platform, utmName, ads[0]?.utmContent), [platform, utmName, ads]);
 
   const draft: FranchiseCampaignItem = useMemo(() => {
     const id = `cmp-${Date.now().toString(36)}`;
@@ -61,21 +71,24 @@ export const NewCampaignWizard: React.FC<Props> = ({ assets, suggested, onCancel
       geo,
       format,
       objective: "lead_franquicia",
+      initiative: initiative.trim() || undefined,
+      audience: { type: rmk ? "remarketing" : "nuevos", segments: rmk ? segments : [] },
+      conversions,
       landingPageUrl: SITE_FRANQUICIA_URL,
       utmParams: { source: utm.source, medium: utm.medium, campaign: utm.campaign, term: utm.term, content: utm.content, finalUrlWithUtm: utm.finalUrl },
       ads: ads.map((a) => ({
         ...a,
         metaAdData: a.metaAdData ? { ...a.metaAdData, feedPlacement: placement === "facebook" ? "Facebook Feed" : "Instagram Feed & Explorar" } : undefined,
-        googleAdData: a.googleAdData ? { ...a.googleAdData, finalUrlSuffix: buildUtm(platform, name, a.utmContent).suffix } : undefined,
-        displayAdData: a.displayAdData ? { ...a.displayAdData, finalUrlSuffix: buildUtm(platform, name, a.utmContent).suffix } : undefined,
+        googleAdData: a.googleAdData ? { ...a.googleAdData, finalUrlSuffix: buildUtm(platform, utmName, a.utmContent).suffix } : undefined,
+        displayAdData: a.displayAdData ? { ...a.displayAdData, finalUrlSuffix: buildUtm(platform, utmName, a.utmContent).suffix } : undefined,
       })),
       approvalHistory: [],
       learningsNotes: "",
     };
-  }, [name, platform, placement, mode, start, end, daily, cap, maxCpa, geo, format, utm, ads]);
+  }, [name, platform, placement, mode, start, end, daily, cap, maxCpa, geo, format, utm, utmName, ads, initiative, rmk, segments, conversions]);
 
-  const checks = useMemo(() => checkCampaign(draft, assets), [draft, assets]);
-  const step1Ok = !!chosen && name.trim().length > 0 && Number(cap) > 0 && hasGeoTarget(geo);
+  const checks = useMemo(() => checkCampaign(draft, assets, events), [draft, assets, events]);
+  const step1Ok = !!chosen && name.trim().length > 0 && Number(cap) > 0 && hasGeoTarget(geo) && (!rmk || segments.length > 0);
   const info = PLATFORM_INFO.find((p) => p.id === platform)!;
 
   const inputCls = "w-full h-[40px] px-3 border border-[#8C8580] rounded-[8px] text-[14px] text-[#161418] bg-white kol-focus";
@@ -160,8 +173,49 @@ export const NewCampaignWizard: React.FC<Props> = ({ assets, suggested, onCancel
               <div>
                 <label className={labelCls} htmlFor="c-name">Nombre de la campaña</label>
                 <input id="c-name" className={inputCls} value={name} onChange={(e) => setName(e.target.value)} placeholder="ej. Franquicia Nov · Búsqueda Google (Santa Fe y Córdoba)" />
-                <p className="text-[11.5px] text-[#6A6460] mt-1">Es el nombre que va a llevar en Google o Meta y en el UTM: así sabés qué campaña trajo cada consulta.</p>
+                <p className="text-[11.5px] text-[#6A6460] mt-1">Es el nombre que va a llevar en Google o Meta.</p>
               </div>
+
+              <div>
+                <label className={labelCls} htmlFor="c-init">Campaña paraguas (opcional)</label>
+                <input id="c-init" list="initiatives" className={inputCls} value={initiative} onChange={(e) => setInitiative(e.target.value)} placeholder="ej. Franquicia Nov 2026" />
+                <datalist id="initiatives">{initiatives.map((i) => <option key={i} value={i} />)}</datalist>
+                <p className="text-[11.5px] text-[#6A6460] mt-1">
+                  Agrupa las campañas de Google y Meta que persiguen lo mismo. Todas comparten el mismo <code>utm_campaign</code> ({utm.campaign}), así en GA4 ves el total y también cuánto trajo cada plataforma y cada anuncio.
+                </p>
+              </div>
+
+              {chosen && chosen !== "google_search" && (
+                <div className="space-y-2">
+                  <span className={labelCls}>¿A quién le mostramos el anuncio?</span>
+                  <div role="radiogroup" aria-label="Público" className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {([["nuevos", "Gente nueva", "Personas que todavía no conocen a Kol. Es lo normal para empezar."], ["remarketing", "Remarketing", "Personas que ya visitaron el sitio y no terminaron. Se usa cuando ya hay visitas juntadas."]] as const).map(([id, t, d]) => (
+                      <button key={id} type="button" role="radio" aria-checked={audienceType === id} onClick={() => setAudienceType(id)} className={`text-left p-3 rounded-[10px] border-2 kol-focus ${audienceType === id ? "border-[#161418] bg-[#FAF8F6]" : "border-[#C9C3BE] bg-white hover:bg-[#FAF8F6]"}`}>
+                        <div className="font-bold text-[13.5px] text-[#161418]">{t}</div>
+                        <div className="text-[12px] text-[#46413F] mt-1">{d}</div>
+                      </button>
+                    ))}
+                  </div>
+                  {rmk && (
+                    <div className="p-3.5 bg-[#FAF8F6] border border-[#C9C3BE] rounded-[10px] space-y-3">
+                      <span className="text-[13px] font-bold text-[#161418] block">¿A qué personas?</span>
+                      {REMARKETING_SEGMENTS.map((sg) => (
+                        <label key={sg.id} className="flex items-start gap-2 text-[13px] cursor-pointer">
+                          <input type="checkbox" checked={segments.includes(sg.id)} onChange={(e) => setSegments(e.target.checked ? [...segments, sg.id] : segments.filter((x) => x !== sg.id))} className="mt-0.5" />
+                          <span>{sg.label}</span>
+                        </label>
+                      ))}
+                      <div className="text-[12.5px] text-[#46413F] border-t border-[#E7E3DF] pt-3 space-y-1.5">
+                        <strong className="text-[#161418] block">Antes de que funcione hace falta:</strong>
+                        <p>• Una lista de al menos <strong>100 personas activas en 30 días</strong> (hoy el hub recibe unas 75 visitas por mes, dato de GA4 al 5/10/2026).</p>
+                        <p>• GA4 vinculado a la cuenta de Google Ads de franquicia (la cuenta todavía no está creada).</p>
+                        <p>• Aviso de privacidad y de cookies acorde a la Ley 25.326: con remarketing se vuelve necesario.</p>
+                        {platform === "meta_instagram" && <p>• <strong>Meta:</strong> necesita el pixel de Meta, que hoy no está instalado (se decidió no medir Meta por ahora).</p>}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
@@ -213,10 +267,22 @@ export const NewCampaignWizard: React.FC<Props> = ({ assets, suggested, onCancel
                 <div className="flex justify-between gap-3"><span className="text-[#46413F]">Tope total</span><strong className="tabular-nums">{cap ? `$ ${Number(cap).toLocaleString("es-AR")}` : "—"}</strong></div>
                 <div className="flex justify-between gap-3"><span className="text-[#46413F]">Dónde</span><strong className="text-right">{hasGeoTarget(geo) ? locations.join(", ") : "—"}</strong></div>
               </div>
-              <p className="text-[12px] text-[#46413F] bg-white border border-[#E7E3DF] rounded-[8px] p-2.5 leading-relaxed">
-                <Target className="inline w-3.5 h-3.5 mr-1" />
-                Solo se mide <strong>lead_franquicia</strong> (el envío del formulario de franquicia). No se usa <code>generate_lead</code> ni <code>purchase</code>, que mezclan la tienda.
-              </p>
+              <div className="text-[12px] text-[#46413F] bg-white border border-[#E7E3DF] rounded-[8px] p-2.5 leading-relaxed space-y-2">
+                <div>
+                  <strong className="text-[#161418] block">Conversión principal (la que se optimiza)</strong>
+                  {conversions.primary.map((e) => (<div key={e}>• {eventLabel(e)} <code>{e}</code></div>))}
+                </div>
+                <div>
+                  <strong className="text-[#161418] block">Secundarias (solo se miran)</strong>
+                  {MEASUREMENT_EVENTS.filter((e) => e.id !== "lead_franquicia" && !conversions.primary.includes(e.id)).map((e) => (
+                    <label key={e.id} className="flex items-start gap-1.5 cursor-pointer">
+                      <input type="checkbox" checked={secondary.includes(e.id)} onChange={(ev) => setSecondary(ev.target.checked ? [...secondary, e.id] : secondary.filter((x) => x !== e.id))} className="mt-0.5" />
+                      <span>{e.label} <code>{e.id}</code>{!events[e.id] && <span className="text-[#A40F5F]"> · falta crearlo en GA4</span>}</span>
+                    </label>
+                  ))}
+                </div>
+                <p className="text-[11.5px]"><Target className="inline w-3 h-3 mr-1" />Nunca <code>generate_lead</code> ni <code>purchase</code>: mezclan la tienda.</p>
+              </div>
             </aside>
           </div>
           )}
@@ -244,7 +310,7 @@ export const NewCampaignWizard: React.FC<Props> = ({ assets, suggested, onCancel
               ))}
             </div>
           </div>
-          <AdVariantsEditor platform={platform} ads={ads} assets={assets} onGoToFiles={onGoToFiles} defaultPlacement={placement} onChange={setAds} />
+          <AdVariantsEditor platform={platform} ads={ads} assets={assets} actions={actions} defaultPlacement={placement} onChange={setAds} />
           <div className="flex justify-between border-t border-[#C9C3BE] pt-4">
             <button type="button" onClick={() => setStep(1)} className="kol-btn-normal px-5 py-2 bg-[#FAF8F6] border border-[#C9C3BE] text-[#161418] font-bold text-[13px]">← Volver al paso 1</button>
             <button type="button" onClick={() => setStep(3)} className="kol-btn-normal px-6 py-2 bg-[#161418] text-[#FAF8F6] font-bold text-[13px] flex items-center gap-2">Siguiente: Medición <ChevronRight className="w-4 h-4" /></button>
@@ -272,7 +338,7 @@ export const NewCampaignWizard: React.FC<Props> = ({ assets, suggested, onCancel
               <div className="space-y-2.5">
                 <span className="text-[12px] font-bold text-[#46413F] block">Enlace de cada anuncio</span>
                 {ads.map((ad) => {
-                  const u = buildUtm(platform, name, ad.utmContent);
+                  const u = buildUtm(platform, utmName, ad.utmContent);
                   return (
                     <div key={ad.id}>
                       <div className="flex items-center justify-between mb-1">

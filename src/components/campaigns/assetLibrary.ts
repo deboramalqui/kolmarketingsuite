@@ -140,3 +140,9 @@ export const META_FORMATS: Array<{ id: "feed_191" | "feed_1x1" | "feed_4x5" | "s
 ];
 
 export const metaFormatInfo = (id?: string) => META_FORMATS.find((f) => f.id === id) ?? META_FORMATS[0];
+
+/** Acciones sobre la galería que se pueden usar sin salir de lo que se está haciendo */
+export interface AssetActions {
+  add: (file: File, kind: "foto" | "logo") => Promise<{ asset: GalleryAsset; saved: boolean }>;
+  update: (id: string, patch: Partial<GalleryAsset>) => void;
+}

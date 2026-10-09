@@ -313,6 +313,12 @@ export interface FranchiseCampaignItem {
     maxCpaTarget?: number;
   };
   targetLocations: string[];
+  /** Campaña paraguas: agrupa las campañas de cada plataforma bajo un mismo nombre y un mismo utm_campaign */
+  initiative?: string;
+  /** Gente nueva o remarketing (personas que ya visitaron) */
+  audience?: { type: "nuevos" | "remarketing"; segments: string[] };
+  /** Conversiones: las principales sirven para optimizar; las secundarias solo se miran */
+  conversions?: { primary: string[]; secondary: string[] };
   /** A quién se dirige la campaña (de dónde queremos captar inversores) */
   geo?: {
     scope: "pais" | "provincias" | "ciudades";
@@ -351,6 +357,10 @@ export interface FranchiseCampaignItem {
     /** Siempre "manual" por ahora: la persona carga los números desde la plataforma */
     source?: "manual";
     updatedAt?: string;
+    visits?: number;
+    citas?: number;
+    /** Resultados por anuncio, cargados a mano */
+    byAd?: Array<{ adId: string; spend: number; clicks: number; visits: number; consultas: number; citas: number }>;
   };
   learningsNotes?: string;
   /** Datos de publicación cargados a mano después de crear la campaña en la plataforma */

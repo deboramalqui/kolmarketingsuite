@@ -5,10 +5,13 @@ import { VERIFIED_BRAND_FACTS, VERIFIED_LOCATIONS, SITE_FRANQUICIA_URL } from ".
 import { assetFits, fileToAsset, META_FORMATS, ratioLabel } from "./assetLibrary";
 import { useCopy } from "./useCopy";
 import { CopyButton } from "./CopyButton";
+import { EventStatus, MEASUREMENT_EVENTS } from "./campaignModel";
 
 interface Props {
   assets: GalleryAsset[];
   onChange: (next: GalleryAsset[]) => boolean;
+  events: EventStatus;
+  onEventsChange: (next: EventStatus) => void;
 }
 
 const Fit: React.FC<{ ok: boolean; label: string }> = ({ ok, label }) => (
@@ -19,7 +22,7 @@ const Fit: React.FC<{ ok: boolean; label: string }> = ({ ok, label }) => (
 );
 
 /** Datos que se toman como verdad para publicar + galería de fotos y logos */
-export const DataAndFilesView: React.FC<Props> = ({ assets, onChange }) => {
+export const DataAndFilesView: React.FC<Props> = ({ assets, onChange, events, onEventsChange }) => {
   const { copiedKey, copy } = useCopy();
   const photoInput = useRef<HTMLInputElement>(null);
   const logoInput = useRef<HTMLInputElement>(null);
@@ -85,6 +88,33 @@ export const DataAndFilesView: React.FC<Props> = ({ assets, onChange }) => {
           <span className="text-[12.5px] text-[#46413F] break-all">Destino de todas las campañas: <strong>{SITE_FRANQUICIA_URL}</strong></span>
           <CopyButton text={SITE_FRANQUICIA_URL} id="dest" copiedKey={copiedKey} onCopy={copy} />
         </div>
+      </section>
+
+      <section className="space-y-4">
+        <div>
+          <h2 className="font-kol-display font-bold text-[18px] text-[#161418]">Eventos de medición</h2>
+          <p className="text-[13px] text-[#46413F] max-w-3xl mt-1">
+            Lo que se cuenta como conversión. Marcá cada evento cuando ya esté creado en GA4: mientras no lo esté, una campaña que lo use como conversión principal no se puede pedir a revisión.
+          </p>
+        </div>
+        <div className="space-y-3">
+          {MEASUREMENT_EVENTS.map((e) => (
+            <div key={e.id} className="p-4 bg-white border border-[#C9C3BE] rounded-[10px] flex flex-col md:flex-row md:items-start gap-3 justify-between">
+              <div className="space-y-1 max-w-2xl">
+                <div className="font-bold text-[14px] text-[#161418]">{e.label} <code className="font-mono text-[12px] text-[#6A6460] font-normal">{e.id}</code></div>
+                <p className="text-[13px] text-[#46413F]">{e.what}</p>
+                <p className="text-[12.5px] text-[#6A6460]"><strong>Cómo se crea:</strong> {e.howTo}</p>
+              </div>
+              <label className="flex items-center gap-2 text-[13px] font-bold text-[#161418] cursor-pointer whitespace-nowrap">
+                <input type="checkbox" checked={!!events[e.id]} disabled={e.id === "lead_franquicia"} onChange={(ev) => onEventsChange({ ...events, [e.id]: ev.target.checked })} />
+                {events[e.id] ? "Ya está creado en GA4" : "Todavía no existe"}
+              </label>
+            </div>
+          ))}
+        </div>
+        <p className="text-[12px] text-[#6A6460]">
+          Reglas de Google Ads: las conversiones <strong>principales</strong> guían la optimización del gasto; las <strong>secundarias</strong> solo se miran. Llegar a franquicias desde un anuncio es una conversión secundaria: si fuera principal, Google buscaría visitas baratas en vez de consultas.
+        </p>
       </section>
 
       <section className="space-y-4">

@@ -1,7 +1,8 @@
 import React from "react";
 import { AlertTriangle, CheckCircle2 } from "lucide-react";
 import { GalleryAsset } from "../../types/marketing";
-import { assetFits, AssetSlot, ratioLabel } from "../campaigns/assetLibrary";
+import { Upload } from "lucide-react";
+import { assetFits, AssetActions, AssetSlot, ratioLabel } from "../campaigns/assetLibrary";
 
 interface Props {
   label: string;
@@ -13,10 +14,27 @@ interface Props {
   onChange: (assetId?: string) => void;
   disabled?: boolean;
   required?: boolean;
+  actions?: AssetActions;
 }
 
 /** Elige una imagen de la galería y dice al instante si cumple lo que pide la plataforma. */
-export const AssetPicker: React.FC<Props> = ({ label, hint, slot, kind, assets, value, onChange, disabled, required }) => {
+export const AssetPicker: React.FC<Props> = ({ label, hint, slot, kind, assets, value, onChange, disabled, required, actions }) => {
+  const [busy, setBusy] = React.useState(false);
+  const [err, setErr] = React.useState<string | null>(null);
+  const upload = async (file?: File | null) => {
+    if (!file || !actions) return;
+    setBusy(true);
+    setErr(null);
+    try {
+      const { asset, saved } = await actions.add(file, kind);
+      onChange(asset.id);
+      if (!saved) setErr("Se usa en esta pantalla, pero el navegador no tiene espacio para guardarla. Borrá imágenes que no uses.");
+    } catch {
+      setErr("No se pudo leer la imagen. Probá con un JPG o PNG.");
+    } finally {
+      setBusy(false);
+    }
+  };
   const options = assets.filter((a) => a.kind === kind);
   const chosen = assets.find((a) => a.id === value);
   const fit = chosen ? assetFits(chosen, slot) : undefined;
@@ -48,6 +66,21 @@ export const AssetPicker: React.FC<Props> = ({ label, hint, slot, kind, assets, 
               </option>
             ))}
           </select>
+          {!disabled && actions && (
+            <div className="flex flex-wrap items-center gap-3">
+              <label className={`inline-flex items-center gap-1.5 px-2.5 py-1 bg-white border border-[#161418] rounded-[6px] text-[12px] font-bold cursor-pointer ${busy ? "opacity-60 pointer-events-none" : ""}`}>
+                <Upload className="w-3.5 h-3.5" /> {busy ? "Subiendo…" : kind === "logo" ? "Subir logo" : "Subir imagen"}
+                <input type="file" accept="image/*" className="sr-only" onChange={(e) => { upload(e.target.files?.[0]); e.target.value = ""; }} />
+              </label>
+              {chosen && actions && (
+                <label className="inline-flex items-center gap-1.5 text-[12px] text-[#161418] cursor-pointer">
+                  <input type="checkbox" checked={chosen.permission} onChange={(e) => actions.update(chosen.id, { permission: e.target.checked })} />
+                  Tenemos permiso para usarla en anuncios
+                </label>
+              )}
+            </div>
+          )}
+          {err && <div role="alert" className="text-[12px] text-[#A40F5F] font-bold">{err}</div>}
           {chosen && fit && (
             <div className={`flex items-center gap-1.5 text-[12px] ${fit.ok ? "text-[#46413F]" : "text-[#A40F5F] font-bold"}`}>
               {fit.ok ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> : <AlertTriangle className="w-3.5 h-3.5" />}

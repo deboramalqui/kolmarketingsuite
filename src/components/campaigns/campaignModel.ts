@@ -83,6 +83,7 @@ export interface UtmBuild {
 
 /** Convención de guia-utm-campanas.md */
 export function buildUtm(platform: CampaignPlatform, name: string, contentOverride?: string): UtmBuild {
+  // `name` es el nombre de la campaña paraguas si tiene; si no, el de la campaña
   const campaign = utmSlug(name) || "franquicia-campana";
   let source = "google";
   let medium = "cpc";
@@ -209,3 +210,69 @@ export function geoToLocations(g: GeoValue): string[] {
 export function hasGeoTarget(g: GeoValue): boolean {
   return g.scope === "pais" || (g.scope === "provincias" ? g.provinces.length > 0 : g.cities.length > 0);
 }
+
+/** Nombre que se usa para el utm_campaign: el de la campaña paraguas si existe */
+export const utmNameOf = (c: Pick<FranchiseCampaignItem, "name" | "initiative">) => (c.initiative && c.initiative.trim()) || c.name;
+
+/* ---- Conversiones ---- */
+export interface MeasurementEvent {
+  id: string;
+  label: string;
+  /** Qué es, en simple */
+  what: string;
+  /** Cómo se crea si todavía no existe */
+  howTo: string;
+}
+
+export const MEASUREMENT_EVENTS: MeasurementEvent[] = [
+  {
+    id: "lead_franquicia",
+    label: "Dejó sus datos en el formulario",
+    what: "Se dispara cuando se envía el formulario de franquicia. Es la conversión principal.",
+    howTo: "Ya está creado y verificado en GA4 (propiedad kolaccesorios - GA4).",
+  },
+  {
+    id: "visita_franquicia",
+    label: "Llegó a franquicias desde un anuncio",
+    what: "Se dispara cuando alguien entra a /franquicia/ viniendo de un anuncio pago (utm_medium cpc, display o paid_social). Se mira, no se optimiza.",
+    howTo: "Hay que crearlo en GA4: un evento que se active en las páginas /franquicia/ cuando la visita viene de un anuncio, y marcarlo como evento clave.",
+  },
+  {
+    id: "cita_agendada",
+    label: "Agendó una cita",
+    what: "Se dispara cuando alguien reserva un horario para hablar con Kol. Es la conversión del remarketing.",
+    howTo: "Hace falta primero un calendario de citas en el sitio, y que al confirmarse dispare este evento en GA4.",
+  },
+];
+
+export const eventLabel = (id: string) => MEASUREMENT_EVENTS.find((e) => e.id === id)?.label ?? id;
+
+const EVENTS_KEY = "kol_measurement_events_v1";
+export type EventStatus = Record<string, boolean>;
+
+export function loadEventStatus(): EventStatus {
+  try {
+    const raw = localStorage.getItem(EVENTS_KEY);
+    if (raw) return { lead_franquicia: true, ...JSON.parse(raw) };
+  } catch {}
+  return { lead_franquicia: true };
+}
+export function saveEventStatus(s: EventStatus) {
+  try {
+    localStorage.setItem(EVENTS_KEY, JSON.stringify(s));
+  } catch {}
+}
+
+export function defaultConversions(type: "nuevos" | "remarketing"): { primary: string[]; secondary: string[] } {
+  return type === "remarketing"
+    ? { primary: ["lead_franquicia", "cita_agendada"], secondary: ["visita_franquicia"] }
+    : { primary: ["lead_franquicia"], secondary: ["visita_franquicia"] };
+}
+
+export const REMARKETING_SEGMENTS = [
+  { id: "visito_hub", label: "Visitaron /franquicia/ y no dejaron sus datos (últimos 30 días)" },
+  { id: "visito_inversion", label: "Entraron a Inversión inicial y no dejaron sus datos" },
+  { id: "dejo_datos_sin_cita", label: "Dejaron sus datos y no agendaron una cita" },
+];
+
+export const getConversions = (c: FranchiseCampaignItem) => c.conversions ?? defaultConversions(c.audience?.type ?? "nuevos");

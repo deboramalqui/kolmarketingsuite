@@ -3,7 +3,7 @@ import { GalleryAsset } from "../../types/marketing";
 import { AssetPicker } from "./AssetPicker";
 import { MetaAdPreview } from "./AdPreviews";
 import { MetaFormat } from "../../types/marketing";
-import { assetFits, META_FORMATS, metaFormatInfo } from "../campaigns/assetLibrary";
+import { assetFits, AssetActions, META_FORMATS, metaFormatInfo } from "../campaigns/assetLibrary";
 import { AdChecklist } from "./AdChecklist";
 import { checkMetaAd, META_PRIMARY_VISIBLE_CHARS } from "./adChecks";
 import { SITE_DOMAIN } from "../../data/initialMarketingData";
@@ -25,7 +25,7 @@ interface Props {
   value: MetaAdFields;
   onChange: (patch: Partial<MetaAdFields>) => void;
   assets: GalleryAsset[];
-  onGoToFiles?: () => void;
+  actions?: AssetActions;
   readOnly?: boolean;
   defaultPlacement?: "instagram" | "facebook";
 }
@@ -56,7 +56,7 @@ const Seg: React.FC<{ options: Array<[string, string]>; value: string; onPick: (
   </div>
 );
 
-export const MetaAdEditor: React.FC<Props> = ({ value, onChange, assets, onGoToFiles, readOnly, defaultPlacement = "instagram" }) => {
+export const MetaAdEditor: React.FC<Props> = ({ value, onChange, assets, actions, readOnly, defaultPlacement = "instagram" }) => {
   const [placement, setPlacement] = useState<"instagram" | "facebook">(defaultPlacement);
   const chosen = assets.find((a) => a.id === value.mediaAssetId);
   const checks = checkMetaAd({
@@ -150,12 +150,8 @@ export const MetaAdEditor: React.FC<Props> = ({ value, onChange, assets, onGoToF
             onChange={(id) => onChange({ mediaAssetId: id })}
             disabled={readOnly}
             required
+            actions={actions}
           />
-          {onGoToFiles && (
-            <button type="button" onClick={onGoToFiles} className="text-[12.5px] font-bold text-[#C51172] hover:underline">
-              Subir fotos en Datos y archivos →
-            </button>
-          )}
           <div className="flex flex-wrap items-center gap-3 pt-1">
             <label className="inline-flex items-center gap-2 text-[13px] text-[#161418]">
               <input type="checkbox" disabled={readOnly} checked={value.showSeal} onChange={(e) => onChange({ showSeal: e.target.checked })} />
