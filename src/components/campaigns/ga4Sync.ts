@@ -91,3 +91,17 @@ export function applyGa4Rows(c: FranchiseCampaignItem, rows: Ga4Row[]): Franchis
     },
   };
 }
+
+export async function manualStart(): Promise<{ url: string; redirectUri: string }> {
+  const r = await fetch("/api/ga4/oauth/manual-start");
+  const b = await r.json();
+  if (!r.ok) throw new Error(b.error || "No se pudo generar el enlace");
+  return b;
+}
+
+export async function manualFinish(pasted: string): Promise<{ email?: string; refreshToken: string }> {
+  const r = await fetch("/api/ga4/oauth/manual-finish", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ pasted }) });
+  const b = await r.json();
+  if (!r.ok) throw new Error(b.error || "No se pudo completar la autorización");
+  return b;
+}

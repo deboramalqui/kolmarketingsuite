@@ -4,7 +4,7 @@ import fs from "fs";
 import { fileURLToPath } from "url";
 import dotenv from "dotenv";
 import { GoogleGenAI, Type, type FunctionDeclaration } from "@google/genai";
-import { ga4Status, ga4CampaignRows, oauthClientConfigured, oauthAuthUrl, oauthExchange, newOauthState, consumeOauthState } from "./ga4Server";
+import { ga4Status, ga4CampaignRows, oauthClientConfigured, oauthAuthUrl, oauthExchange, oauthFinishManual, newOauthState, consumeOauthState, MANUAL_REDIRECT_URI } from "./ga4Server";
 
 dotenv.config();
 
@@ -241,6 +241,21 @@ async function startServer() {
       return res.status(400).send("Falta cargar GOOGLE_OAUTH_CLIENT_ID y GOOGLE_OAUTH_CLIENT_SECRET en los Secrets del servidor.");
     }
     res.redirect(oauthAuthUrl(redirectUriOf(req), newOauthState()));
+  });
+
+  // Autorización manual (sirve cuando volver a la app da error 403 por tener varias cuentas de Google abiertas)
+  app.get("/api/ga4/oauth/manual-start", (_req, res) => {
+    if (!oauthClientConfigured()) return res.status(400).json({ error: "Falta cargar GOOGLE_OAUTH_CLIENT_ID y GOOGLE_OAUTH_CLIENT_SECRET en los Secrets." });
+    res.json({ url: oauthAuthUrl(MANUAL_REDIRECT_URI, newOauthState()), redirectUri: MANUAL_REDIRECT_URI });
+  });
+
+  app.post("/api/ga4/oauth/manual-finish", async (req, res) => {
+    try {
+      const out = await oauthFinishManual(String(req.body?.pasted || ""));
+      res.json({ ok: true, email: out.email, refreshToken: out.refreshToken });
+    } catch (e) {
+      res.status(400).json({ error: e instanceof Error ? e.message : "No se pudo completar la autorización" });
+    }
   });
 
   app.get("/api/ga4/oauth/callback", async (req, res) => {

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { CheckCircle2, AlertTriangle, RefreshCw } from "lucide-react";
-import { fetchGa4Status, fetchOauthInfo, Ga4Status } from "./ga4Sync";
+import { fetchGa4Status, fetchOauthInfo, Ga4Status, manualStart, manualFinish } from "./ga4Sync";
 import { useCopy } from "./useCopy";
 import { CopyButton } from "./CopyButton";
 
@@ -10,6 +10,34 @@ export const Ga4Panel: React.FC = () => {
   const [busy, setBusy] = useState(false);
   const [oauth, setOauth] = useState<{ clientConfigured: boolean; redirectUri: string }>({ clientConfigured: false, redirectUri: "" });
   const { copiedKey, copy } = useCopy();
+  const [manualUrl, setManualUrl] = useState<string | null>(null);
+  const [pasted, setPasted] = useState("");
+  const [manualMsg, setManualMsg] = useState<{ ok: boolean; text: string; token?: string } | null>(null);
+  const [manualBusy, setManualBusy] = useState(false);
+
+  const prepare = async () => {
+    setManualMsg(null);
+    try {
+      setManualUrl((await manualStart()).url);
+    } catch (e) {
+      setManualMsg({ ok: false, text: e instanceof Error ? e.message : "No se pudo generar el enlace" });
+    }
+  };
+  const finish = async () => {
+    setManualBusy(true);
+    setManualMsg(null);
+    try {
+      const r = await manualFinish(pasted);
+      setManualMsg({ ok: true, text: `Listo: GA4 quedó autorizado con ${r.email || "tu cuenta de Google"}.`, token: r.refreshToken });
+      setPasted("");
+      setManualUrl(null);
+      fetchGa4Status(true).then(setSt);
+    } catch (e) {
+      setManualMsg({ ok: false, text: e instanceof Error ? e.message : "No se pudo completar" });
+    } finally {
+      setManualBusy(false);
+    }
+  };
 
   useEffect(() => {
     fetchGa4Status(false).then(setSt);
@@ -89,6 +117,44 @@ export const Ga4Panel: React.FC = () => {
             </a>
             {!oauth.clientConfigured && <p className="text-[12px] text-[#6A6460]">Se habilita cuando estén cargados el ID de cliente y el secreto (paso 3).</p>}
           </div>
+        </div>
+      )}
+      {!st?.ok && (
+        <div className="p-4 bg-white border-2 border-[#161418] rounded-[10px] space-y-3">
+          <h3 className="font-bold text-[14px] text-[#161418]">Opción B, versión manual (si al volver de Google te da error 403)</h3>
+          <p className="text-[12.5px] text-[#46413F]">Con varias cuentas de Google abiertas, la vuelta a la app puede fallar. Esta versión no vuelve a la app: copiás una dirección y la pegás acá.</p>
+          <ol className="space-y-2 text-[13px] text-[#161418] list-decimal pl-5">
+            <li>
+              En Google Cloud, en el mismo cliente OAuth, agregá otra dirección en “URI de redireccionamiento autorizados”:
+              <div className="mt-1.5 p-2 bg-[#F3F0ED] border border-[#E7E3DF] rounded-[6px] flex items-center justify-between gap-2">
+                <code className="text-[12px] break-all">http://localhost:8080/oauth</code>
+                <CopyButton text="http://localhost:8080/oauth" id="manual-redir" copiedKey={copiedKey} onCopy={copy} />
+              </div>
+            </li>
+            <li>
+              <button type="button" onClick={prepare} disabled={!oauth.clientConfigured} className="kol-btn-normal px-3 py-1.5 bg-white border border-[#161418] text-[12.5px] font-bold disabled:opacity-40">Generar el enlace</button>
+              {manualUrl && (
+                <a href={manualUrl} target="_blank" rel="noreferrer" className="ml-2 inline-block kol-btn-normal px-3 py-1.5 bg-[#161418] text-[#FAF8F6] text-[12.5px] font-bold">Abrir Google para autorizar</a>
+              )}
+            </li>
+            <li>Elegí <code>redeskolaccesorios@gmail.com</code> y aceptá. Al final, el navegador va a mostrar <strong>“No se puede acceder a este sitio”</strong>: es lo esperado. <strong>Copiá la dirección completa de la barra de arriba</strong> (empieza con <code>http://localhost:8080/oauth?...</code>).</li>
+            <li>
+              Pegala acá y tocá Terminar:
+              <textarea value={pasted} onChange={(e) => setPasted(e.target.value)} rows={3} placeholder="http://localhost:8080/oauth?state=...&code=..." className="mt-1.5 w-full p-2 border border-[#8C8580] rounded-[6px] text-[12px] font-mono kol-focus" />
+              <button type="button" onClick={finish} disabled={manualBusy || !pasted.trim()} className="mt-1.5 kol-btn-normal px-4 py-2 bg-[#161418] text-[#FAF8F6] text-[12.5px] font-bold disabled:opacity-40">{manualBusy ? "Terminando…" : "Terminar"}</button>
+            </li>
+          </ol>
+          {manualMsg && (
+            <div role="status" className={`text-[13px] ${manualMsg.ok ? "text-[#161418]" : "text-[#A40F5F] font-bold"}`}>
+              {manualMsg.text}
+              {manualMsg.token && (
+                <div className="mt-2 space-y-1 text-[12.5px] font-normal">
+                  <p>Para que no se pierda cuando el servidor se reinicie, guardá este código en <strong>Secrets</strong> como <code>GA4_REFRESH_TOKEN</code>. Es una llave: no la compartas.</p>
+                  <textarea readOnly rows={3} value={manualMsg.token} onClick={(e) => (e.target as HTMLTextAreaElement).select()} className="w-full p-2 border border-[#8C8580] rounded-[6px] text-[12px] font-mono" />
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
       <p className="text-[12px] text-[#6A6460] max-w-3xl">

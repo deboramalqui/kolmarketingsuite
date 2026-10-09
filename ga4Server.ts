@@ -96,6 +96,9 @@ export function consumeOauthState(st: string | undefined): boolean {
   return !!exp && exp > Date.now();
 }
 
+/** Dirección "de paso" para la autorización manual: el navegador no la abre bien, pero deja el código en la barra de direcciones. */
+export const MANUAL_REDIRECT_URI = "http://localhost:8080/oauth";
+
 export function oauthAuthUrl(redirectUri: string, state: string): string {
   const q = new URLSearchParams({
     client_id: process.env.GOOGLE_OAUTH_CLIENT_ID || "",
@@ -323,4 +326,24 @@ export async function ga4CampaignRows(startDate: string, endDate: string): Promi
     return mergeReports(traffic, events);
   });
   return result;
+}
+
+/** Autorización manual: la persona pega la dirección (o solo el código) que Google dejó en su navegador. */
+export async function oauthFinishManual(pasted: string): Promise<{ refreshToken: string; email?: string }> {
+  const text = (pasted || "").trim();
+  if (!text) throw new Error("Pegá la dirección completa que quedó en la barra del navegador.");
+  let code = text;
+  let state: string | null = null;
+  try {
+    const u = new URL(text);
+    if (u.searchParams.get("error")) throw new Error(`Google informó: ${u.searchParams.get("error")}`);
+    code = u.searchParams.get("code") || "";
+    state = u.searchParams.get("state");
+  } catch (e) {
+    if (e instanceof Error && e.message.startsWith("Google informó")) throw e;
+    // no era una dirección: se toma el texto como el código
+  }
+  if (!code) throw new Error("En lo que pegaste no encuentro el código. Copiá la dirección completa de la barra.");
+  if (state && !consumeOauthState(state)) throw new Error("Esa autorización venció o es de otro intento. Generá el enlace de nuevo.");
+  return oauthExchange(decodeURIComponent(code), MANUAL_REDIRECT_URI);
 }
