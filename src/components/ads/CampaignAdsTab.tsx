@@ -117,6 +117,7 @@ export const CampaignAdsTab: React.FC<Props> = ({ campaign, galleryImages, onUpl
 
       {meta && (
         <MetaAdEditor
+          defaultPlacement={/facebook/i.test(campaign.metaAdData?.feedPlacement || "") ? "facebook" : "instagram"}
           value={meta}
           readOnly={!editable}
           galleryImages={galleryImages}

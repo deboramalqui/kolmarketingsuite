@@ -79,6 +79,12 @@ const DEFAULT_GALLERY_IMAGES: GalleryImage[] = [
   },
 ];
 
+// Ubicación de Meta de una campaña guardada (por defecto Instagram)
+const metaPlacementOf = (c: FranchiseCampaignItem): "instagram" | "facebook" =>
+  /facebook/i.test(c.metaAdData?.feedPlacement || "") ? "facebook" : "instagram";
+const platformLabel = (c: FranchiseCampaignItem) =>
+  c.platform === "google_search" ? "Google Búsqueda" : metaPlacementOf(c) === "facebook" ? "Meta Facebook" : "Meta Instagram";
+
 // Helper para generar slug de UTM en minúsculas, sin tildes, con guiones
 function generateUtmSlug(text: string): string {
   return text
@@ -117,6 +123,8 @@ export const CampaignStudioView: React.FC<CampaignStudioViewProps> = ({
   const [wizardStep, setWizardStep] = useState<1 | 2 | 3 | 4>(1);
   const [newCampName, setNewCampName] = useState("");
   const [newCampPlatform, setNewCampPlatform] = useState<"google_search" | "meta_instagram">("google_search");
+  // Instagram y Facebook son la misma campaña de Meta; esto define con cuál se abre la vista previa
+  const [newCampMetaPlacement, setNewCampMetaPlacement] = useState<"instagram" | "facebook">("instagram");
   const [newCampMode, setNewCampMode] = useState<CampaignLifecycleMode>("prueba");
   const [newCampCurrency, setNewCampCurrency] = useState<"USD" | "ARS">("ARS");
   const [newCampDailyBudget, setNewCampDailyBudget] = useState<number | "">("");
@@ -274,7 +282,7 @@ export const CampaignStudioView: React.FC<CampaignStudioViewProps> = ({
               description: newMetaDescription,
               callToAction: newMetaCta,
               mediaUrl: newMetaMediaUrl,
-              feedPlacement: "Instagram Feed & Explorar",
+              feedPlacement: newCampMetaPlacement === "facebook" ? "Facebook Feed" : "Instagram Feed & Explorar",
               pageName: newMetaPageName,
               avatarTheme: newMetaAvatarTheme,
               showSeal: newMetaShowSeal,
@@ -595,7 +603,7 @@ export const CampaignStudioView: React.FC<CampaignStudioViewProps> = ({
                         ) : (
                           <div className="flex items-center gap-1.5 text-[#161418]">
                             <Instagram className="w-3.5 h-3.5 text-[#C51172]" />
-                            <span>Meta Instagram</span>
+                            <span>{platformLabel(camp)}</span>
                           </div>
                         )}
                       </td>
@@ -759,13 +767,31 @@ export const CampaignStudioView: React.FC<CampaignStudioViewProps> = ({
                       Plataforma
                     </label>
                     <select
-                      value={newCampPlatform}
-                      onChange={(e) => setNewCampPlatform(e.target.value as any)}
+                      value={
+                        newCampPlatform === "google_search"
+                          ? "google_search"
+                          : newCampMetaPlacement === "facebook"
+                          ? "meta_facebook"
+                          : "meta_instagram"
+                      }
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        if (v === "google_search") {
+                          setNewCampPlatform("google_search");
+                        } else {
+                          setNewCampPlatform("meta_instagram");
+                          setNewCampMetaPlacement(v === "meta_facebook" ? "facebook" : "instagram");
+                        }
+                      }}
                       className="w-full h-[40px] px-3 border border-[#8C8580] rounded-[8px] text-[13px] text-[#161418] bg-white kol-focus"
                     >
-                      <option value="google_search">Google Búsqueda (Search)</option>
-                      <option value="meta_instagram">Meta (Instagram Feed & Stories)</option>
+                      <option value="google_search">Google Búsqueda (solo texto)</option>
+                      <option value="meta_instagram">Instagram (feed)</option>
+                      <option value="meta_facebook">Facebook (feed)</option>
                     </select>
+                    <p className="text-[11.5px] text-[#6A6460] mt-1">
+                      Instagram y Facebook van en la misma campaña de Meta. Elegís con cuál empezás y en el paso 2 ves la vista previa de los dos.
+                    </p>
                   </div>
 
                   <div>
@@ -938,7 +964,7 @@ export const CampaignStudioView: React.FC<CampaignStudioViewProps> = ({
                     </div>
                     <div className="flex justify-between border-b border-[#E7E3DF] pb-2">
                       <span className="text-[#46413F]">Plataforma:</span>
-                      <strong>{newCampPlatform === "google_search" ? "Google Search" : "Meta Instagram"}</strong>
+                      <strong>{newCampPlatform === "google_search" ? "Google Búsqueda" : newCampMetaPlacement === "facebook" ? "Meta Facebook" : "Meta Instagram"}</strong>
                     </div>
                     <div className="flex justify-between border-b border-[#E7E3DF] pb-2">
                       <span className="text-[#46413F]">Modo y duración:</span>
@@ -1031,6 +1057,7 @@ export const CampaignStudioView: React.FC<CampaignStudioViewProps> = ({
 
               {newCampPlatform === "meta_instagram" && (
                 <MetaAdEditor
+                  defaultPlacement={newCampMetaPlacement}
                   value={{
                     pageName: newMetaPageName,
                     avatarTheme: newMetaAvatarTheme,
@@ -1327,7 +1354,7 @@ export const CampaignStudioView: React.FC<CampaignStudioViewProps> = ({
                   {getStatusBadge(selectedCampaign.status)}
                 </div>
                 <div className="text-[12px] text-[#46413F] flex items-center gap-2 mt-0.5">
-                  <span>Plataforma: <strong>{selectedCampaign.platform === "google_search" ? "Google Búsqueda" : "Meta Instagram"}</strong></span>
+                  <span>Plataforma: <strong>{platformLabel(selectedCampaign)}</strong></span>
                   <span>·</span>
                   <span>Modo: <strong>{selectedCampaign.mode}</strong></span>
                   <span>·</span>
@@ -1397,7 +1424,7 @@ export const CampaignStudioView: React.FC<CampaignStudioViewProps> = ({
                 <div className="space-y-2 text-[13px]">
                   <div className="flex justify-between border-b border-[#E7E3DF] pb-1.5">
                     <span className="text-[#46413F]">Plataforma:</span>
-                    <strong className="text-[#161418]">{selectedCampaign.platform === "google_search" ? "Google Search" : "Meta Instagram"}</strong>
+                    <strong className="text-[#161418]">{platformLabel(selectedCampaign)}</strong>
                   </div>
                   <div className="flex justify-between border-b border-[#E7E3DF] pb-1.5">
                     <span className="text-[#46413F]">Modo:</span>

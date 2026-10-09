@@ -23,6 +23,7 @@ interface Props {
   galleryImages: Array<{ id: string; name: string; url: string }>;
   onUploadPhoto?: (e: React.ChangeEvent<HTMLInputElement>, onUploaded: (url: string) => void) => void;
   readOnly?: boolean;
+  defaultPlacement?: "instagram" | "facebook";
 }
 
 const inputCls =
@@ -51,8 +52,8 @@ const Seg: React.FC<{ options: Array<[string, string]>; value: string; onPick: (
   </div>
 );
 
-export const MetaAdEditor: React.FC<Props> = ({ value, onChange, galleryImages, onUploadPhoto, readOnly }) => {
-  const [placement, setPlacement] = useState<"instagram" | "facebook">("instagram");
+export const MetaAdEditor: React.FC<Props> = ({ value, onChange, galleryImages, onUploadPhoto, readOnly, defaultPlacement = "instagram" }) => {
+  const [placement, setPlacement] = useState<"instagram" | "facebook">(defaultPlacement);
   const checks = checkMetaAd(value);
   const len = value.primaryText.length;
 
