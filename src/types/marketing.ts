@@ -210,7 +210,7 @@ export interface FranchiseCampaignQualityChecklist {
   recuperoVerificado: boolean; // 18 a 24 meses, casos en 12
   regaliasCanonCero: boolean; // 0% regalías y 0% canon
   ciudadesVerificadas: boolean; // Solo Santa Fe, Santo Tomé, Córdoba
-  destinoCanonica: boolean; // https://kolaccesorios.com.ar/franquicia/
+  destinoCanonica: boolean; // https://kolaccesorios.com/franquicia/
   utmValidos: boolean; // minúsculas, sin tildes, con guiones
   eventoConversionUnico: boolean; // lead_franquicia únicamente
 }
@@ -259,6 +259,11 @@ export interface FranchiseCampaignItem {
     descriptions: string[];
     keywords: Array<{ keyword: string; matchType: "exact" | "phrase" | "broad" }>;
     finalUrlSuffix: string;
+    // Opcionales (vista previa realista de Google Búsqueda)
+    displayPath?: [string, string];
+    sitelinks?: Array<{ title: string; line1: string; line2: string }>;
+    callouts?: string[];
+    negativeKeywords?: string[];
   };
   metaAdData?: {
     primaryText: string;
@@ -267,6 +272,11 @@ export interface FranchiseCampaignItem {
     callToAction: string;
     mediaUrl: string;
     feedPlacement: string;
+    // Opcionales (vista previa realista de Instagram / Facebook)
+    pageName?: string;
+    avatarTheme?: "claro" | "oscuro";
+    showSeal?: boolean;
+    sealVariant?: "claro" | "oscuro";
   };
   qualityChecklist: FranchiseCampaignQualityChecklist;
   approvalHistory: CampaignApprovalRecord[];

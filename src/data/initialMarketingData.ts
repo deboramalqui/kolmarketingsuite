@@ -414,7 +414,7 @@ export const VERIFIED_BRAND_FACTS = [
   {
     id: "locales",
     label: "Locales activos",
-    text: "10 locales en el país (5 propios y 5 franquicias) en 7 direcciones",
+    text: "10 locales (5 propios y 5 franquicias) en 7 direcciones",
     value: "10 locales",
     rule: "Nunca '7 locales' ni 'sucursales'; son 10 locales en 7 direcciones físicas.",
   },
@@ -435,7 +435,7 @@ export const VERIFIED_BRAND_FACTS = [
   {
     id: "destino_canonica",
     label: "Destino oficial",
-    text: "https://kolaccesorios.com.ar/franquicia/",
+    text: "https://kolaccesorios.com/franquicia/",
     value: "/franquicia/",
     rule: "Todo enlace de campaña debe apuntar a la ruta canónica del hub con UTM.",
   },
@@ -463,7 +463,7 @@ export const INITIAL_FRANCHISE_CAMPAIGNS: FranchiseCampaignItem[] = [
     targetLocations: ["Santa Fe", "Santo Tomé", "Córdoba Capital"],
     format: "isla",
     objective: "lead_franquicia",
-    landingPageUrl: "https://kolaccesorios.com.ar/franquicia/",
+    landingPageUrl: "https://kolaccesorios.com/franquicia/",
     utmParams: {
       source: "google",
       medium: "cpc",
@@ -471,7 +471,7 @@ export const INITIAL_FRANCHISE_CAMPAIGNS: FranchiseCampaignItem[] = [
       term: "{keyword}",
       content: "anuncio-inversor-isla",
       finalUrlWithUtm:
-        "https://kolaccesorios.com.ar/franquicia/?utm_source=google&utm_medium=cpc&utm_campaign=franquicia-nov-busqueda-santafe-cordoba&utm_term={keyword}&utm_content=anuncio-inversor-isla",
+        "https://kolaccesorios.com/franquicia/?utm_source=google&utm_medium=cpc&utm_campaign=franquicia-nov-busqueda-santafe-cordoba&utm_term={keyword}&utm_content=anuncio-inversor-isla",
     },
     googleAdData: {
       headlines: [
@@ -537,7 +537,7 @@ export const INITIAL_FRANCHISE_CAMPAIGNS: FranchiseCampaignItem[] = [
     targetLocations: ["Córdoba Capital", "Santa Fe"],
     format: "isla",
     objective: "lead_franquicia",
-    landingPageUrl: "https://kolaccesorios.com.ar/franquicia/",
+    landingPageUrl: "https://kolaccesorios.com/franquicia/",
     utmParams: {
       source: "instagram",
       medium: "paid_social",
@@ -545,11 +545,11 @@ export const INITIAL_FRANCHISE_CAMPAIGNS: FranchiseCampaignItem[] = [
       term: "perfil-inversor",
       content: "banner-isla-shopping",
       finalUrlWithUtm:
-        "https://kolaccesorios.com.ar/franquicia/?utm_source=instagram&utm_medium=paid_social&utm_campaign=franquicia-nov-instagram-feed-isla&utm_content=banner-isla-shopping",
+        "https://kolaccesorios.com/franquicia/?utm_source=instagram&utm_medium=paid_social&utm_campaign=franquicia-nov-instagram-feed-isla&utm_content=banner-isla-shopping",
     },
     metaAdData: {
       primaryText:
-        "¿Buscás una franquicia con bajo costo fijo en tecnología? KOL cuenta con 10 locales en el país. Inversión inicial con US$ 3.000 de derecho de marca, 0 % de regalías y 0 % de canon publicitario.",
+        "¿Buscás una franquicia con bajo costo fijo en tecnología? KOL cuenta con 10 locales. Inversión inicial con US$ 3.000 de derecho de marca, 0 % de regalías y 0 % de canon publicitario.",
       headline: "Franquicia KOL · Formato Isla",
       description: "Recupero estimado de 18 a 24 meses, con casos en 12",
       callToAction: "Más información",
@@ -571,3 +571,7 @@ export const INITIAL_FRANCHISE_CAMPAIGNS: FranchiseCampaignItem[] = [
       "Capitaliza las 40 visitas actuales que llegan desde Instagram orgánico para medir si el tráfico pago califica y completa el formulario.",
   },
 ];
+
+// Dominio del sitio de Kol usado en avisos y enlaces de campañas (el de GA4 y Search Console).
+export const SITE_DOMAIN = "kolaccesorios.com";
+export const SITE_FRANQUICIA_URL = `https://${SITE_DOMAIN}/franquicia/`;
