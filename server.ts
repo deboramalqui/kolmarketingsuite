@@ -4,6 +4,7 @@ import fs from "fs";
 import { fileURLToPath } from "url";
 import dotenv from "dotenv";
 import { GoogleGenAI, Type, type FunctionDeclaration } from "@google/genai";
+import { ga4Status, ga4CampaignRows } from "./ga4Server";
 
 dotenv.config();
 
@@ -215,6 +216,21 @@ async function startServer() {
     } catch (e) {
       console.error("Error guardando la configuración del servidor:", e);
       res.status(500).json({ error: "Error al persistir configuración en servidor" });
+    }
+  });
+
+  // Resultados de campañas desde GA4 (las credenciales viven solo en el servidor)
+  app.get("/api/ga4/status", async (req, res) => {
+    res.json(await ga4Status(req.query.test === "1"));
+  });
+
+  app.post("/api/ga4/campaign-results", async (req, res) => {
+    try {
+      const { startDate = "28daysAgo", endDate = "today" } = req.body || {};
+      const rows = await ga4CampaignRows(String(startDate), String(endDate));
+      res.json({ rows, fetchedAt: new Date().toISOString() });
+    } catch (e) {
+      res.status(502).json({ error: e instanceof Error ? e.message : "No se pudieron leer los resultados de GA4" });
     }
   });
 

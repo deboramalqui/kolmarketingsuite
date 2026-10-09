@@ -354,8 +354,8 @@ export interface FranchiseCampaignItem {
     costPerConsulta: number;
     daysRunning: number;
     statusMessage?: string;
-    /** Siempre "manual" por ahora: la persona carga los números desde la plataforma */
-    source?: "manual";
+    /** "manual": los cargó una persona; "ga4": se leyeron de Google Analytics */
+    source?: "manual" | "ga4";
     updatedAt?: string;
     visits?: number;
     citas?: number;

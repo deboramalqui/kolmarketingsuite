@@ -6,6 +6,7 @@ import { assetFits, fileToAsset, META_FORMATS, ratioLabel } from "./assetLibrary
 import { useCopy } from "./useCopy";
 import { CopyButton } from "./CopyButton";
 import { EventStatus, MEASUREMENT_EVENTS } from "./campaignModel";
+import { Ga4Panel } from "./Ga4Panel";
 
 interface Props {
   assets: GalleryAsset[];
@@ -89,6 +90,8 @@ export const DataAndFilesView: React.FC<Props> = ({ assets, onChange, events, on
           <CopyButton text={SITE_FRANQUICIA_URL} id="dest" copiedKey={copiedKey} onCopy={copy} />
         </div>
       </section>
+
+      <Ga4Panel />
 
       <section className="space-y-4">
         <div>

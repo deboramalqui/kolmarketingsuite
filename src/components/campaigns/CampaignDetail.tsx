@@ -10,6 +10,7 @@ import { CopyButton } from "./CopyButton";
 import { AdChecklist } from "../ads/AdChecklist";
 import { CampaignAdsTab } from "../ads/CampaignAdsTab";
 import { AssetActions } from "./assetLibrary";
+import { Ga4SyncBar } from "./Ga4SyncBar";
 
 type Tab = "resumen" | "anuncios" | "medicion" | "revision" | "paquete" | "resultados";
 
@@ -347,8 +348,22 @@ export const CampaignDetail: React.FC<Props> = ({ campaign: c, assets, events, i
                 {c.publication?.platformCampaignId && <span className="block text-[12.5px] text-[#46413F] mt-1">ID en la plataforma: <code>{c.publication.platformCampaignId}</code></span>}
               </div>
               <div className="p-4 bg-white border border-[#C9C3BE] rounded-[10px] space-y-3">
-                <span className="font-bold text-[14px] block">Números (los cargás a mano desde Google Ads o Meta y GA4)</span>
-                <p className="text-[12.5px] text-[#6A6460]">Cuando se conecte GA4, las consultas se van a leer solas con el nombre de campaña del UTM: <code>{utm.campaign}</code>.</p>
+                <span className="font-bold text-[14px] block">Resultados por anuncio</span>
+                <Ga4SyncBar
+                  campaigns={[c]}
+                  label="Traer los números de GA4"
+                  onUpdate={(next) => {
+                    onSave(next);
+                    const out: typeof rows = {};
+                    getAds(next).forEach((ad) => {
+                      const r = next.livePerformance?.byAd?.find((x) => x.adId === ad.id);
+                      out[ad.id] = r ? { spend: r.spend, clicks: r.clicks, visits: r.visits, consultas: r.consultas, citas: r.citas } : { ...emptyRow };
+                    });
+                    setRows(out);
+                  }}
+                />
+                <p className="text-[12.5px] text-[#6A6460]">También podés cargarlos a mano. Si GA4 trae un valor, reemplaza el de esa celda; el gasto y los clics de Meta se siguen cargando a mano.</p>
+                <p className="text-[12.5px] text-[#6A6460]">GA4 las busca con <code>utm_campaign={utm.campaign}</code>{c.livePerformance?.source === "ga4" ? ` · última lectura de GA4: ${c.livePerformance.updatedAt}` : ""}.</p>
                 <div className="overflow-x-auto">
                   <table className="w-full text-[13px] border-collapse min-w-[560px]">
                     <thead>

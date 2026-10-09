@@ -6,3 +6,5 @@ coverage/
 *.log
 .env*
 !.env.example
+# Credenciales guardadas por el servidor (nunca al repositorio)
+.kol_accounts_config.json

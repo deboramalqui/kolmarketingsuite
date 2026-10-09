@@ -2,10 +2,12 @@ import React from "react";
 import { FranchiseCampaignItem } from "../../types/marketing";
 import { formatMoney, getAds, platformLabel, utmSlug } from "./campaignModel";
 import { StatusBadge } from "./StatusBadge";
+import { Ga4SyncBar } from "./Ga4SyncBar";
 
 interface Props {
   campaigns: FranchiseCampaignItem[];
   onOpen: (id: string, tab?: "resumen" | "anuncios" | "paquete") => void;
+  onUpdate: (c: FranchiseCampaignItem) => void;
 }
 
 const NONE = "Sin campaña paraguas";
@@ -21,7 +23,7 @@ const Tile: React.FC<{ label: string; value: string; note?: string }> = ({ label
 );
 
 /** Vista "Por campaña paraguas": el total y el desglose por plataforma y por anuncio */
-export const InitiativesView: React.FC<Props> = ({ campaigns, onOpen }) => {
+export const InitiativesView: React.FC<Props> = ({ campaigns, onOpen, onUpdate }) => {
   const groups = new Map<string, FranchiseCampaignItem[]>();
   campaigns.forEach((c) => {
     const k = c.initiative?.trim() || NONE;
@@ -35,9 +37,11 @@ export const InitiativesView: React.FC<Props> = ({ campaigns, onOpen }) => {
         y adentro de cada una, varios anuncios. Todas llevan el mismo <code>utm_campaign</code>: así en GA4 ves el total de la paraguas y también cuánto trajo cada plataforma y cada anuncio.
       </div>
 
+      <Ga4SyncBar campaigns={campaigns.filter((c) => (c.status === "en_vivo" || c.status === "cerrada") && !c.id.startsWith("demo-"))} onUpdate={onUpdate} />
+
       {Array.from(groups.entries()).map(([name, list]) => {
         const demo = list.every(isDemo);
-        const withData = list.filter((c) => c.livePerformance?.source === "manual");
+        const withData = list.filter((c) => !!c.livePerformance?.source);
         const has = withData.length > 0;
         const t = withData.reduce(
           (a, c) => ({ spend: a.spend + (c.livePerformance?.spend ?? 0), visits: a.visits + (c.livePerformance?.visits ?? 0), consultas: a.consultas + (c.livePerformance?.consultas ?? 0), citas: a.citas + (c.livePerformance?.citas ?? 0) }),
@@ -101,7 +105,7 @@ export const InitiativesView: React.FC<Props> = ({ campaigns, onOpen }) => {
                 <tbody>
                   {list.map((c) => {
                     const lp = c.livePerformance;
-                    const ok = lp?.source === "manual";
+                    const ok = !!lp?.source;
                     return (
                       <React.Fragment key={c.id}>
                         <tr className="border-t-2 border-[#C9C3BE] bg-[#FAF8F6]">

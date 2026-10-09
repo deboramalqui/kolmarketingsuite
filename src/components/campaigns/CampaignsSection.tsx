@@ -123,6 +123,7 @@ export const CampaignsSection: React.FC<Props> = ({ franchiseCampaigns, onSaveCa
           onNew={() => { setSuggested(false); setCreating(true); }}
           onNewSuggested={() => { setSuggested(true); setCreating(true); }}
           onOpen={(id, tab) => { setSelectedId(id); setInitialTab(tab || "resumen"); }}
+          onUpdate={onSaveCampaign}
           onDelete={onDeleteCampaign}
           hasSamples={campaigns.some(isSampleCampaign)}
           onLoadSamples={() => buildSampleCampaigns().filter((c) => !campaigns.some((x) => x.id === c.id)).forEach(onSaveCampaign)}

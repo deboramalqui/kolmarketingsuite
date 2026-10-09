@@ -10,6 +10,7 @@ interface Props {
   onNew: () => void;
   onNewSuggested: () => void;
   onOpen: (id: string, tab?: "resumen" | "anuncios" | "paquete") => void;
+  onUpdate: (c: FranchiseCampaignItem) => void;
   onDelete: (id: string) => void;
   onLoadSamples: () => void;
   onRemoveSamples: () => void;
@@ -29,7 +30,7 @@ const Kpi: React.FC<{ label: string; value: string; note: string }> = ({ label, 
   </div>
 );
 
-export const CampaignList: React.FC<Props> = ({ campaigns, onNew, onNewSuggested, onOpen, onDelete, onLoadSamples, onRemoveSamples, hasSamples, onLoadDemo, onRemoveDemo, hasDemo }) => {
+export const CampaignList: React.FC<Props> = ({ campaigns, onNew, onNewSuggested, onOpen, onUpdate, onDelete, onLoadSamples, onRemoveSamples, hasSamples, onLoadDemo, onRemoveDemo, hasDemo }) => {
   const [view, setView] = useState<"lista" | "paraguas">("lista");
   const [query, setQuery] = useState("");
   const [type, setType] = useState<"todas" | CampaignPlatform>("todas");
@@ -50,7 +51,7 @@ export const CampaignList: React.FC<Props> = ({ campaigns, onNew, onNewSuggested
   const real = campaigns.filter((c) => !c.id.startsWith("demo-"));
   const live = real.filter((c) => c.status === "en_vivo");
   const committed = real.filter((c) => c.status === "lista_para_publicar" || c.status === "en_vivo").reduce((s, c) => s + (c.budget.totalCap || 0), 0);
-  const withResults = real.filter((c) => c.livePerformance && c.livePerformance.source === "manual");
+  const withResults = real.filter((c) => c.livePerformance && !!c.livePerformance.source);
   const consultas = withResults.reduce((s, c) => s + (c.livePerformance?.consultas || 0), 0);
 
   if (campaigns.length === 0) {
@@ -103,7 +104,7 @@ export const CampaignList: React.FC<Props> = ({ campaigns, onNew, onNewSuggested
         ))}
       </div>
 
-      {view === "paraguas" && <InitiativesView campaigns={campaigns} onOpen={onOpen} />}
+      {view === "paraguas" && <InitiativesView campaigns={campaigns} onOpen={onOpen} onUpdate={onUpdate} />}
 
       {view === "lista" && (
       <>
@@ -183,7 +184,7 @@ export const CampaignList: React.FC<Props> = ({ campaigns, onNew, onNewSuggested
                   <td className="py-3.5 px-3 whitespace-nowrap text-[13px]">{platformLabel(c)}</td>
                   <td className="py-3.5 px-3 text-[13px] capitalize">{c.mode}</td>
                   <td className="py-3.5 px-3 whitespace-nowrap tabular-nums text-[13px]">{formatMoney(c.budget.totalCap, c.budget.currency)}</td>
-                  <td className="py-3.5 px-3 text-right tabular-nums text-[13px]">{c.livePerformance?.source === "manual" ? c.livePerformance.consultas : "—"}</td>
+                  <td className="py-3.5 px-3 text-right tabular-nums text-[13px]">{!!c.livePerformance?.source ? c.livePerformance.consultas : "—"}</td>
                   <td className="py-3.5 px-4 text-right whitespace-nowrap">
                     <div className="flex items-center justify-end gap-2">
                       <button type="button" onClick={() => onOpen(c.id, "resumen")} className="px-3 py-1 bg-[#FAF8F6] border border-[#C9C3BE] hover:bg-[#E7E3DF] text-[#161418] rounded-[6px] text-[12px] font-bold kol-focus">Ver ficha</button>
