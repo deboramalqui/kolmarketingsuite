@@ -127,7 +127,7 @@ export async function oauthExchange(code: string, redirectUri: string): Promise<
   try {
     fs.writeFileSync(OAUTH_FILE, JSON.stringify({ refreshToken: body.refresh_token, email, savedAt: new Date().toISOString() }), { mode: 0o600 });
   } catch {}
-  cached = null;
+  delete cachedTokens.oauth;
   return { refreshToken: body.refresh_token, email };
 }
 
@@ -147,24 +147,27 @@ async function accessTokenFromRefresh(saved: SavedOauth): Promise<string> {
     const expired = body.error === "invalid_grant";
     throw new Error(expired ? "La autorización de Google venció o fue revocada: volvé a tocar “Autorizar con Google”." : `Google no aceptó la autorización: ${body.error_description || res.status}`);
   }
-  cached = { token: body.access_token, exp: Date.now() + (body.expires_in ?? 3600) * 1000 };
-  return cached.token;
+  cachedTokens.oauth = { token: body.access_token, exp: Date.now() + (body.expires_in ?? 3600) * 1000 };
+  return body.access_token;
 }
 
-type Mode = { kind: "service"; cred: Credentials } | { kind: "oauth"; saved: SavedOauth } | null;
+type Mode = { kind: "service"; cred: Credentials } | { kind: "oauth"; saved: SavedOauth };
 
-function currentMode(): Mode {
+/** Todas las formas de conectarse que están cargadas, en orden de preferencia. Si una falla se prueba la siguiente. */
+function availableModes(): Mode[] {
+  const out: Mode[] = [];
   const cred = readCredentials();
-  if (cred) return { kind: "service", cred };
+  if (cred) out.push({ kind: "service", cred });
   const saved = readSavedOauth();
-  if (saved && oauthClientConfigured()) return { kind: "oauth", saved };
-  return null;
+  if (saved && oauthClientConfigured()) out.push({ kind: "oauth", saved });
+  return out;
 }
 
-let cached: { token: string; exp: number } | null = null;
+const cachedTokens: Partial<Record<Mode["kind"], { token: string; exp: number }>> = {};
 
-async function accessToken(mode: NonNullable<Mode>): Promise<string> {
-  if (cached && cached.exp > Date.now() + 60_000) return cached.token;
+async function accessToken(mode: Mode): Promise<string> {
+  const hit = cachedTokens[mode.kind];
+  if (hit && hit.exp > Date.now() + 60_000) return hit.token;
   if (mode.kind === "oauth") return accessTokenFromRefresh(mode.saved);
   const cred = mode.cred;
   const res = await fetch("https://oauth2.googleapis.com/token", {
@@ -174,8 +177,25 @@ async function accessToken(mode: NonNullable<Mode>): Promise<string> {
   });
   const body = (await res.json()) as { access_token?: string; expires_in?: number; error_description?: string };
   if (!res.ok || !body.access_token) throw new Error(`Google no aceptó la cuenta de servicio: ${body.error_description || res.status}`);
-  cached = { token: body.access_token, exp: Date.now() + (body.expires_in ?? 3600) * 1000 };
-  return cached.token;
+  cachedTokens.service = { token: body.access_token, exp: Date.now() + (body.expires_in ?? 3600) * 1000 };
+  return cachedTokens.service.token;
+}
+
+const modeName = (m: Mode) => (m.kind === "service" ? `cuenta de servicio ${m.cred.clientEmail}` : `autorización de ${m.saved.email || "una cuenta de Google"}`);
+
+/** Corre la consulta con la primera forma de conexión que funcione */
+async function withAnyMode<T>(fn: (token: string) => Promise<T>): Promise<{ result: T; mode: Mode }> {
+  const modes = availableModes();
+  if (modes.length === 0) throw new Error("GA4 no está conectado todavía");
+  const errors: string[] = [];
+  for (const m of modes) {
+    try {
+      return { result: await fn(await accessToken(m)), mode: m };
+    } catch (e) {
+      errors.push(`${m.kind === "service" ? "Cuenta de servicio" : "Autorización de Google"}: ${e instanceof Error ? e.message : "error"}`);
+    }
+  }
+  throw new Error(errors.join(" · "));
 }
 
 const propertyId = () => String(process.env.GA4_PROPERTY_ID || DEFAULT_PROPERTY).replace(/^properties\//, "").trim();
@@ -256,9 +276,9 @@ export interface Ga4StatusInfo {
 }
 
 export async function ga4Status(test: boolean): Promise<Ga4StatusInfo> {
-  const mode = currentMode();
+  const modes = availableModes();
   const oauthClient = oauthClientConfigured();
-  if (!mode) {
+  if (modes.length === 0) {
     return {
       configured: false,
       propertyId: propertyId(),
@@ -266,37 +286,35 @@ export async function ga4Status(test: boolean): Promise<Ga4StatusInfo> {
       message: oauthClient ? "Todavía no está autorizado: tocá “Autorizar con Google” e iniciá sesión con la cuenta que tiene acceso a GA4." : "Todavía no está conectado: falta la cuenta de servicio o la autorización de Google.",
     };
   }
-  const who = mode.kind === "service" ? `cuenta de servicio ${mode.cred.clientEmail}` : `autorización de ${mode.saved.email || "una cuenta de Google"}`;
-  if (!test) return { configured: true, mode: mode.kind, propertyId: propertyId(), oauthClient, message: `Credenciales cargadas (${who}). Falta probar la conexión.` };
+  if (!test) return { configured: true, mode: modes[0].kind, propertyId: propertyId(), oauthClient, message: `Credenciales cargadas (${modes.map(modeName).join(" y ")}). Falta probar la conexión.` };
   try {
-    const token = await accessToken(mode);
-    await runReport(token, { dateRanges: [{ startDate: "7daysAgo", endDate: "today" }], metrics: [{ name: "sessions" }], limit: 1 });
-    return { configured: true, mode: mode.kind, propertyId: propertyId(), oauthClient, ok: true, message: `Conexión correcta con ${who}: se pudo leer la propiedad de GA4.` };
+    const { mode } = await withAnyMode((token) => runReport(token, { dateRanges: [{ startDate: "7daysAgo", endDate: "today" }], metrics: [{ name: "sessions" }], limit: 1 }));
+    return { configured: true, mode: mode.kind, propertyId: propertyId(), oauthClient, ok: true, message: `Conexión correcta con ${modeName(mode)}: se pudo leer la propiedad de GA4.` };
   } catch (e) {
-    return { configured: true, mode: mode.kind, propertyId: propertyId(), oauthClient, ok: false, message: e instanceof Error ? e.message : "No se pudo conectar" };
+    return { configured: true, mode: modes[0].kind, propertyId: propertyId(), oauthClient, ok: false, message: e instanceof Error ? e.message : "No se pudo conectar" };
   }
 }
 
 export async function ga4CampaignRows(startDate: string, endDate: string): Promise<CampaignRow[]> {
-  const mode = currentMode();
-  if (!mode) throw new Error("GA4 no está conectado todavía");
-  const token = await accessToken(mode);
   const dateRanges = [{ startDate, endDate }];
-  const [traffic, events] = await Promise.all([
-    runReport(token, {
-      dateRanges,
-      dimensions: baseDims,
-      metrics: [{ name: "sessions" }, { name: "advertiserAdCost" }, { name: "advertiserAdClicks" }],
-      dimensionFilter: mediumFilter,
-      limit: 1000,
-    }),
-    runReport(token, {
-      dateRanges,
-      dimensions: [...baseDims, { name: "eventName" }],
-      metrics: [{ name: "eventCount" }],
-      dimensionFilter: { andGroup: { expressions: [mediumFilter, { filter: { fieldName: "eventName", inListFilter: { values: TRACKED_EVENTS } } }] } },
-      limit: 1000,
-    }),
-  ]);
-  return mergeReports(traffic, events);
+  const { result } = await withAnyMode(async (token) => {
+    const [traffic, events] = await Promise.all([
+      runReport(token, {
+        dateRanges,
+        dimensions: baseDims,
+        metrics: [{ name: "sessions" }, { name: "advertiserAdCost" }, { name: "advertiserAdClicks" }],
+        dimensionFilter: mediumFilter,
+        limit: 1000,
+      }),
+      runReport(token, {
+        dateRanges,
+        dimensions: [...baseDims, { name: "eventName" }],
+        metrics: [{ name: "eventCount" }],
+        dimensionFilter: { andGroup: { expressions: [mediumFilter, { filter: { fieldName: "eventName", inListFilter: { values: TRACKED_EVENTS } } }] } },
+        limit: 1000,
+      }),
+    ]);
+    return mergeReports(traffic, events);
+  });
+  return result;
 }
