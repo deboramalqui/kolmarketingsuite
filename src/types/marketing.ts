@@ -224,10 +224,25 @@ export interface CampaignApprovalRecord {
   comment?: string;
 }
 
+export type CampaignPlatform = "google_search" | "google_display" | "meta_instagram";
+
+/** Foto o logo de la galería de "Datos y archivos" */
+export interface GalleryAsset {
+  id: string;
+  name: string;
+  url: string;
+  kind: "foto" | "logo";
+  width: number;
+  height: number;
+  /** La persona confirmó que Kol tiene permiso para usar la imagen en anuncios */
+  permission: boolean;
+  addedAt: string;
+}
+
 export interface FranchiseCampaignItem {
   id: string;
   name: string;
-  platform: "google_search" | "meta_instagram";
+  platform: CampaignPlatform;
   mode: CampaignLifecycleMode;
   status: CampaignLifecycleStatus;
   createdAt: string;
@@ -265,12 +280,26 @@ export interface FranchiseCampaignItem {
     callouts?: string[];
     negativeKeywords?: string[];
   };
+  displayAdData?: {
+    businessName: string;
+    shortHeadlines: string[];
+    longHeadline: string;
+    descriptions: string[];
+    callToAction: string;
+    landscapeAssetId?: string;
+    squareAssetId?: string;
+    logoSquareAssetId?: string;
+    logoWideAssetId?: string;
+    finalUrlSuffix?: string;
+  };
   metaAdData?: {
     primaryText: string;
     headline: string;
     description: string;
     callToAction: string;
     mediaUrl: string;
+    /** Imagen elegida de la galería (tiene prioridad sobre mediaUrl) */
+    mediaAssetId?: string;
     feedPlacement: string;
     // Opcionales (vista previa realista de Instagram / Facebook)
     pageName?: string;
@@ -278,18 +307,28 @@ export interface FranchiseCampaignItem {
     showSeal?: boolean;
     sealVariant?: "claro" | "oscuro";
   };
-  qualityChecklist: FranchiseCampaignQualityChecklist;
+  /** Obsoleto: el chequeo ahora se calcula en vivo; no se guarda */
+  qualityChecklist?: FranchiseCampaignQualityChecklist;
   approvalHistory: CampaignApprovalRecord[];
   livePerformance?: {
     spend: number;
-    impressions: number;
+    impressions?: number;
     clicks: number;
     consultas: number;
     costPerConsulta: number;
     daysRunning: number;
     statusMessage?: string;
+    /** Siempre "manual" por ahora: la persona carga los números desde la plataforma */
+    source?: "manual";
+    updatedAt?: string;
   };
   learningsNotes?: string;
+  /** Datos de publicación cargados a mano después de crear la campaña en la plataforma */
+  publication?: {
+    platformCampaignId?: string;
+    publishedAt?: string;
+    publishedBy?: string;
+  };
 }
 
 export interface ConnectedAccountsConfig {

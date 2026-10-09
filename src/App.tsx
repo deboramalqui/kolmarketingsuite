@@ -196,7 +196,12 @@ export default function App() {
   const [franchiseCampaigns, setFranchiseCampaigns] = useState<FranchiseCampaignItem[]>(() => {
     try {
       const saved = localStorage.getItem("kol_marketing_franchise_campaigns");
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        // Se descartan las campañas de ejemplo de versiones anteriores (tenían datos inventados)
+        const SAMPLE_IDS = ["cmp-nov-search-01", "cmp-nov-meta-02"];
+        const parsed: FranchiseCampaignItem[] = JSON.parse(saved);
+        return parsed.filter((c) => !SAMPLE_IDS.includes(c.id));
+      }
     } catch {}
     return INITIAL_FRANCHISE_CAMPAIGNS;
   });

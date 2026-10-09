@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { Upload } from "lucide-react";
+import { GalleryAsset } from "../../types/marketing";
+import { AssetPicker } from "./AssetPicker";
 import { MetaAdPreview } from "./AdPreviews";
 import { AdChecklist } from "./AdChecklist";
 import { checkMetaAd, META_PRIMARY_VISIBLE_CHARS } from "./adChecks";
@@ -14,14 +15,14 @@ export interface MetaAdFields {
   headline: string;
   description: string;
   callToAction: string;
-  mediaUrl: string;
+  mediaAssetId?: string;
 }
 
 interface Props {
   value: MetaAdFields;
   onChange: (patch: Partial<MetaAdFields>) => void;
-  galleryImages: Array<{ id: string; name: string; url: string }>;
-  onUploadPhoto?: (e: React.ChangeEvent<HTMLInputElement>, onUploaded: (url: string) => void) => void;
+  assets: GalleryAsset[];
+  onGoToFiles?: () => void;
   readOnly?: boolean;
   defaultPlacement?: "instagram" | "facebook";
 }
@@ -52,9 +53,16 @@ const Seg: React.FC<{ options: Array<[string, string]>; value: string; onPick: (
   </div>
 );
 
-export const MetaAdEditor: React.FC<Props> = ({ value, onChange, galleryImages, onUploadPhoto, readOnly, defaultPlacement = "instagram" }) => {
+export const MetaAdEditor: React.FC<Props> = ({ value, onChange, assets, onGoToFiles, readOnly, defaultPlacement = "instagram" }) => {
   const [placement, setPlacement] = useState<"instagram" | "facebook">(defaultPlacement);
-  const checks = checkMetaAd(value);
+  const chosen = assets.find((a) => a.id === value.mediaAssetId);
+  const checks = checkMetaAd({
+    primaryText: value.primaryText,
+    headline: value.headline,
+    description: value.description,
+    mediaUrl: chosen?.url || "",
+    imagePermission: chosen ? chosen.permission : undefined,
+  });
   const len = value.primaryText.length;
 
   return (
@@ -119,17 +127,21 @@ export const MetaAdEditor: React.FC<Props> = ({ value, onChange, galleryImages, 
         </div>
 
         <div className="space-y-2">
-          <label className="block text-[13px] font-bold text-[#161418]" htmlFor="meta-img">Imagen del anuncio</label>
-          <select id="meta-img" className={inputCls} disabled={readOnly} value={value.mediaUrl} onChange={(e) => onChange({ mediaUrl: e.target.value })}>
-            {galleryImages.map((g) => (
-              <option key={g.id} value={g.url}>{g.name}</option>
-            ))}
-          </select>
-          {!readOnly && onUploadPhoto && (
-            <label className="inline-flex items-center gap-2 px-3 py-1.5 bg-[#161418] text-[#FAF8F6] rounded-[8px] text-[12.5px] font-semibold cursor-pointer">
-              <Upload className="w-3.5 h-3.5" /> Subir una imagen
-              <input type="file" accept="image/*" className="sr-only" onChange={(e) => onUploadPhoto(e, (url) => onChange({ mediaUrl: url }))} />
-            </label>
+          <AssetPicker
+            label="Imagen del anuncio"
+            hint="Cuadrada 1:1 o vertical 4:5, mín. 600 px"
+            slot="meta"
+            kind="foto"
+            assets={assets}
+            value={value.mediaAssetId}
+            onChange={(id) => onChange({ mediaAssetId: id })}
+            disabled={readOnly}
+            required
+          />
+          {onGoToFiles && (
+            <button type="button" onClick={onGoToFiles} className="text-[12.5px] font-bold text-[#C51172] hover:underline">
+              Subir fotos en Datos y archivos →
+            </button>
           )}
           <div className="flex flex-wrap items-center gap-3 pt-1">
             <label className="inline-flex items-center gap-2 text-[13px] text-[#161418]">
@@ -168,7 +180,7 @@ export const MetaAdEditor: React.FC<Props> = ({ value, onChange, galleryImages, 
           description={value.description}
           callToAction={value.callToAction}
           domain={SITE_DOMAIN}
-          mediaUrl={value.mediaUrl}
+          mediaUrl={chosen?.url || ""}
           showSeal={value.showSeal}
           sealVariant={value.sealVariant}
         />

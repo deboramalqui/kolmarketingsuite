@@ -1,8 +1,10 @@
 import React, { useState } from "react";
-import { FranchiseCampaignItem } from "../../types/marketing";
+import { FranchiseCampaignItem, GalleryAsset } from "../../types/marketing";
 import { MetaAdEditor, MetaAdFields } from "./MetaAdEditor";
 import { GoogleSearchAdEditor, GoogleAdFields } from "./GoogleSearchAdEditor";
+import { DisplayAdEditor, DisplayAdFields } from "./DisplayAdEditor";
 import { parseKeywords, stringifyKeywords } from "./adChecks";
+import { metaPlacementOf, todayISO } from "../campaigns/campaignModel";
 
 const EDITABLE: FranchiseCampaignItem["status"][] = ["idea", "borrador", "devuelta"];
 
@@ -17,7 +19,7 @@ export function metaFieldsFrom(c: FranchiseCampaignItem): MetaAdFields {
     headline: m.headline,
     description: m.description,
     callToAction: m.callToAction,
-    mediaUrl: m.mediaUrl,
+    mediaAssetId: m.mediaAssetId,
   };
 }
 
@@ -34,31 +36,45 @@ export function googleFieldsFrom(c: FranchiseCampaignItem): GoogleAdFields {
   };
 }
 
+export function displayFieldsFrom(c: FranchiseCampaignItem): DisplayAdFields {
+  const d = c.displayAdData!;
+  return {
+    businessName: d.businessName,
+    shortHeadlines: d.shortHeadlines,
+    longHeadline: d.longHeadline,
+    descriptions: d.descriptions,
+    callToAction: d.callToAction,
+    landscapeAssetId: d.landscapeAssetId,
+    squareAssetId: d.squareAssetId,
+    logoSquareAssetId: d.logoSquareAssetId,
+    logoWideAssetId: d.logoWideAssetId,
+  };
+}
+
 interface Props {
   campaign: FranchiseCampaignItem;
-  galleryImages: Array<{ id: string; name: string; url: string }>;
-  onUploadPhoto: (e: React.ChangeEvent<HTMLInputElement>, onUploaded: (url: string) => void) => void;
+  assets: GalleryAsset[];
+  onGoToFiles: () => void;
   onSaveCampaign: (c: FranchiseCampaignItem) => void;
 }
 
 /** Pestaña "Anuncios y creativos" de la ficha: editable en el lugar, con vista previa realista. */
-export const CampaignAdsTab: React.FC<Props> = ({ campaign, galleryImages, onUploadPhoto, onSaveCampaign }) => {
-  const isMeta = campaign.platform === "meta_instagram";
-  const [meta, setMeta] = useState<MetaAdFields | null>(isMeta && campaign.metaAdData ? metaFieldsFrom(campaign) : null);
-  const [google, setGoogle] = useState<GoogleAdFields | null>(!isMeta && campaign.googleAdData ? googleFieldsFrom(campaign) : null);
+export const CampaignAdsTab: React.FC<Props> = ({ campaign, assets, onGoToFiles, onSaveCampaign }) => {
+  const [meta, setMeta] = useState<MetaAdFields | null>(campaign.platform === "meta_instagram" && campaign.metaAdData ? metaFieldsFrom(campaign) : null);
+  const [google, setGoogle] = useState<GoogleAdFields | null>(campaign.platform === "google_search" && campaign.googleAdData ? googleFieldsFrom(campaign) : null);
+  const [display, setDisplay] = useState<DisplayAdFields | null>(campaign.platform === "google_display" && campaign.displayAdData ? displayFieldsFrom(campaign) : null);
   const [dirty, setDirty] = useState(false);
   const [savedMsg, setSavedMsg] = useState(false);
 
   const editable = EDITABLE.includes(campaign.status);
-  const today = new Date().toISOString().split("T")[0];
 
   const save = () => {
+    const base = { ...campaign, updatedAt: todayISO() };
     if (meta && campaign.metaAdData) {
-      onSaveCampaign({ ...campaign, updatedAt: today, metaAdData: { ...campaign.metaAdData, ...meta } });
+      onSaveCampaign({ ...base, metaAdData: { ...campaign.metaAdData, ...meta, mediaUrl: "" } });
     } else if (google && campaign.googleAdData) {
       onSaveCampaign({
-        ...campaign,
-        updatedAt: today,
+        ...base,
         googleAdData: {
           ...campaign.googleAdData,
           headlines: google.headlines,
@@ -70,6 +86,8 @@ export const CampaignAdsTab: React.FC<Props> = ({ campaign, galleryImages, onUpl
           negativeKeywords: google.negativeKeywordsText.split("\n").map((k) => k.trim()).filter(Boolean),
         },
       });
+    } else if (display && campaign.displayAdData) {
+      onSaveCampaign({ ...base, displayAdData: { ...campaign.displayAdData, ...display } });
     }
     setDirty(false);
     setSavedMsg(true);
@@ -77,18 +95,19 @@ export const CampaignAdsTab: React.FC<Props> = ({ campaign, galleryImages, onUpl
   };
 
   const discard = () => {
-    if (isMeta && campaign.metaAdData) setMeta(metaFieldsFrom(campaign));
-    if (!isMeta && campaign.googleAdData) setGoogle(googleFieldsFrom(campaign));
+    if (campaign.platform === "meta_instagram" && campaign.metaAdData) setMeta(metaFieldsFrom(campaign));
+    if (campaign.platform === "google_search" && campaign.googleAdData) setGoogle(googleFieldsFrom(campaign));
+    if (campaign.platform === "google_display" && campaign.displayAdData) setDisplay(displayFieldsFrom(campaign));
     setDirty(false);
   };
 
-  const backToDraft = () => onSaveCampaign({ ...campaign, status: "borrador", updatedAt: today });
+  const backToDraft = () => onSaveCampaign({ ...campaign, status: "borrador", updatedAt: todayISO() });
 
   return (
     <div className="space-y-5">
       {editable ? (
         <div className="flex flex-wrap items-center justify-between gap-3 p-3 bg-[#FAF8F6] border border-[#C9C3BE] rounded-[10px]">
-          <span className="text-[13px] text-[#46413F]">
+          <span className="text-[13px] text-[#46413F]" aria-live="polite">
             {dirty ? "Tenés cambios sin guardar." : savedMsg ? "Cambios guardados." : "Podés editar los anuncios acá: la vista previa cambia al instante."}
           </span>
           <div className="flex gap-2">
@@ -117,11 +136,11 @@ export const CampaignAdsTab: React.FC<Props> = ({ campaign, galleryImages, onUpl
 
       {meta && (
         <MetaAdEditor
-          defaultPlacement={/facebook/i.test(campaign.metaAdData?.feedPlacement || "") ? "facebook" : "instagram"}
+          defaultPlacement={metaPlacementOf(campaign)}
           value={meta}
           readOnly={!editable}
-          galleryImages={galleryImages}
-          onUploadPhoto={onUploadPhoto}
+          assets={assets}
+          onGoToFiles={onGoToFiles}
           onChange={(patch) => {
             setMeta({ ...meta, ...patch });
             setDirty(true);
@@ -134,6 +153,18 @@ export const CampaignAdsTab: React.FC<Props> = ({ campaign, galleryImages, onUpl
           readOnly={!editable}
           onChange={(patch) => {
             setGoogle({ ...google, ...patch });
+            setDirty(true);
+          }}
+        />
+      )}
+      {display && (
+        <DisplayAdEditor
+          value={display}
+          readOnly={!editable}
+          assets={assets}
+          onGoToFiles={onGoToFiles}
+          onChange={(patch) => {
+            setDisplay({ ...display, ...patch });
             setDirty(true);
           }}
         />
