@@ -10,7 +10,13 @@ export interface Ga4Status {
   oauthClient?: boolean;
 }
 
-export async function fetchOauthInfo(): Promise<{ clientConfigured: boolean; redirectUri: string }> {
+export interface OauthInfo {
+  clientConfigured: boolean;
+  redirectUri: string;
+  client?: { configured: boolean; idLooksValid: boolean; idHint: string; secretLength: number };
+}
+
+export async function fetchOauthInfo(): Promise<OauthInfo> {
   try {
     return await (await fetch("/api/ga4/oauth/info")).json();
   } catch {

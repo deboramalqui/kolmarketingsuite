@@ -4,7 +4,7 @@ import fs from "fs";
 import { fileURLToPath } from "url";
 import dotenv from "dotenv";
 import { GoogleGenAI, Type, type FunctionDeclaration } from "@google/genai";
-import { ga4Status, ga4CampaignRows, oauthClientConfigured, oauthAuthUrl, oauthExchange, oauthFinishManual, newOauthState, consumeOauthState, MANUAL_REDIRECT_URI } from "./ga4Server";
+import { ga4Status, ga4CampaignRows, oauthClientConfigured, oauthClientHint, oauthAuthUrl, oauthExchange, oauthFinishManual, newOauthState, consumeOauthState, MANUAL_REDIRECT_URI } from "./ga4Server";
 
 dotenv.config();
 
@@ -233,7 +233,7 @@ async function startServer() {
   };
 
   app.get("/api/ga4/oauth/info", (req, res) => {
-    res.json({ clientConfigured: oauthClientConfigured(), redirectUri: redirectUriOf(req) });
+    res.json({ clientConfigured: oauthClientConfigured(), redirectUri: redirectUriOf(req), client: oauthClientHint() });
   });
 
   app.get("/api/ga4/oauth/start", (req, res) => {

@@ -60,7 +60,24 @@ export function buildJwt(cred: Credentials, nowSec = Math.floor(Date.now() / 100
 const OAUTH_FILE = path.join(path.dirname(fileURLToPath(import.meta.url)), ".kol_ga4_oauth.json");
 const OAUTH_SCOPE = "https://www.googleapis.com/auth/analytics.readonly openid email";
 
-export const oauthClientConfigured = () => !!(process.env.GOOGLE_OAUTH_CLIENT_ID && process.env.GOOGLE_OAUTH_CLIENT_SECRET);
+/** Quita espacios, saltos de línea y comillas que se cuelan al copiar y pegar */
+const clean = (v: string | undefined) => (v || "").replace(/\s+/g, "").replace(/^["']+|["']+$/g, "");
+const clientId = () => clean(process.env.GOOGLE_OAUTH_CLIENT_ID);
+const clientSecret = () => clean(process.env.GOOGLE_OAUTH_CLIENT_SECRET);
+
+export const oauthClientConfigured = () => !!(clientId() && clientSecret());
+
+/** Para diagnosticar: muestra si el ID de cliente tiene el formato esperado, sin revelar el secreto */
+export function oauthClientHint(): { configured: boolean; idLooksValid: boolean; idHint: string; secretLength: number } {
+  const id = clientId();
+  const valid = /^[0-9]+-[a-z0-9]+\.apps\.googleusercontent\.com$/i.test(id);
+  return {
+    configured: oauthClientConfigured(),
+    idLooksValid: valid,
+    idHint: id ? `${id.slice(0, 6)}…${id.slice(-26)}` : "",
+    secretLength: clientSecret().length,
+  };
+}
 
 interface SavedOauth {
   refreshToken: string;
@@ -101,7 +118,7 @@ export const MANUAL_REDIRECT_URI = "http://localhost:8080/oauth";
 
 export function oauthAuthUrl(redirectUri: string, state: string): string {
   const q = new URLSearchParams({
-    client_id: process.env.GOOGLE_OAUTH_CLIENT_ID || "",
+    client_id: clientId(),
     redirect_uri: redirectUri,
     response_type: "code",
     scope: OAUTH_SCOPE,
@@ -120,8 +137,8 @@ export async function oauthExchange(code: string, redirectUri: string): Promise<
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
       code,
-      client_id: process.env.GOOGLE_OAUTH_CLIENT_ID || "",
-      client_secret: process.env.GOOGLE_OAUTH_CLIENT_SECRET || "",
+      client_id: clientId(),
+      client_secret: clientSecret(),
       redirect_uri: redirectUri,
       grant_type: "authorization_code",
     }),
@@ -145,8 +162,8 @@ async function accessTokenFromRefresh(saved: SavedOauth): Promise<string> {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
-      client_id: process.env.GOOGLE_OAUTH_CLIENT_ID || "",
-      client_secret: process.env.GOOGLE_OAUTH_CLIENT_SECRET || "",
+      client_id: clientId(),
+      client_secret: clientSecret(),
       refresh_token: saved.refreshToken,
       grant_type: "refresh_token",
     }),

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { CheckCircle2, AlertTriangle, RefreshCw } from "lucide-react";
-import { fetchGa4Status, fetchOauthInfo, Ga4Status, manualStart, manualFinish } from "./ga4Sync";
+import { fetchGa4Status, fetchOauthInfo, Ga4Status, manualStart, manualFinish, OauthInfo } from "./ga4Sync";
 import { useCopy } from "./useCopy";
 import { CopyButton } from "./CopyButton";
 
@@ -8,7 +8,7 @@ import { CopyButton } from "./CopyButton";
 export const Ga4Panel: React.FC = () => {
   const [st, setSt] = useState<Ga4Status | null>(null);
   const [busy, setBusy] = useState(false);
-  const [oauth, setOauth] = useState<{ clientConfigured: boolean; redirectUri: string }>({ clientConfigured: false, redirectUri: "" });
+  const [oauth, setOauth] = useState<OauthInfo>({ clientConfigured: false, redirectUri: "" });
   const { copiedKey, copy } = useCopy();
   const [manualUrl, setManualUrl] = useState<string | null>(null);
   const [pasted, setPasted] = useState("");
@@ -108,6 +108,15 @@ export const Ga4Panel: React.FC = () => {
               <li>Tocá el botón de abajo, elegí la cuenta y aceptá. Google puede avisar “app no verificada”: Avanzado → Ir a KOL Marketing Suite.</li>
               <li>Al terminar, te muestra un código: guardalo en Secrets como <code>GA4_REFRESH_TOKEN</code> para que no se pierda si el servidor se reinicia.</li>
             </ol>
+            {oauth.client && (
+              <p className={`text-[12px] p-2 rounded-[6px] border ${oauth.client.configured && oauth.client.idLooksValid ? "bg-[#F3F0ED] border-[#E7E3DF] text-[#46413F]" : "bg-white border-[#A40F5F] text-[#A40F5F] font-bold"}`}>
+                {!oauth.client.configured
+                  ? "Todavía no hay ID de cliente y secreto cargados en Secrets."
+                  : oauth.client.idLooksValid
+                  ? `ID de cliente detectado: ${oauth.client.idHint} (formato correcto) · secreto de ${oauth.client.secretLength} caracteres.`
+                  : `El ID de cliente cargado (${oauth.client.idHint}) no tiene el formato esperado: tiene que ser números-letras y terminar en .apps.googleusercontent.com. Copialo de nuevo, sin comillas ni espacios.`}
+              </p>
+            )}
             <a
               href={oauth.clientConfigured ? "/api/ga4/oauth/start" : undefined}
               aria-disabled={!oauth.clientConfigured}
