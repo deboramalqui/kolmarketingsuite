@@ -7,6 +7,7 @@ export interface Snapshot {
   periodDays: number;
   funnel: Record<"page_view" | "click_cta_formulario" | "inicio_formulario" | "lead_franquicia", { now: number; prev: number }>;
   channels: Array<{ channelGroup: string; visitors: number; leads: number }>;
+  pages?: Array<{ path: string; sessions: number; users: number; bounceRatePct: number; leads: number }>;
   error?: string;
 }
 
@@ -21,6 +22,7 @@ export const EMPTY_SNAPSHOT: Snapshot = {
     lead_franquicia: { now: 0, prev: 0 },
   },
   channels: [],
+  pages: [],
 };
 
 export async function fetchSnapshot(force = false): Promise<Snapshot> {

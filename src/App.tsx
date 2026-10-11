@@ -794,6 +794,8 @@ export default function App() {
         {/* PESTAÑA 2: FUENTES */}
         {activeTab === "fuentes" && (
           <FuentesView
+            pages={snapshot.pages ?? []}
+            ga4Connected={hasData(snapshot)}
             accountsConfig={accountsConfig}
             clarityPages={clarityPages}
             searchKeywords={searchKeywords}
