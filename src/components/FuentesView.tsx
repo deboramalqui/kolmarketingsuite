@@ -22,6 +22,8 @@ import {
 } from "lucide-react";
 
 interface FuentesViewProps {
+  pages: Array<{ path: string; sessions: number; users: number; bounceRatePct: number; leads: number }>;
+  ga4Connected: boolean;
   accountsConfig: ConnectedAccountsConfig;
   clarityPages: ClarityPageTelemetry[];
   searchKeywords: GoogleSearchKeyword[];
@@ -37,6 +39,8 @@ interface FuentesViewProps {
 }
 
 export const FuentesView: React.FC<FuentesViewProps> = ({
+  pages,
+  ga4Connected,
   accountsConfig,
   clarityPages,
   searchKeywords,
@@ -143,45 +147,46 @@ export const FuentesView: React.FC<FuentesViewProps> = ({
             </div>
           </div>
 
-          {/* Tabla de páginas medidas en el Hub de Franquicias */}
+          {/* Páginas de /franquicia* leídas de GA4: nada de esta tabla es fijo */}
           <div className="border border-[#C9C3BE] rounded-[10px] overflow-hidden">
             <div className="bg-[#E7E3DF] px-4 py-3 font-bold text-[#161418] text-[14px]">
-              Páginas de franquicia medidas en GA4 (Últimos 28 días)
+              Páginas de franquicia medidas en GA4 (últimos 28 días)
             </div>
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-[#F3F0ED] text-[#46413F] text-[13px] font-semibold">
-                  <th className="py-3 px-4">Ruta de destino</th>
-                  <th className="py-3 px-3 text-right">Sesiones</th>
-                  <th className="py-3 px-3 text-right">Usuarios únicos</th>
-                  <th className="py-3 px-3 text-right">Tasa de rebote</th>
-                  <th className="py-3 px-3 text-right">Evento lead_franquicia</th>
-                  <th className="py-3 px-3 text-right">Vinculación Clarity</th>
-                </tr>
-              </thead>
-              <tbody className="text-[14px] text-[#161418]">
-                <tr className="bg-[#FFFFFF] border-t border-[#C9C3BE]">
-                  <td className="py-3 px-4 font-bold">
-                    /franquicia/ <span className="text-[12px] text-[#46413F] font-normal">(Hub principal de franquicias)</span>
-                  </td>
-                  <td className="py-3 px-3 text-right tabular-nums font-semibold">60</td>
-                  <td className="py-3 px-3 text-right tabular-nums">57</td>
-                  <td className="py-3 px-3 text-right tabular-nums">38.4 %</td>
-                  <td className="py-3 px-3 text-right tabular-nums font-bold text-[#C51172]">1</td>
-                  <td className="py-3 px-3 text-right text-emerald-700 text-[13px] font-semibold">✓ Vinculado</td>
-                </tr>
-                <tr className="bg-[#FAF8F6] border-t border-[#C9C3BE]">
-                  <td className="py-3 px-4 font-bold">
-                    /franquicia/#formulario <span className="text-[12px] text-[#46413F] font-normal">(Formulario de contacto de franquicia)</span>
-                  </td>
-                  <td className="py-3 px-3 text-right tabular-nums font-semibold">15</td>
-                  <td className="py-3 px-3 text-right tabular-nums">14</td>
-                  <td className="py-3 px-3 text-right tabular-nums">12.0 %</td>
-                  <td className="py-3 px-3 text-right tabular-nums font-bold text-[#C51172]">1</td>
-                  <td className="py-3 px-3 text-right text-emerald-700 text-[13px] font-semibold">✓ Vinculado</td>
-                </tr>
-              </tbody>
-            </table>
+            {pages.length === 0 ? (
+              <p className="px-4 py-5 text-[14px] text-[#46413F]">
+                {ga4Connected
+                  ? "GA4 está conectado pero todavía no devolvió páginas de /franquicia en este período."
+                  : "Sin datos: GA4 todavía no está conectado."}
+              </p>
+            ) : (
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-[#F3F0ED] text-[#46413F] text-[13px] font-semibold">
+                    <th className="py-3 px-4">Ruta de destino</th>
+                    <th className="py-3 px-3 text-right">Sesiones</th>
+                    <th className="py-3 px-3 text-right">Usuarios únicos</th>
+                    <th className="py-3 px-3 text-right">Tasa de rebote</th>
+                    <th className="py-3 px-3 text-right">Consultas enviadas (lead_franquicia)</th>
+                  </tr>
+                </thead>
+                <tbody className="text-[14px] text-[#161418]">
+                  {pages.map((p, idx) => (
+                    <tr key={p.path} className={idx % 2 === 1 ? "bg-[#FAF8F6] border-t border-[#C9C3BE]" : "bg-[#FFFFFF] border-t border-[#C9C3BE]"}>
+                      <td className="py-3 px-4 font-bold">
+                        {p.path}{" "}
+                        <span className="text-[12px] text-[#46413F] font-normal">
+                          ({p.path === "/franquicia/" ? "Hub principal" : "Página hija"})
+                        </span>
+                      </td>
+                      <td className="py-3 px-3 text-right tabular-nums font-semibold">{p.sessions}</td>
+                      <td className="py-3 px-3 text-right tabular-nums">{p.users}</td>
+                      <td className="py-3 px-3 text-right tabular-nums">{p.bounceRatePct.toLocaleString("es-AR")} %</td>
+                      <td className="py-3 px-3 text-right tabular-nums font-bold text-[#C51172]">{p.leads}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
         </div>
       )}
