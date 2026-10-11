@@ -176,19 +176,19 @@ export const HoyDashboardView: React.FC<HoyDashboardViewProps> = ({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-4 gap-2 sm:gap-3">
           {funnelSteps.map((step) => (
-            <div key={step.id} className="bg-[#FFFFFF] border border-[#C9C3BE] rounded-[12px] p-3.5" title={step.plainLanguageExplanation}>
+            <div key={step.id} className="bg-[#FFFFFF] border border-[#C9C3BE] rounded-[12px] p-2.5 sm:p-3 min-w-0" title={step.plainLanguageExplanation}>
               <div className="flex items-start gap-2">
                 <span className="font-kol-display font-extrabold text-[14px] text-[#C51172] border-b-2 border-[#C51172] leading-tight">{step.stepNumber}</span>
                 <span className="text-[13px] font-bold text-[#161418] leading-snug">{step.name}</span>
               </div>
-              <div className="font-kol-display font-extrabold text-[28px] tabular-nums text-[#C51172] mt-2">{step.count}</div>
-              <div className="text-[12px] text-[#6A6460]">
+              <div className="font-kol-display font-extrabold text-[24px] leading-none tabular-nums text-[#C51172] mt-1.5">{step.count}</div>
+              <div className="text-[12px] text-[#6A6460] leading-snug mt-1">
                 {step.conversionRateFromStartPct} % del total
-                {step.stepNumber > 1 && <> · caída {step.dropoffRateFromPreviousPct.toFixed(1)} %</>}
+                {step.stepNumber > 1 && (step.dropoffRateFromPreviousPct < 0 ? <><br />sin caída (llegaron por otro camino)</> : <><br />caída {step.dropoffRateFromPreviousPct.toFixed(1)} %</>)}
               </div>
-              <div className="font-mono text-[11px] text-[#6A6460] mt-1 truncate">{step.eventName}</div>
+              
             </div>
           ))}
         </div>
@@ -211,8 +211,7 @@ export const HoyDashboardView: React.FC<HoyDashboardViewProps> = ({
                 <span className="font-kol-display font-extrabold text-[14px] text-[#C51172] border-b-2 border-[#C51172] leading-tight">{k.n}</span>
                 <span className="text-[13px] font-bold text-[#161418] leading-snug">{k.label}</span>
               </div>
-              <div className="font-kol-display font-extrabold text-[28px] tabular-nums text-[#C51172] mt-2">{k.value}</div>
-              <div className="font-mono text-[11px] text-[#6A6460] truncate">{k.ev}</div>
+              <div className="font-kol-display font-extrabold text-[24px] leading-none tabular-nums text-[#C51172] mt-1.5">{k.value}</div>
             </div>
           ))}
         </div>
