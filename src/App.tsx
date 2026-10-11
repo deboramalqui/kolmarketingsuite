@@ -796,6 +796,7 @@ export default function App() {
           <FuentesView
             pages={snapshot.pages ?? []}
             guide={snapshot.guide}
+            notFound={snapshot.notFound ?? []}
             ga4Connected={hasData(snapshot)}
             accountsConfig={accountsConfig}
             clarityPages={clarityPages}
