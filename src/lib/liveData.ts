@@ -8,6 +8,7 @@ export interface Snapshot {
   funnel: Record<"page_view" | "click_cta_formulario" | "inicio_formulario" | "lead_franquicia", { now: number; prev: number }>;
   channels: Array<{ channelGroup: string; visitors: number; leads: number }>;
   pages?: Array<{ path: string; sessions: number; users: number; bounceRatePct: number; leads: number }>;
+  guide?: { clicks: number; leads: number; downloads: number };
   error?: string;
 }
 
