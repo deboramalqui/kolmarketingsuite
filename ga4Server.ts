@@ -143,8 +143,12 @@ export async function oauthExchange(code: string, redirectUri: string): Promise<
       grant_type: "authorization_code",
     }),
   });
-  const body = (await res.json()) as { refresh_token?: string; id_token?: string; error_description?: string; error?: string };
+  const body = (await res.json()) as { refresh_token?: string; id_token?: string; scope?: string; error_description?: string; error?: string };
   if (!res.ok) throw new Error(`Google rechazó la autorización: ${body.error_description || body.error || res.status}`);
+  // Google permite destildar permisos en la pantalla de aceptación: sin este no se pueden leer los datos
+  if (!(body.scope || "").includes("analytics.readonly")) {
+    throw new Error("En la pantalla de Google no quedó tildado el permiso de Google Analytics (“Ver y descargar tus datos de Google Analytics”). Generá el enlace de nuevo y tildá esa casilla antes de continuar.");
+  }
   if (!body.refresh_token) throw new Error("Google no devolvió el permiso permanente. Volvé a autorizar y aceptá todos los permisos.");
   let email: string | undefined;
   try {
