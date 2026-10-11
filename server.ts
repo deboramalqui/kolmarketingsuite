@@ -486,45 +486,7 @@ async function startServer() {
             }
           });
 
-          // Consulta de términos de búsqueda en GA4 si están disponibles
-          try {
-            const kwRes = await fetch(
-              `https://analyticsdata.googleapis.com/v1beta/properties/${cleanPropId}:runReport`,
-              {
-                method: "POST",
-                headers: {
-                  Authorization: `Bearer ${oauthAccessToken}`,
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                  dateRanges: [{ startDate: "30daysAgo", endDate: "today" }],
-                  dimensions: [{ name: "searchTerm" }],
-                  metrics: [{ name: "sessions" }, { name: "conversions" }],
-                  limit: 25,
-                }),
-              }
-            );
-            if (kwRes.ok) {
-              const kwData = await kwRes.json();
-              const kwRows = Array.isArray(kwData.rows) ? kwData.rows : [];
-              kwRows.forEach((kr: { dimensionValues?: Array<{ value?: string }>; metricValues?: Array<{ value?: string }> }, kIdx: number) => {
-                const kw = kr.dimensionValues?.[0]?.value || "";
-                if (!kw || kw === "(not set)" || kw === "(not provided)") return;
-                const clicks = Number(kr.metricValues?.[0]?.value || 0);
-                const convs = Number(kr.metricValues?.[1]?.value || 0);
-                fetchedKeywords.push({
-                  id: `ga4-kw-${kIdx}`,
-                  keyword: kw,
-                  clicks,
-                  impressions: clicks * 8,
-                  ctrPct: 12.5,
-                  avgPosition: 2.1,
-                  conversions: convs,
-                  intent: kw.toLowerCase().includes("invers") ? "Inversor" : "Franquicia",
-                });
-              });
-            }
-          } catch {}
+          // Palabras clave: no se inventan. Vendrán de Search Console cuando esté conectado.
         }
       }
 
@@ -718,12 +680,12 @@ async function startServer() {
                 fetchedClarityPages.push({
                   id: `clr-real-${idx}`,
                   pageUrl: item.url,
-                  sessions: item.sessions || 1,
+                  sessions: item.sessions,
                   rageClicksPct: item.rageClicks,
                   deadClicksPct: item.deadClicks,
-                  avgScrollDepthPct: item.scrollDepth || 55,
+                  avgScrollDepthPct: item.scrollDepth,
                   quickbacksPct: 0,
-                  avgEngagementSec: item.engagementSec || 40,
+                  avgEngagementSec: item.engagementSec,
                   dominantFrictionIssue: item.issue,
                   linkedGmpCampaign: "Sincronizado desde Clarity API",
                 });
@@ -735,12 +697,12 @@ async function startServer() {
                 fetchedClarityPages.push({
                   id: `clr-real-${i}`,
                   pageUrl: String(firstInfo.URL || firstInfo.Url || entry.metricName || "/"),
-                  sessions: Number(firstInfo.totalSessionCount || 1),
+                  sessions: Number(firstInfo.totalSessionCount || 0),
                   rageClicksPct: Number(firstInfo.subTotal || 0),
                   deadClicksPct: 0,
-                  avgScrollDepthPct: Number(firstInfo.averageScrollDepth || 50),
+                  avgScrollDepthPct: Number(firstInfo.averageScrollDepth || 0),
                   quickbacksPct: 0,
-                  avgEngagementSec: Number(firstInfo.activeTime || 35),
+                  avgEngagementSec: Number(firstInfo.activeTime || 0),
                   dominantFrictionIssue: `Métrica Clarity: ${String(entry.metricName || "Live Insight")}`,
                   linkedGmpCampaign: "Sincronizado desde Clarity API",
                 });
@@ -781,17 +743,8 @@ async function startServer() {
 Reglas operativas y analíticas obligatorias del brief:
 1. Sin ROAS: Un lead de franquicia no tiene ingreso inmediato asociado, el ROAS confunde. Hablá siempre de "Costo por consulta" (Inversión ÷ Consultas). Si no hay inversión publicitaria activa todavía (campañas activas en noviembre), decí claramente: "Sin inversión publicitaria registrada todavía; las campañas pagas se activan en noviembre".
 2. Un solo evento de conversión: ÚNICAMENTE medimos "lead_franquicia". Nunca menciones ni mezcles generate_lead (es el WhatsApp general de retail de todo el sitio) ni purchase.
-3. El embudo de 4 pasos tal cual el protocolo verificado:
-   Paso 1: Entra al hub (page_view en franquicias, ~75 visitas en los últimos 28 días)
-   Paso 2: Toca el botón del formulario (click_cta_formulario, 4 personas)
-   Paso 3: Empieza el formulario (inicio_formulario, 3 personas)
-   Paso 4: Envía consulta (lead_franquicia, 2 consultas recibidas)
-4. Orígenes de tráfico reales del hub:
-   - Instagram es el principal canal (40 de 75 visitas)
-   - Google Orgánico (Search Console) segundo (16 visitas)
-   - Canales con IA (ChatGPT, Perplexity, Gemini): 7 visitas, 0 consultas
-   - Directo: 9 visitas
-   - Otros: 3 visitas
+3. El embudo es de 4 pasos: page_view en franquicias, click_cta_formulario, inicio_formulario y lead_franquicia. Las cantidades SOLO salen de contextData. Si no hay datos en contextData, decí que no hay datos; nunca estimes ni recuerdes cifras.
+4. Orígenes de tráfico: usá únicamente los que vengan en contextData, con su período. No inventes porcentajes ni visitas.
 5. Microsoft Clarity y grabaciones de sesión:
    - El proyecto de Clarity es "ytmpieugg9" y está vinculado a GA4 (propiedad 372010641).
    - Cuando te pregunten por grabaciones de sesión o fricción, explicá qué pasa y ofrecé el link directo filtrado a Clarity (ejemplo: https://clarity.microsoft.com/projects/view/ytmpieugg9/recordings?filter=url%3D... o filtrado por evento lead_franquicia).
