@@ -540,7 +540,7 @@ export default function App() {
                 className={`w-[40px] h-[40px] rounded-[12px] border flex items-center justify-center transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FAF8F6] focus-visible:ring-offset-2 focus-visible:ring-offset-[#161418] ${
                   activeTab === "connections"
                     ? "bg-[#46413F] text-[#FFBA00] border-[#FFBA00] ring-1 ring-[#FFBA00]"
-                    : "bg-[#2A2629] text-[#FAF8F6] border-[#46413F] hover:bg-[#383337]"
+                    : "bg-[#2A2629] text-[#FAF8F6] border-[#46413F] hover:bg-[#46413F]"
                 }`}
               >
                 <Settings className="w-4 h-4" />
@@ -774,6 +774,7 @@ export default function App() {
         {/* PESTAÑA 1: HOY (PORTADA PRINCIPAL) */}
         {activeTab === "hoy" && (
           <HoyDashboardView
+            guide={snapshot.guide}
             funnelSteps={funnelSteps}
             acquisitionChannels={acquisitionChannels}
             searchKeywords={searchKeywords}
