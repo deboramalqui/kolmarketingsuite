@@ -24,6 +24,7 @@ import {
 interface FuentesViewProps {
   pages: Array<{ path: string; sessions: number; users: number; bounceRatePct: number; leads: number }>;
   ga4Connected: boolean;
+  guide?: { clicks: number; leads: number; downloads: number };
   accountsConfig: ConnectedAccountsConfig;
   clarityPages: ClarityPageTelemetry[];
   searchKeywords: GoogleSearchKeyword[];
@@ -41,6 +42,7 @@ interface FuentesViewProps {
 export const FuentesView: React.FC<FuentesViewProps> = ({
   pages,
   ga4Connected,
+  guide,
   accountsConfig,
   clarityPages,
   searchKeywords,
@@ -145,6 +147,32 @@ export const FuentesView: React.FC<FuentesViewProps> = ({
                 Recordatorio técnico: GA4 tarda 24 a 48 hs en procesar eventos nuevos. Los administradores logueados no se miden; probar siempre formularios en ventana de incógnito.
               </span>
             </div>
+          </div>
+
+          {/* Guía descargable de los 9 pasos: personas únicas, leídas de GA4 */}
+          <div className="border border-[#C9C3BE] rounded-[10px] overflow-hidden">
+            <div className="bg-[#E7E3DF] px-4 py-3 font-bold text-[#161418] text-[14px]">
+              Guía de los 9 pasos (últimos 28 días, personas únicas)
+            </div>
+            {ga4Connected && guide ? (
+              <div className="grid grid-cols-3 gap-4 p-4">
+                {[
+                  { label: "Tocaron el botón de la guía", value: guide.clicks },
+                  { label: "Enviaron el formulario", value: guide.leads },
+                  { label: "Descargaron el PDF", value: guide.downloads },
+                ].map((k) => (
+                  <div key={k.label} className="bg-[#FAF8F6] border border-[#C9C3BE] rounded-[10px] p-4">
+                    <div className="text-[12px] text-[#46413F] font-semibold">{k.label}</div>
+                    <div className="text-[28px] font-extrabold text-[#161418] tabular-nums">{k.value}</div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="px-4 py-5 text-[14px] text-[#46413F]">Sin datos: GA4 todavía no está conectado.</p>
+            )}
+            <p className="px-4 pb-4 text-[12px] text-[#46413F]">
+              Los administradores logueados no se miden. La guía no cuenta como consulta de franquicia (lead_franquicia).
+            </p>
           </div>
 
           {/* Páginas de /franquicia* leídas de GA4: nada de esta tabla es fijo */}

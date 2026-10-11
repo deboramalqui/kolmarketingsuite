@@ -25,6 +25,8 @@ export interface Snapshot {
   channels: Array<{ channelGroup: string; visitors: number; leads: number }>;
   /** Una fila por página de /franquicia* (hub e hijas), leída de GA4 */
   pages: Array<{ path: string; sessions: number; users: number; bounceRatePct: number; leads: number }>;
+  /** Guía descargable de los 9 pasos: personas (usuarios únicos) que hicieron cada cosa en /franquicia* */
+  guide?: { clicks: number; leads: number; downloads: number };
   error?: string;
 }
 
@@ -35,6 +37,7 @@ const empty = (connected: boolean, error?: string): Snapshot => ({
   funnel: Object.fromEntries(FUNNEL_EVENTS.map((e) => [e, { now: 0, prev: 0 }])) as Snapshot["funnel"],
   channels: [],
   pages: [],
+  guide: { clicks: 0, leads: 0, downloads: 0 },
   error,
 });
 
@@ -42,7 +45,7 @@ type Row = { dimensionValues?: Array<{ value?: string }>; metricValues?: Array<{
 const num = (r: Row, i: number) => Number(r.metricValues?.[i]?.value ?? 0) || 0;
 
 /** Convierte las filas de GA4 al resumen. Exportado para poder probarlo sin llamar a Google. */
-export function buildSnapshot(funnelRows: Row[], channelRows: Row[], leadRows: Row[], now = new Date(), pageRows: Row[] = [], pageLeadRows: Row[] = []): Snapshot {
+export function buildSnapshot(funnelRows: Row[], channelRows: Row[], leadRows: Row[], now = new Date(), pageRows: Row[] = [], pageLeadRows: Row[] = [], guideRows: Row[] = []): Snapshot {
   const snap = empty(true);
   snap.fetchedAt = now.toISOString();
   // con dos períodos GA4 agrega una dimensión final con el nombre del rango
@@ -70,6 +73,14 @@ export function buildSnapshot(funnelRows: Row[], channelRows: Row[], leadRows: R
     const p = r.dimensionValues?.[0]?.value || "";
     leadsByPage.set(p, (leadsByPage.get(p) || 0) + num(r, 0));
   });
+  const g = { clicks: 0, leads: 0, downloads: 0 };
+  guideRows.forEach((r) => {
+    const ev = r.dimensionValues?.[0]?.value;
+    if (ev === "click_cta_guia") g.clicks = num(r, 0);
+    if (ev === "lead_guia") g.leads = num(r, 0);
+    if (ev === "descarga_pdf_guia") g.downloads = num(r, 0);
+  });
+  snap.guide = g;
   snap.pages = pageRows
     .map((r) => {
       const p = r.dimensionValues?.[0]?.value || "";
@@ -82,7 +93,7 @@ export function buildSnapshot(funnelRows: Row[], channelRows: Row[], leadRows: R
 
 let current: Snapshot = (() => {
   try {
-    if (fs.existsSync(FILE)) return { pages: [], ...JSON.parse(fs.readFileSync(FILE, "utf-8")) };
+    if (fs.existsSync(FILE)) return { pages: [], guide: { clicks: 0, leads: 0, downloads: 0 }, ...JSON.parse(fs.readFileSync(FILE, "utf-8")) };
   } catch {}
   return empty(false);
 })();
@@ -95,7 +106,7 @@ export function getCachedSnapshot(): Snapshot {
 const pageFilter = { filter: { fieldName: "pagePath", stringFilter: { matchType: "CONTAINS", value: "/franquicia" } } };
 
 async function fetchFromGa4(): Promise<Snapshot> {
-  const [funnelRows, channelRows, leadRows, pageRows, pageLeadRows] = await Promise.all([
+  const [funnelRows, channelRows, leadRows, pageRows, pageLeadRows, guideRows] = await Promise.all([
     ga4RunReport({
       dateRanges: [
         { startDate: "28daysAgo", endDate: "today", name: "actual" },
@@ -134,8 +145,15 @@ async function fetchFromGa4(): Promise<Snapshot> {
       dimensionFilter: { andGroup: { expressions: [{ filter: { fieldName: "eventName", stringFilter: { matchType: "EXACT", value: "lead_franquicia" } } }, pageFilter] } },
       limit: 50,
     }),
+    ga4RunReport({
+      dateRanges: [{ startDate: "28daysAgo", endDate: "today" }],
+      dimensions: [{ name: "eventName" }],
+      metrics: [{ name: "totalUsers" }],
+      dimensionFilter: { andGroup: { expressions: [{ filter: { fieldName: "eventName", inListFilter: { values: ["click_cta_guia", "lead_guia", "descarga_pdf_guia"] } } }, pageFilter] } },
+      limit: 10,
+    }),
   ]);
-  return buildSnapshot(funnelRows, channelRows, leadRows, new Date(), pageRows, pageLeadRows);
+  return buildSnapshot(funnelRows, channelRows, leadRows, new Date(), pageRows, pageLeadRows, guideRows);
 }
 
 /** Actualiza desde GA4. Si falla, se conserva lo último bueno y se informa el error. */

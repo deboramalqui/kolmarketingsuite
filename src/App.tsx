@@ -795,6 +795,7 @@ export default function App() {
         {activeTab === "fuentes" && (
           <FuentesView
             pages={snapshot.pages ?? []}
+            guide={snapshot.guide}
             ga4Connected={hasData(snapshot)}
             accountsConfig={accountsConfig}
             clarityPages={clarityPages}
