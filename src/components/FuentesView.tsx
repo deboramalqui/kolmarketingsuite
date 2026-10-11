@@ -21,10 +21,22 @@ import {
   Sliders,
 } from "lucide-react";
 
+const AI_SOURCES = ["chatgpt", "openai", "perplexity", "gemini", "claude", "copilot", "deepseek", "grok", "you.com", "meta.ai"];
+/** Pista sobre el origen de una visita (solo orientativa) */
+function originHint(source: string, medium: string): string {
+  const s = source.toLowerCase();
+  if (AI_SOURCES.some((a) => s.includes(a))) return "posible asistente de IA";
+  if (s === "(direct)" || medium === "(none)") return "directo: enlace copiado, escrito a mano o sin origen";
+  if (s.includes("google") && medium === "organic") return "búsqueda de Google";
+  if (s.includes("instagram") || s.includes("facebook") || s.includes("l.wl.co")) return "red social";
+  return "otro origen";
+}
+
 interface FuentesViewProps {
   pages: Array<{ path: string; sessions: number; users: number; bounceRatePct: number; leads: number }>;
   ga4Connected: boolean;
   guide?: { clicks: number; leads: number; downloads: number };
+  notFound?: Array<{ path: string; sessions: number; sources: Array<{ source: string; medium: string; sessions: number }> }>;
   accountsConfig: ConnectedAccountsConfig;
   clarityPages: ClarityPageTelemetry[];
   searchKeywords: GoogleSearchKeyword[];
@@ -43,6 +55,7 @@ export const FuentesView: React.FC<FuentesViewProps> = ({
   pages,
   ga4Connected,
   guide,
+  notFound = [],
   accountsConfig,
   clarityPages,
   searchKeywords,
@@ -203,8 +216,11 @@ export const FuentesView: React.FC<FuentesViewProps> = ({
                       <td className="py-3 px-4 font-bold">
                         {p.path}{" "}
                         <span className="text-[12px] text-[#46413F] font-normal">
-                          ({p.path === "/franquicia/" ? "Hub principal" : "Página hija"})
+                          ({p.path === "/franquicia/" ? "Hub principal" : notFound.some((n) => n.path === p.path) ? "" : "Página hija"})
                         </span>
+                        {notFound.some((n) => n.path === p.path) && (
+                          <span className="ml-1 text-[12px] font-bold text-[#8A1C1C]">Página no encontrada (404)</span>
+                        )}
                       </td>
                       <td className="py-3 px-3 text-right tabular-nums font-semibold">{p.sessions}</td>
                       <td className="py-3 px-3 text-right tabular-nums">{p.users}</td>
@@ -216,6 +232,41 @@ export const FuentesView: React.FC<FuentesViewProps> = ({
               </table>
             )}
           </div>
+
+          {/* Direcciones que no existen (404) y de dónde llegaron: ¿una IA, un enlace mal armado? */}
+          {notFound.length > 0 && (
+            <div className="border border-[#C9C3BE] rounded-[10px] overflow-hidden">
+              <div className="bg-[#E7E3DF] px-4 py-3 font-bold text-[#161418] text-[14px]">
+                Visitas a direcciones que no existen (404) y de dónde llegaron
+              </div>
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-[#F3F0ED] text-[#46413F] text-[13px] font-semibold">
+                    <th className="py-3 px-4">Dirección pedida</th>
+                    <th className="py-3 px-3">Origen de la visita</th>
+                    <th className="py-3 px-3 text-right">Sesiones</th>
+                  </tr>
+                </thead>
+                <tbody className="text-[14px] text-[#161418]">
+                  {notFound.flatMap((n) =>
+                    n.sources.map((s, i) => (
+                      <tr key={`${n.path}-${s.source}-${s.medium}-${i}`} className="border-t border-[#C9C3BE] bg-[#FFFFFF]">
+                        <td className="py-3 px-4 font-mono text-[13px]">{i === 0 ? n.path : ""}</td>
+                        <td className="py-3 px-3">
+                          {s.source} / {s.medium}{" "}
+                          <span className="text-[12px] text-[#46413F]">({originHint(s.source, s.medium)})</span>
+                        </td>
+                        <td className="py-3 px-3 text-right tabular-nums font-semibold">{s.sessions}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+              <p className="px-4 py-3 text-[12px] text-[#46413F]">
+                GA4 registra cualquier dirección que alguien pida, aunque la página no exista. La interpretación entre paréntesis es una pista según el origen, no un dato de GA4.
+              </p>
+            </div>
+          )}
         </div>
       )}
 

@@ -27,6 +27,8 @@ export interface Snapshot {
   pages: Array<{ path: string; sessions: number; users: number; bounceRatePct: number; leads: number }>;
   /** Guía descargable de los 9 pasos: personas (usuarios únicos) que hicieron cada cosa en /franquicia* */
   guide?: { clicks: number; leads: number; downloads: number };
+  /** Direcciones de /franquicia* que devuelven "Página no encontrada" (404) y de dónde llegaron las visitas */
+  notFound?: Array<{ path: string; sessions: number; sources: Array<{ source: string; medium: string; sessions: number }> }>;
   error?: string;
 }
 
@@ -38,6 +40,7 @@ const empty = (connected: boolean, error?: string): Snapshot => ({
   channels: [],
   pages: [],
   guide: { clicks: 0, leads: 0, downloads: 0 },
+  notFound: [],
   error,
 });
 
@@ -45,7 +48,7 @@ type Row = { dimensionValues?: Array<{ value?: string }>; metricValues?: Array<{
 const num = (r: Row, i: number) => Number(r.metricValues?.[i]?.value ?? 0) || 0;
 
 /** Convierte las filas de GA4 al resumen. Exportado para poder probarlo sin llamar a Google. */
-export function buildSnapshot(funnelRows: Row[], channelRows: Row[], leadRows: Row[], now = new Date(), pageRows: Row[] = [], pageLeadRows: Row[] = [], guideRows: Row[] = []): Snapshot {
+export function buildSnapshot(funnelRows: Row[], channelRows: Row[], leadRows: Row[], now = new Date(), pageRows: Row[] = [], pageLeadRows: Row[] = [], guideRows: Row[] = [], notFoundRows: Row[] = []): Snapshot {
   const snap = empty(true);
   snap.fetchedAt = now.toISOString();
   // con dos períodos GA4 agrega una dimensión final con el nombre del rango
@@ -81,6 +84,18 @@ export function buildSnapshot(funnelRows: Row[], channelRows: Row[], leadRows: R
     if (ev === "descarga_pdf_guia") g.downloads = num(r, 0);
   });
   snap.guide = g;
+  const nf = new Map<string, { path: string; sessions: number; sources: Array<{ source: string; medium: string; sessions: number }> }>();
+  notFoundRows.forEach((r) => {
+    const d = (r.dimensionValues ?? []).map((x) => x.value ?? "");
+    const path = d[0] || "";
+    if (!path) return;
+    const item = nf.get(path) ?? { path, sessions: 0, sources: [] };
+    const n = num(r, 0);
+    item.sessions += n;
+    item.sources.push({ source: d[1] || "(not set)", medium: d[2] || "(not set)", sessions: n });
+    nf.set(path, item);
+  });
+  snap.notFound = Array.from(nf.values()).sort((a, b) => b.sessions - a.sessions);
   snap.pages = pageRows
     .map((r) => {
       const p = r.dimensionValues?.[0]?.value || "";
@@ -93,7 +108,7 @@ export function buildSnapshot(funnelRows: Row[], channelRows: Row[], leadRows: R
 
 let current: Snapshot = (() => {
   try {
-    if (fs.existsSync(FILE)) return { pages: [], guide: { clicks: 0, leads: 0, downloads: 0 }, ...JSON.parse(fs.readFileSync(FILE, "utf-8")) };
+    if (fs.existsSync(FILE)) return { pages: [], notFound: [], guide: { clicks: 0, leads: 0, downloads: 0 }, ...JSON.parse(fs.readFileSync(FILE, "utf-8")) };
   } catch {}
   return empty(false);
 })();
@@ -106,7 +121,7 @@ export function getCachedSnapshot(): Snapshot {
 const pageFilter = { filter: { fieldName: "pagePath", stringFilter: { matchType: "CONTAINS", value: "/franquicia" } } };
 
 async function fetchFromGa4(): Promise<Snapshot> {
-  const [funnelRows, channelRows, leadRows, pageRows, pageLeadRows, guideRows] = await Promise.all([
+  const [funnelRows, channelRows, leadRows, pageRows, pageLeadRows, guideRows, notFoundRows] = await Promise.all([
     ga4RunReport({
       dateRanges: [
         { startDate: "28daysAgo", endDate: "today", name: "actual" },
@@ -152,8 +167,16 @@ async function fetchFromGa4(): Promise<Snapshot> {
       dimensionFilter: { andGroup: { expressions: [{ filter: { fieldName: "eventName", inListFilter: { values: ["click_cta_guia", "lead_guia", "descarga_pdf_guia"] } } }, pageFilter] } },
       limit: 10,
     }),
+    // El sitio titula sus 404 "Página no encontrada · KOL": así se distinguen de las páginas reales
+    ga4RunReport({
+      dateRanges: [{ startDate: "28daysAgo", endDate: "today" }],
+      dimensions: [{ name: "pagePath" }, { name: "sessionSource" }, { name: "sessionMedium" }],
+      metrics: [{ name: "sessions" }],
+      dimensionFilter: { andGroup: { expressions: [pageFilter, { filter: { fieldName: "pageTitle", stringFilter: { matchType: "CONTAINS", value: "Página no encontrada", caseSensitive: false } } }] } },
+      limit: 100,
+    }),
   ]);
-  return buildSnapshot(funnelRows, channelRows, leadRows, new Date(), pageRows, pageLeadRows, guideRows);
+  return buildSnapshot(funnelRows, channelRows, leadRows, new Date(), pageRows, pageLeadRows, guideRows, notFoundRows);
 }
 
 /** Actualiza desde GA4. Si falla, se conserva lo último bueno y se informa el error. */
