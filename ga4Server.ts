@@ -377,3 +377,19 @@ export async function oauthFinishManual(pasted: string): Promise<{ refreshToken:
   if (state && !consumeOauthState(state)) throw new Error("Esa autorización venció o es de otro intento. Generá el enlace de nuevo.");
   return oauthExchange(decodeURIComponent(code), MANUAL_REDIRECT_URI);
 }
+
+/** Token de acceso de GA4 para otros usos del servidor (null si no hay conexión que funcione) */
+export async function ga4AccessTokenOrNull(): Promise<string | null> {
+  try {
+    const { result } = await withAnyMode(async (token) => token);
+    return result;
+  } catch {
+    return null;
+  }
+}
+
+export function ga4HasCredentials(): boolean {
+  return availableModes().length > 0;
+}
+
+export const ga4PropertyIdValue = propertyId;

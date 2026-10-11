@@ -1,3 +1,4 @@
+import { useConnectionsStatus } from "../lib/secrets";
 import React, { useState, useEffect } from "react";
 import {
   ConnectedAccountsConfig,
@@ -48,14 +49,16 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
   const [selectedModules, setSelectedModules] = useState<string[]>(
     config.gmpConnectedModules
   );
-  const [oauthToken, setOauthToken] = useState(config.oauthAccessToken);
+  const connections = useConnectionsStatus();
+  // Las claves no se piden ni se guardan acá: viven en los Secrets del servidor
+  const [oauthToken, setOauthToken] = useState("");
 
   // Estado para Meta Ads con selección de campañas y eventos específicos
   const [metaAdAccountId, setMetaAdAccountId] = useState(
     config.metaAdAccountId
   );
   const [metaAccessToken, setMetaAccessToken] = useState(
-    config.metaAccessToken
+    ""
   );
   const [metaPixelId, setMetaPixelId] = useState(config.metaPixelId);
   const [metaOnlySpecific, setMetaOnlySpecific] = useState<boolean>(
@@ -88,9 +91,9 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
       setGmpEmail(config.gmpAccountEmail);
       setGmpPropertyId(config.gmpPropertyId);
       setSelectedModules(config.gmpConnectedModules);
-      setOauthToken(config.oauthAccessToken);
+      setOauthToken("");
       setMetaAdAccountId(config.metaAdAccountId);
-      setMetaAccessToken(config.metaAccessToken);
+      setMetaAccessToken("");
       setMetaPixelId(config.metaPixelId);
       setMetaOnlySpecific(config.metaOnlySpecificCampaigns);
       setMetaKeywords(config.metaAllowedCampaignKeywords);
@@ -158,7 +161,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
     if (
       !gmpPropertyId.trim() &&
       !metaAdAccountId.trim() &&
-      !clarityToken.trim()
+      !connections.clarity
     ) {
       setErrorMsg(
         "Ingresá tu Property ID de GA4, tu Ad Account ID de Meta Ads o tu token de Microsoft Clarity, o subí un archivo CSV exportado"
@@ -177,14 +180,11 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ga4PropertyId: gmpPropertyId.trim(),
-          oauthAccessToken: oauthToken.trim(),
           metaAdAccountId: metaAdAccountId.trim(),
-          metaAccessToken: metaAccessToken.trim(),
           metaOnlySpecificCampaigns: metaOnlySpecific,
           metaAllowedCampaignKeywords: metaKeywords,
           metaSelectedCampaignNames: selectedCandidateNames,
           metaTrackedEvents,
-          clarityApiToken: clarityToken.trim(),
         }),
       });
       const data = await res.json();
@@ -240,9 +240,9 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
         gmpPropertyId: gmpPropertyId.trim(),
         gmpConnectedModules:
           selectedModules.length > 0 ? selectedModules : AVAILABLE_GMP_MODULES,
-        oauthAccessToken: oauthToken.trim(),
+        oauthAccessToken: "",
         metaAdAccountId: metaAdAccountId.trim(),
-        metaAccessToken: metaAccessToken.trim(),
+        metaAccessToken: "",
         metaPixelId: metaPixelId.trim(),
         metaOnlySpecificCampaigns: metaOnlySpecific,
         metaAllowedCampaignKeywords: metaKeywords,
@@ -251,11 +251,9 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
           .map((c) => c.name),
         metaTrackedEvents,
         clarityProjectId: clarityToken.trim(),
-        clarityConnected: Boolean(clarityToken.trim()),
+        clarityConnected: connections.clarity,
         defaultReportRecipientEmail: recipientEmail.trim() || gmpEmail.trim(),
-        realtimeSyncActive: Boolean(
-          oauthToken.trim() || metaAccessToken.trim() || clarityToken.trim()
-        ),
+        realtimeSyncActive: connections.ga4.connected || connections.meta || connections.clarity,
       });
     } catch (err: unknown) {
       setErrorMsg(
@@ -463,9 +461,9 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
       gmpPropertyId: gmpPropertyId.trim(),
       gmpConnectedModules:
         selectedModules.length > 0 ? selectedModules : AVAILABLE_GMP_MODULES,
-      oauthAccessToken: oauthToken.trim(),
+      oauthAccessToken: "",
       metaAdAccountId: metaAdAccountId.trim(),
-      metaAccessToken: metaAccessToken.trim(),
+      metaAccessToken: "",
       metaPixelId: metaPixelId.trim(),
       metaOnlySpecificCampaigns: metaOnlySpecific,
       metaAllowedCampaignKeywords: metaKeywords,
@@ -474,11 +472,9 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
         .map((c) => c.name),
       metaTrackedEvents,
       clarityProjectId: clarityToken.trim(),
-      clarityConnected: Boolean(clarityToken.trim()),
+      clarityConnected: connections.clarity,
       defaultReportRecipientEmail: recipientEmail.trim() || gmpEmail.trim(),
-      realtimeSyncActive: Boolean(
-        oauthToken.trim() || metaAccessToken.trim() || clarityToken.trim()
-      ),
+      realtimeSyncActive: connections.ga4.connected || connections.meta || connections.clarity,
     });
     onClose();
   };
@@ -619,17 +615,12 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                 </div>
               </div>
 
-              <div>
-                <label className="block text-[14px] font-semibold text-[#161418] mb-1.5">
-                  Token OAuth 2.0 Bearer (para Google Analytics Data API v1beta y envío por Gmail API)
-                </label>
-                <input
-                  type="password"
-                  value={oauthToken}
-                  onChange={(e) => setOauthToken(e.target.value)}
-                  placeholder="ya29.a0AfH6SM..."
-                  className="w-full h-[40px] px-3.5 text-[14px] bg-[#FAF8F6] border border-[#8C8580] rounded-[10px] text-[#161418] kol-focus"
-                />
+              <div className={`p-3.5 rounded-[10px] border text-[13.5px] ${connections.ga4.connected ? "bg-[#F3F0ED] border-[#C9C3BE] text-[#161418]" : "bg-[#FAF8F6] border-[#A40F5F] text-[#161418]"}`}>
+                <strong>{connections.ga4.connected ? "GA4: la clave está cargada en el servidor." : "GA4: falta conectar la clave en el servidor."}</strong>
+                <p className="text-[#46413F] mt-1">
+                  Por seguridad, las claves ya no se pegan en esta ventana ni se guardan en el navegador. Se cargan una sola vez en los <strong>Secrets</strong> del servidor.
+                  La conexión con GA4 se hace en <strong>Campañas → Datos y archivos → Conexión con Google Analytics</strong>.
+                </p>
               </div>
 
               <div className="p-4 bg-[#F3F0ED] border border-[#C9C3BE] kol-card-12 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -728,17 +719,9 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                   />
                 </div>
 
-                <div>
-                  <label className="block text-[14px] font-semibold text-[#161418] mb-1.5">
-                    Access Token (Meta Marketing API)
-                  </label>
-                  <input
-                    type="password"
-                    value={metaAccessToken}
-                    onChange={(e) => setMetaAccessToken(e.target.value)}
-                    placeholder="EAABwzLixnjYBO..."
-                    className="w-full h-[40px] px-3.5 text-[14px] bg-[#FAF8F6] border border-[#8C8580] rounded-[10px] text-[#161418] kol-focus"
-                  />
+                <div className={`p-3 rounded-[10px] border text-[13px] ${connections.meta ? "bg-[#F3F0ED] border-[#C9C3BE]" : "bg-[#FAF8F6] border-[#A40F5F]"}`}>
+                  <strong>{connections.meta ? "Meta: la clave está cargada en el servidor." : "Meta: falta la clave en el servidor."}</strong>
+                  <p className="text-[#46413F] mt-1">Se carga en Secrets como <code>META_ACCESS_TOKEN</code>, no se pega acá.</p>
                 </div>
               </div>
 
@@ -999,52 +982,34 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                   <span className="font-bold text-[#161418]">
                     Microsoft Clarity (Mapas de calor y comportamiento UX)
                   </span>
-                  {clarityToken.trim() && (
-                    <span className="text-[12px] font-bold px-2.5 py-0.5 rounded-[6px] bg-emerald-100 text-emerald-800 border border-emerald-300">
-                      ✓ Token ingresado
+                  {connections.clarity && (
+                    <span className="text-[12px] font-bold px-2.5 py-0.5 rounded-[6px] bg-[#F3F0ED] text-[#161418] border border-[#C9C3BE]">
+                      ✓ Clave cargada en el servidor
                     </span>
                   )}
                 </div>
                 <p className="text-[14px] text-[#46413F]">
                   Microsoft Clarity analiza mapas de calor, clics de rabia y profundidad de lectura en tu web (no gestiona campañas de pauta).
                 </p>
-                <p className="text-[13px] text-[#46413F]">
-                  Obtené tu token en: <strong>Settings &gt; Data Export &gt; Generate new API token</strong> y pegalo a continuación.
-                </p>
+
               </div>
 
               <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-[14px] font-semibold text-[#161418]">
-                    Token API de Microsoft Clarity (Data Export JWT)
-                  </label>
-                  {clarityToken.trim() && (
-                    <span className="text-[13px] text-[#C51172] font-semibold">
-                      Listo para guardar
-                    </span>
-                  )}
+                <label className="block text-[14px] font-semibold text-[#161418] mb-1.5" htmlFor="clarity-project-id">
+                  ID del proyecto de Clarity (no es una clave, ej. ytmpieugg9)
+                </label>
+                <input
+                  id="clarity-project-id"
+                  type="text"
+                  value={clarityToken}
+                  onChange={(e) => setClarityToken(e.target.value.replace(/[^a-z0-9]/gi, "").slice(0, 20))}
+                  placeholder="ytmpieugg9"
+                  className="w-full h-[40px] px-3.5 text-[14px] bg-[#FFFFFF] border border-[#8C8580] rounded-[10px] text-[#161418] font-mono kol-focus"
+                />
+                <div className={`mt-2 p-3 rounded-[10px] border text-[13px] ${connections.clarity ? "bg-[#F3F0ED] border-[#C9C3BE]" : "bg-[#FAF8F6] border-[#A40F5F]"}`}>
+                  <strong>{connections.clarity ? "Clarity: la clave de exportación está cargada en el servidor." : "Clarity: falta la clave de exportación en el servidor."}</strong>
+                  <p className="text-[#46413F] mt-1">Se genera en Clarity (Settings → Data Export → Generate new API token) y se carga en Secrets como <code>CLARITY_API_TOKEN</code>. No se pega acá.</p>
                 </div>
-                <div className="relative">
-                  <input
-                    type={showClarityToken ? "text" : "password"}
-                    value={clarityToken}
-                    onChange={(e) => setClarityToken(e.target.value)}
-                    placeholder="Pegá el token JWT de exportación de tu proyecto Clarity"
-                    className="w-full h-[40px] pl-3.5 pr-20 text-[14px] bg-[#FFFFFF] border border-[#8C8580] rounded-[10px] text-[#161418] font-mono kol-focus"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowClarityToken(!showClarityToken)}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-[12px] font-bold text-[#46413F] hover:text-[#161418] px-2 py-1 rounded"
-                  >
-                    {showClarityToken ? "Ocultar" : "Mostrar"}
-                  </button>
-                </div>
-                {clarityToken.trim() && (
-                  <p className="text-[12px] text-[#46413F] mt-1.5 font-mono truncate">
-                    Token: {clarityToken.trim().slice(0, 12)}...{clarityToken.trim().slice(-6)}
-                  </p>
-                )}
               </div>
             </div>
           )}

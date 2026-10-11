@@ -21,7 +21,6 @@ interface ReportsAndScheduleViewProps {
   campaigns: CampaignMetric[];
   clarityPages: ClarityPageTelemetry[];
   defaultRecipientEmail: string;
-  oauthAccessToken: string;
 }
 
 const AVAILABLE_REPORT_METRICS = [
@@ -49,7 +48,6 @@ export const ReportsAndScheduleView: React.FC<ReportsAndScheduleViewProps> = ({
   campaigns,
   clarityPages,
   defaultRecipientEmail,
-  oauthAccessToken,
 }) => {
   const [newReportTitle, setNewReportTitle] = useState("");
   const [newReportPlatform, setNewReportPlatform] = useState("GMP + Clarity");
@@ -207,7 +205,6 @@ export const ReportsAndScheduleView: React.FC<ReportsAndScheduleViewProps> = ({
           scheduleConfig: sched,
           gmpSummary: campaigns,
           claritySummary: clarityPages,
-          oauthAccessToken,
         }),
       });
       const data = await res.json();

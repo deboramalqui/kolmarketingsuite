@@ -1,3 +1,4 @@
+import { stripSecrets } from "../lib/secrets";
 import React, { useState } from "react";
 import { ConnectedAccountsConfig } from "../types/marketing";
 import {
@@ -37,12 +38,12 @@ export const ConexionesView: React.FC<ConexionesViewProps> = ({
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSaveConfig(formData);
+    onSaveConfig(stripSecrets(formData));
     try {
       await fetch("/api/accounts/config", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(stripSecrets(formData)),
       });
       setSaveStatus("Configuración guardada en el servidor.");
       setTimeout(() => setSaveStatus(null), 4000);

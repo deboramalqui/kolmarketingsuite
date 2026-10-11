@@ -1,3 +1,4 @@
+import { stripSecrets } from "./lib/secrets";
 import React, { useState, useEffect } from "react";
 import {
   CampaignMetric,
@@ -74,7 +75,7 @@ export default function App() {
           if (parsed.gmpAccountEmail?.includes("marketing@") || parsed.gmpAccountEmail?.includes("redes.kol")) {
             parsed.gmpAccountEmail = "";
           }
-          return { ...INITIAL_CONNECTED_ACCOUNTS, ...parsed };
+          return stripSecrets({ ...INITIAL_CONNECTED_ACCOUNTS, ...parsed });
         }
       } catch {}
       return INITIAL_CONNECTED_ACCOUNTS;
@@ -96,11 +97,13 @@ export default function App() {
             !serverData.gmpAccountEmail.includes("redes.kol")
               ? serverData.gmpAccountEmail
               : "";
-          setAccountsConfig((prev) => ({
-            ...prev,
-            ...serverData,
-            gmpAccountEmail: cleanEmail,
-          }));
+          setAccountsConfig((prev) =>
+            stripSecrets({
+              ...prev,
+              ...serverData,
+              gmpAccountEmail: cleanEmail,
+            })
+          );
         }
       })
       .catch(() => {});
@@ -235,9 +238,10 @@ export default function App() {
   // Persistir en localStorage
   useEffect(() => {
     try {
+      // Nunca se guardan claves en el navegador
       localStorage.setItem(
         "kol_marketing_accounts_config",
-        JSON.stringify(accountsConfig)
+        JSON.stringify(stripSecrets(accountsConfig))
       );
     } catch {}
   }, [accountsConfig]);
@@ -346,11 +350,9 @@ export default function App() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          // Las claves las pone el servidor (Secrets); acá solo van datos no sensibles
           ga4PropertyId: accountsConfig.gmpPropertyId,
-          oauthAccessToken: accountsConfig.oauthAccessToken,
           metaAdAccountId: accountsConfig.metaAdAccountId,
-          metaAccessToken: accountsConfig.metaAccessToken,
-          clarityApiToken: accountsConfig.clarityProjectId,
         }),
       }).catch(() => null);
     } catch {}
@@ -840,7 +842,6 @@ export default function App() {
             campaigns={campaigns}
             clarityPages={clarityPages}
             defaultRecipientEmail={accountsConfig.defaultReportRecipientEmail}
-            oauthAccessToken={accountsConfig.oauthAccessToken}
           />
         )}
 

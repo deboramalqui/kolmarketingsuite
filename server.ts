@@ -4,9 +4,26 @@ import fs from "fs";
 import { fileURLToPath } from "url";
 import dotenv from "dotenv";
 import { GoogleGenAI, Type, type FunctionDeclaration } from "@google/genai";
-import { ga4Status, ga4CampaignRows, oauthClientConfigured, oauthClientHint, oauthAuthUrl, oauthExchange, oauthFinishManual, newOauthState, consumeOauthState, MANUAL_REDIRECT_URI } from "./ga4Server";
+import { ga4AccessTokenOrNull, ga4HasCredentials, ga4PropertyIdValue, ga4Status, ga4CampaignRows, oauthClientConfigured, oauthClientHint, oauthAuthUrl, oauthExchange, oauthFinishManual, newOauthState, consumeOauthState, MANUAL_REDIRECT_URI } from "./ga4Server";
 
 dotenv.config();
+
+/** Claves que NUNCA se guardan en el navegador ni en archivos: viven en los Secrets del servidor */
+const SENSITIVE_KEYS = ["oauthAccessToken", "metaAccessToken", "clarityApiToken", "oauthToken", "accessToken", "refreshToken", "clientSecret"];
+const cleanEnv = (v: string | undefined) => (v || "").replace(/\s+/g, "").replace(/^["']+|["']+$/g, "");
+const metaTokenFromEnv = () => cleanEnv(process.env.META_ACCESS_TOKEN);
+const clarityTokenFromEnv = () => cleanEnv(process.env.CLARITY_API_TOKEN).replace(/^Bearer/i, "");
+
+/** Saca de una configuración cualquier clave. Un "ID de proyecto de Clarity" largo con puntos es en realidad un token: también se saca. */
+function stripSecrets(cfg: unknown): Record<string, unknown> {
+  const out: Record<string, unknown> = { ...(cfg && typeof cfg === "object" ? (cfg as Record<string, unknown>) : {}) };
+  SENSITIVE_KEYS.forEach((k) => {
+    if (k in out) out[k] = "";
+  });
+  const cid = String(out.clarityProjectId ?? "");
+  if (cid.length > 24 || cid.includes(".")) out.clarityProjectId = "";
+  return out;
+}
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -196,27 +213,42 @@ async function startServer() {
 
   const CONFIG_STORE_PATH = path.join(__dirname, ".kol_accounts_config.json");
 
-  // Endpoint de persistencia de credenciales en el servidor (para uso compartido de equipo)
+  // Configuración compartida del equipo: SOLO datos no sensibles (IDs de cuentas, opciones). Las claves van en Secrets.
+  try {
+    if (fs.existsSync(CONFIG_STORE_PATH)) {
+      const existing = JSON.parse(fs.readFileSync(CONFIG_STORE_PATH, "utf-8"));
+      fs.writeFileSync(CONFIG_STORE_PATH, JSON.stringify(stripSecrets(existing), null, 2), "utf-8");
+    }
+  } catch {}
+
   app.get("/api/accounts/config", (_req, res) => {
     try {
       if (fs.existsSync(CONFIG_STORE_PATH)) {
-        const raw = fs.readFileSync(CONFIG_STORE_PATH, "utf-8");
-        return res.json(JSON.parse(raw));
+        return res.json(stripSecrets(JSON.parse(fs.readFileSync(CONFIG_STORE_PATH, "utf-8"))));
       }
     } catch (e) {
-      console.warn("No se pudo leer la configuración del servidor:", e);
+      console.warn("No se pudo leer la configuración del servidor");
     }
     res.json(null);
   });
 
   app.post("/api/accounts/config", (req, res) => {
     try {
-      fs.writeFileSync(CONFIG_STORE_PATH, JSON.stringify(req.body, null, 2), "utf-8");
+      fs.writeFileSync(CONFIG_STORE_PATH, JSON.stringify(stripSecrets(req.body), null, 2), "utf-8");
       res.json({ ok: true, savedAt: new Date().toISOString() });
     } catch (e) {
-      console.error("Error guardando la configuración del servidor:", e);
+      console.error("Error guardando la configuración del servidor");
       res.status(500).json({ error: "Error al persistir configuración en servidor" });
     }
+  });
+
+  // Qué conexiones tienen su clave cargada en el servidor (solo sí o no, nunca el valor)
+  app.get("/api/connections/status", (_req, res) => {
+    res.json({
+      ga4: { connected: ga4HasCredentials(), propertyId: ga4PropertyIdValue() },
+      meta: !!metaTokenFromEnv(),
+      clarity: !!clarityTokenFromEnv(),
+    });
   });
 
   // Resultados de campañas desde GA4 (las credenciales viven solo en el servidor)
@@ -290,16 +322,19 @@ async function startServer() {
   app.post("/api/gmp/sync", async (req, res) => {
     try {
       const {
-        ga4PropertyId,
-        oauthAccessToken,
-        clarityApiToken,
+        ga4PropertyId: bodyPropertyId,
         metaAdAccountId,
-        metaAccessToken,
         metaOnlySpecificCampaigns = true,
         metaAllowedCampaignKeywords = [],
         metaSelectedCampaignNames = [],
         metaTrackedEvents = ["lead_franquicia", "Lead", "Contact"],
       } = req.body;
+
+      // Las claves se leen SIEMPRE del servidor (Secrets): lo que mande el navegador se ignora
+      const ga4PropertyId = bodyPropertyId || ga4PropertyIdValue();
+      const oauthAccessToken = await ga4AccessTokenOrNull();
+      const metaAccessToken = metaTokenFromEnv();
+      const clarityApiToken = clarityTokenFromEnv();
 
       const fetchedCampaigns: Array<Record<string, unknown>> = [];
       const discoveredCampaigns: Array<Record<string, unknown>> = [];
@@ -1167,7 +1202,9 @@ ${JSON.stringify(brandGuidelines || {}, null, 2)}`;
   // 4. Custom Scheduled Performance Report Generator & Email Dispatch
   app.post("/api/reports/dispatch", async (req, res) => {
     try {
-      const { scheduleConfig, gmpSummary, claritySummary, oauthAccessToken } = req.body;
+      const { scheduleConfig, gmpSummary, claritySummary } = req.body;
+      // El envío por Gmail necesita una clave cargada en el servidor (no se acepta una enviada desde el navegador)
+      const oauthAccessToken = cleanEnv(process.env.GMAIL_ACCESS_TOKEN);
       const ai = getGenAIClient();
 
       const prompt = `Genera el contenido completo de un informe ejecutivo de rendimiento personalizado listo para enviarse por correo electrónico.
@@ -1219,7 +1256,7 @@ ${JSON.stringify(claritySummary || {}, null, 2)}`;
       });
 
       const reportContent = JSON.parse(response.text || "{}");
-      let gmailDeliveryStatus = "Relayed via MarketiQ Automated Mailer";
+      let gmailDeliveryStatus = "Informe generado. NO se envió: falta conectar el envío de correo en el servidor";
 
       // If the user connected an OAuth token in the Onboarding flow with gmail.send scope, attempt real Gmail API dispatch
       if (oauthAccessToken && scheduleConfig?.recipientEmail) {
