@@ -58,7 +58,7 @@ export function buildJwt(cred: Credentials, nowSec = Math.floor(Date.now() / 100
 /* ---------- Opción B: autorización con la cuenta de Google de una persona (OAuth) ---------- */
 
 const OAUTH_FILE = path.join(path.dirname(fileURLToPath(import.meta.url)), ".kol_ga4_oauth.json");
-const OAUTH_SCOPE = "https://www.googleapis.com/auth/analytics.readonly openid email";
+const OAUTH_SCOPE = "https://www.googleapis.com/auth/analytics.readonly https://www.googleapis.com/auth/webmasters.readonly openid email";
 
 /** Quita espacios, saltos de línea y comillas que se cuelan al copiar y pegar */
 const clean = (v: string | undefined) => (v || "").replace(/\s+/g, "").replace(/^["']+|["']+$/g, "");
@@ -383,6 +383,19 @@ export async function ga4AccessTokenOrNull(): Promise<string | null> {
   try {
     const { result } = await withAnyMode(async (token) => token);
     return result;
+  } catch {
+    return null;
+  }
+}
+
+/** Token de acceso SOLO de la autorización con cuenta de Google (la cuenta de servicio no sirve para Search Console) */
+export async function oauthAccessTokenOrNull(): Promise<string | null> {
+  const saved = readSavedOauth();
+  if (!saved || !oauthClientConfigured()) return null;
+  try {
+    const hit = cachedTokens.oauth;
+    if (hit && hit.exp > Date.now() + 60_000) return hit.token;
+    return await accessTokenFromRefresh(saved);
   } catch {
     return null;
   }

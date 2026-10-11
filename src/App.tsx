@@ -342,6 +342,7 @@ export default function App() {
     setIsSyncing(true);
     setToastNotice(null);
     const before = snapshot;
+    let gscMessage = "";
     try {
       const res = await fetch("/api/gmp/sync", {
         method: "POST",
@@ -351,6 +352,9 @@ export default function App() {
       }).catch(() => null);
       const data = res && res.ok ? await res.json().catch(() => null) : null;
       if (data && Array.isArray(data.clarityPages) && data.clarityPages.length > 0) setClarityPages(data.clarityPages);
+      // Search Console: solo se reemplaza cuando está conectado (los datos vienen de Google, no se completan)
+      if (data?.gsc?.connected && Array.isArray(data.searchKeywords)) setSearchKeywords(data.searchKeywords);
+      gscMessage = data?.gsc?.message || "";
     } catch {}
 
     const after = await fetchSnapshot(true);
@@ -369,7 +373,7 @@ export default function App() {
         setTimeout(() => setFlashCards(false), 1600);
       }
       setToastNotice({
-        html: `<strong>Datos actualizados.</strong> ${changes.length ? changes.join(", ") + "." : "No hubo cambios desde la última lectura."}<small class='block text-[#C9C3BE] text-[12px] mt-0.5'>GA4 completa los últimos 2 días en 24 a 48 h.</small>`,
+        html: `<strong>Datos actualizados.</strong> ${changes.length ? changes.join(", ") + "." : "No hubo cambios desde la última lectura."}<small class='block text-[#C9C3BE] text-[12px] mt-0.5'>GA4 completa los últimos 2 días en 24 a 48 h.</small>${gscMessage ? `<small class='block text-[#C9C3BE] text-[12px] mt-0.5'>Search Console: ${gscMessage.replace(/[<>&]/g, "")}</small>` : ""}`,
       });
     }
     setTimeout(() => setToastNotice(null), 6000);
@@ -403,11 +407,11 @@ export default function App() {
         if (cols.length >= 2 && cols[0]) {
           const kw = cols[0];
           const clicks = Number(cols[1]) || 0;
-          const impressions = Number(cols[2]) || clicks * 10;
+          const impressions = Number(cols[2]) || 0;
           const ctr =
             Number(cols[3]?.replace("%", "")) ||
             (impressions > 0 ? (clicks / impressions) * 100 : 0);
-          const pos = Number(cols[4]) || 2.5;
+          const pos = Number(cols[4]) || 0;
 
           parsed.push({
             id: `gsc-${idx}-${Date.now()}`,

@@ -38,7 +38,7 @@ export interface GoogleSearchKeyword {
   impressions: number;
   ctrPct: number;
   avgPosition: number;
-  conversions: number;
+  conversions: number | null; // null = Search Console no mide conversiones
   intent: "Inversor" | "Franquicia" | "Marca" | "Informativa";
   landingPage?: string;
   date?: string;
