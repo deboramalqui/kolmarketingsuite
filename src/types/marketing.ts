@@ -23,7 +23,7 @@ export interface FranchiseFunnelStep {
 }
 
 export interface AcquisitionChannel {
-  channelGroup: "Instagram" | "Google Orgánico" | "Canales con IA" | "Directo" | "Otros";
+  channelGroup: string;
   detail: string;
   visitors: number;
   leadsFranquicia: number;
@@ -397,6 +397,8 @@ export interface AssistantChatMessage {
   id: string;
   role: "user" | "assistant";
   text: string;
+  /** De dónde sale la respuesta (solo en respuestas del asistente) */
+  source?: string;
   timestamp: string;
   executedActions?: Array<{
     toolName: string;

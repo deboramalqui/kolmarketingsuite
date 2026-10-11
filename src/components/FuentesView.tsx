@@ -162,7 +162,7 @@ export const FuentesView: React.FC<FuentesViewProps> = ({
               <tbody className="text-[14px] text-[#161418]">
                 <tr className="bg-[#FFFFFF] border-t border-[#C9C3BE]">
                   <td className="py-3 px-4 font-bold">
-                    /franquicias <span className="text-[12px] text-[#46413F] font-normal">(Hub principal de franquicias)</span>
+                    /franquicia/ <span className="text-[12px] text-[#46413F] font-normal">(Hub principal de franquicias)</span>
                   </td>
                   <td className="py-3 px-3 text-right tabular-nums font-semibold">60</td>
                   <td className="py-3 px-3 text-right tabular-nums">57</td>
@@ -172,7 +172,7 @@ export const FuentesView: React.FC<FuentesViewProps> = ({
                 </tr>
                 <tr className="bg-[#FAF8F6] border-t border-[#C9C3BE]">
                   <td className="py-3 px-4 font-bold">
-                    /franquicias/formulario <span className="text-[12px] text-[#46413F] font-normal">(Formulario de contacto de franquicia)</span>
+                    /franquicia/#formulario <span className="text-[12px] text-[#46413F] font-normal">(Formulario de contacto de franquicia)</span>
                   </td>
                   <td className="py-3 px-3 text-right tabular-nums font-semibold">15</td>
                   <td className="py-3 px-3 text-right tabular-nums">14</td>
@@ -194,7 +194,7 @@ export const FuentesView: React.FC<FuentesViewProps> = ({
               <div className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-600" />
                 <span className="font-bold text-[#161418] text-[15px]">
-                  Google Search Console · Propiedad kolaccesorios.com.ar
+                  Google Search Console · Propiedad kolaccesorios.com
                 </span>
               </div>
               <p className="text-[13px] text-[#46413F]">
@@ -264,7 +264,7 @@ export const FuentesView: React.FC<FuentesViewProps> = ({
                       {kw.keyword}
                     </td>
                     <td className="py-3 px-3 font-mono text-[13px] text-[#46413F]">
-                      {kw.landingPage || "/franquicias"}
+                      {kw.landingPage || "/franquicia/"}
                     </td>
                     <td className="py-3 px-3 text-right tabular-nums font-extrabold text-[#161418]">
                       {kw.clicks}

@@ -9,3 +9,4 @@ coverage/
 # Credenciales guardadas por el servidor (nunca al repositorio)
 .kol_accounts_config.json
 .kol_ga4_oauth.json
+.kol_snapshot.json

@@ -1,5 +1,8 @@
+import { useConnectionsStatus, purgeSampleData } from "./lib/secrets";
+import { Snapshot, EMPTY_SNAPSHOT, fetchSnapshot, funnelFromSnapshot, channelsFromSnapshot, diffSnapshots, hasData } from "./lib/liveData";
+import { answerQuestion, weeklySummaryLines } from "./lib/answers";
 import { stripSecrets } from "./lib/secrets";
-import React, { useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import {
   CampaignMetric,
   ClarityPageTelemetry,
@@ -32,7 +35,6 @@ import {
 } from "./data/initialMarketingData";
 import { OnboardingModal } from "./components/OnboardingModal";
 import { DeleteConfirmationModal } from "./components/DeleteConfirmationModal";
-import { DataAssistantView } from "./components/DataAssistantView";
 import { CampaignStudioView } from "./components/CampaignStudioView";
 import { ReportsAndScheduleView } from "./components/ReportsAndScheduleView";
 import { HoyDashboardView } from "./components/HoyDashboardView";
@@ -58,6 +60,9 @@ type ActiveTab =
   | "reports"
   | "connections"
   | "assistant";
+
+// Limpieza única de datos de ejemplo guardados por versiones anteriores
+purgeSampleData();
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<ActiveTab>("hoy");
@@ -112,12 +117,22 @@ export default function App() {
   const [isOnboardingOpen, setIsOnboardingOpen] = useState<boolean>(false);
   const [onboardingInitialStep, setOnboardingInitialStep] = useState<1 | 2 | 3 | 4>(1);
 
-  const [funnelSteps, setFunnelSteps] = useState<FranchiseFunnelStep[]>(
-    INITIAL_FRANCHISE_FUNNEL
-  );
-  const [acquisitionChannels, setAcquisitionChannels] = useState<AcquisitionChannel[]>(
-    INITIAL_ACQUISITION_CHANNELS
-  );
+  // Datos REALES del embudo: los lee el servidor de GA4 (y se actualizan solos cada hora)
+  const connections = useConnectionsStatus();
+  const [snapshot, setSnapshot] = useState<Snapshot>(EMPTY_SNAPSHOT);
+  const [lastChanges, setLastChanges] = useState<string[] | null>(null);
+  useEffect(() => {
+    let alive = true;
+    const load = () => fetchSnapshot(false).then((s) => alive && setSnapshot(s));
+    load();
+    const t = setInterval(load, 5 * 60 * 1000);
+    return () => {
+      alive = false;
+      clearInterval(t);
+    };
+  }, []);
+  const funnelSteps = useMemo(() => funnelFromSnapshot(snapshot), [snapshot]);
+  const acquisitionChannels = useMemo(() => channelsFromSnapshot(snapshot), [snapshot]);
 
   const [campaigns, setCampaigns] = useState<CampaignMetric[]>(() => {
     try {
@@ -151,7 +166,7 @@ export default function App() {
             landingPage:
               kw.landingPage && !kw.landingPage.includes("modelos-isla")
                 ? kw.landingPage
-                : "/franquicias",
+                : "/franquicia/",
           }));
           try {
             localStorage.setItem("kol_marketing_keywords", JSON.stringify(sanitized));
@@ -282,9 +297,6 @@ export default function App() {
     html: string;
     isError?: boolean;
   } | null>(null);
-  const [dynamicConsultas, setDynamicConsultas] = useState<number>(2);
-  const [dynamicVisitas, setDynamicVisitas] = useState<number>(75);
-  const [refreshCount, setRefreshCount] = useState<number>(0);
 
   const [assistantMessages, setAssistantMessages] = useState<
     AssistantChatMessage[]
@@ -308,24 +320,8 @@ export default function App() {
 
     setAssistantMessages((prev) => [...prev, userMsg]);
 
-    // Respuestas verificadas con fuente citada según docs/diseno/prototipo-botones-cabecera.html
-    const lower = text.toLowerCase();
-    let replyText = "";
-    if (lower.includes("visita") || lower.includes("canal") || lower.includes("de dónde")) {
-      replyText = "De las 75 visitas al hub en 28 días: Instagram 40, Google 16 y directo 13. Instagram es la mayor fuente.";
-    } else if (lower.includes("cae") || lower.includes("formulario") || lower.includes("traba")) {
-      replyText = "Todavía no hay volumen para decirlo con seguridad: con 75 visitas, cada paso del embudo tiene muy pocos casos. Conviene mirarlo de nuevo cuando haya más tráfico.";
-    } else if (lower.includes("tarjeta 3") || lower.includes("conversión") || lower.includes("porcentaje")) {
-      replyText = "Mide cuántas de las personas que entran al hub terminan enviando el formulario. Hoy son 2 de 75 (2,7 %). Con una muestra tan chica (<100 visitas), un solo caso cambia mucho el porcentaje.";
-    } else if (lower.includes("google") || lower.includes("buscan") || lower.includes("palabras")) {
-      replyText = "Las principales búsquedas auditadas en Google son: «kol accesorios franquicia» (3 clics, 22 impresiones), «franquicias accesorios moda argentina» (2 clics) y «cuanto cuesta franquicia kol» (1 clic). Todas derivan al hub /franquicias.";
-    } else if (lower.includes("meta") || lower.includes("inversión") || lower.includes("gasto") || lower.includes("lanzar")) {
-      replyText = "Hoy no hay datos de gasto ni resultados de campañas activas (la inversión publicitaria en Meta Ads comienza en noviembre). Por lo tanto no hay costo por consulta registrado aún.";
-    } else if (lower.includes("conectar") || lower.includes("conexiones")) {
-      replyText = "Google Analytics 4, Search Console y Microsoft Clarity están activos. Meta Ads está pausado hasta el lanzamiento de las campañas de noviembre.";
-    } else {
-      replyText = `En base a los datos verificados del hub (${dynamicVisitas} visitas, ${dynamicConsultas} consultas):\n• Tasa de conversión: ${((dynamicConsultas / dynamicVisitas) * 100).toFixed(1)} %.\n• Canales principales: Instagram (53 %), Google Orgánico (21 %).\n• Costo publicitario: $0 (campañas inician en noviembre).`;
-    }
+    // Respuesta armada solo con datos reales (si no hay dato, lo dice)
+    const answer = answerQuestion(text, { snapshot, campaigns: franchiseCampaigns, connections, clarityPages });
 
     setTimeout(() => {
       setAssistantMessages((prev) => [
@@ -333,54 +329,50 @@ export default function App() {
         {
           id: `msg-reply-${Date.now()}`,
           role: "assistant",
-          text: replyText,
+          text: answer.text,
+          source: answer.source,
           timestamp: new Date().toTimeString().slice(0, 5),
         },
       ]);
-    }, 400);
+    }, 300);
   };
 
-  // Sincronización real con feedback visual, tarjetas parpadeando y toast según prototipo
+  // Actualización REAL: el servidor vuelve a leer GA4 (y Clarity/Meta si tienen clave); acá se muestran las diferencias verdaderas
   const handleRefreshWithFeedback = async () => {
     setIsSyncing(true);
     setToastNotice(null);
-
+    const before = snapshot;
     try {
-      await fetch("/api/gmp/sync", {
+      const res = await fetch("/api/gmp/sync", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          // Las claves las pone el servidor (Secrets); acá solo van datos no sensibles
-          ga4PropertyId: accountsConfig.gmpPropertyId,
-          metaAdAccountId: accountsConfig.metaAdAccountId,
-        }),
+        // Las claves las pone el servidor (Secrets); acá solo van datos no sensibles
+        body: JSON.stringify({ ga4PropertyId: accountsConfig.gmpPropertyId, metaAdAccountId: accountsConfig.metaAdAccountId }),
       }).catch(() => null);
+      const data = res && res.ok ? await res.json().catch(() => null) : null;
+      if (data && Array.isArray(data.clarityPages) && data.clarityPages.length > 0) setClarityPages(data.clarityPages);
     } catch {}
 
-    // Simulación progresiva fiel a prototipo-botones-cabecera.html
-    const nextCount = refreshCount + 1;
-    setRefreshCount(nextCount);
+    const after = await fetchSnapshot(true);
+    setSnapshot(after);
+    const changes = diffSnapshots(before, after);
+    setLastChanges(hasData(after) ? changes : null);
 
-    if (nextCount === 1) {
-      setDynamicConsultas(3);
-      setDynamicVisitas(78);
-      // Las tarjetas 1 y 3 parpadean
-      setFlashCards(true);
-      setTimeout(() => setFlashCards(false), 1600);
-
+    if (after.error || !hasData(after)) {
       setToastNotice({
-        html: "<strong>Datos actualizados.</strong> +1 consulta nueva, +3 visitas al hub.<small class='block text-[#C9C3BE] text-[12px] mt-0.5'>GA4 completa los últimos 2 días en 24 a 48 h.</small>",
+        isError: true,
+        html: `<strong>${hasData(after) ? "GA4 no respondió." : "GA4 todavía no está conectado."}</strong> ${(after.error || "Conectalo en Campañas → Datos y archivos → Conexión con Google Analytics.").replace(/[<>&]/g, "")}`,
       });
     } else {
+      if (changes.length) {
+        setFlashCards(true);
+        setTimeout(() => setFlashCards(false), 1600);
+      }
       setToastNotice({
-        html: "<strong>Datos actualizados.</strong> No hubo cambios desde la última vez.<small class='block text-[#C9C3BE] text-[12px] mt-0.5'>GA4 completa los últimos 2 días en 24 a 48 h.</small>",
+        html: `<strong>Datos actualizados.</strong> ${changes.length ? changes.join(", ") + "." : "No hubo cambios desde la última lectura."}<small class='block text-[#C9C3BE] text-[12px] mt-0.5'>GA4 completa los últimos 2 días en 24 a 48 h.</small>`,
       });
     }
-
-    setTimeout(() => {
-      setToastNotice(null);
-    }, 5200);
-
+    setTimeout(() => setToastNotice(null), 6000);
     setIsSyncing(false);
   };
 
@@ -424,9 +416,9 @@ export default function App() {
             impressions,
             ctrPct: Number(ctr.toFixed(1)),
             avgPosition: Number(pos.toFixed(1)),
-            conversions: Math.round(clicks * 0.1),
+            conversions: 0,
             intent: "Inversor",
-            landingPage: "/franquicias",
+            landingPage: "/franquicia/",
             date: new Date().toISOString().slice(0, 10),
           });
         }
@@ -442,7 +434,7 @@ export default function App() {
   const handleOpenClarityRecordings = (filterUrl?: string, eventName?: string) => {
     let url = "https://clarity.microsoft.com/projects/view/ytmpieugg9/recordings";
     if (filterUrl) {
-      url += `?filter=url%3Dhttps%3A%2F%2Fkolaccesorios.com.ar${encodeURIComponent(
+      url += `?filter=url%3Dhttps%3A%2F%2Fkolaccesorios.com${encodeURIComponent(
         filterUrl
       )}`;
     } else if (eventName) {
@@ -488,9 +480,12 @@ export default function App() {
   };
 
   // Métricas verificadas de las 4 tarjetas superiores
-  const consultasCount = dynamicConsultas;
-  const hubVisitorsCount = dynamicVisitas;
-  const conversionRatePct = ((consultasCount / hubVisitorsCount) * 100).toFixed(1);
+  const live = hasData(snapshot);
+  const consultasCount = snapshot.funnel.lead_franquicia.now;
+  const consultasPrev = snapshot.funnel.lead_franquicia.prev;
+  const hubVisitorsCount = snapshot.funnel.page_view.now;
+  const conversionRatePct = hubVisitorsCount > 0 ? ((consultasCount / hubVisitorsCount) * 100).toFixed(1) : "—";
+  const clarityHub = clarityPages.find((p) => p.pageUrl.includes("/franquicia")) || clarityPages[0];
 
   // Modo oscuro total del branding para Conexiones
   const isDarkView = activeTab === "connections";
@@ -523,7 +518,11 @@ export default function App() {
             <div className="flex flex-wrap items-center gap-2.5 shrink-0">
               {/* 1. Control unificado: Estado de los datos + ↻ */}
               <DataStatusControl
+                snapshot={snapshot}
+                connections={connections}
                 isSyncing={isSyncing}
+                lastChanges={lastChanges}
+                canRefresh={true}
                 onRefresh={handleRefreshWithFeedback}
                 onOpenConnections={() => setActiveTab("connections")}
               />
@@ -581,14 +580,18 @@ export default function App() {
                 </div>
                 <div className="inline-block border-b-[3px] border-[#FFBA00] pb-1 mt-2">
                   <span className="font-kol-display font-extrabold text-[28px] leading-[34px] text-[#FFBA00] tabular-nums">
-                    {consultasCount}
+                    {live ? consultasCount : "—"}
                   </span>
                   <span className="text-[14px] text-[#FAF8F6] ml-1.5 font-semibold">
                     consultas
                   </span>
                 </div>
                 <div className="text-[13px] text-[#FAF8F6] mt-2">
-                  <span>+{consultasCount - 1} vs período anterior (28d)</span>
+                  <span>
+                    {live
+                      ? `${consultasCount - consultasPrev >= 0 ? "+" : ""}${consultasCount - consultasPrev} vs período anterior (28d: ${consultasPrev})`
+                      : "Sin conexión con GA4"}
+                  </span>
                 </div>
               </div>
 
@@ -631,15 +634,15 @@ export default function App() {
                 </div>
                 <div className="inline-block border-b-[3px] border-[#FFBA00] pb-1 mt-2">
                   <span className="font-kol-display font-extrabold text-[28px] leading-[34px] text-[#FFBA00] tabular-nums">
-                    {conversionRatePct} %
+                    {live ? `${conversionRatePct} %` : "—"}
                   </span>
                   <span className="text-[14px] text-[#FAF8F6] ml-1.5 font-mono">
-                    ({consultasCount} de {hubVisitorsCount})
+                    {live ? `(${consultasCount} de ${hubVisitorsCount})` : ""}
                   </span>
                 </div>
                 <div className="text-[12px] text-[#C9C3BE] mt-2 flex items-center gap-1.5 font-medium">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#FFBA00] shrink-0" />
-                  <span>Muestra chica (&lt;100 visitas al hub)</span>
+                  <span>{live ? (hubVisitorsCount < 100 ? "Muestra chica (<100 visitas al hub)" : "Muestra suficiente (100 visitas o más)") : "Sin datos todavía"}</span>
                 </div>
               </div>
 
@@ -653,11 +656,17 @@ export default function App() {
                 </div>
                 <div className="inline-block border-b-[3px] border-[#FFBA00] pb-1 mt-2">
                   <span className="font-kol-display font-extrabold text-[24px] leading-[34px] text-[#FFBA00]">
-                    Normal · Alerta en hub
+                    {clarityHub ? (clarityHub.rageClicksPct >= 3 ? "Alerta" : "Normal") : "Sin datos"}
                   </span>
                 </div>
                 <div className="text-[13px] text-[#FAF8F6] mt-2">
-                  <span>3.1 % rage clicks en /franquicias</span>
+                  <span>
+                    {clarityHub
+                      ? `${clarityHub.rageClicksPct.toFixed(1)} % clics repetidos en ${clarityHub.pageUrl}`
+                      : connections.clarity
+                      ? "Clarity conectado, sin sesiones todavía"
+                      : "Falta la clave de Clarity en el servidor"}
+                  </span>
                 </div>
               </div>
             </div>
@@ -841,6 +850,7 @@ export default function App() {
             }
             campaigns={campaigns}
             clarityPages={clarityPages}
+            summaryLines={weeklySummaryLines({ snapshot, campaigns: franchiseCampaigns, connections, clarityPages })}
             defaultRecipientEmail={accountsConfig.defaultReportRecipientEmail}
           />
         )}

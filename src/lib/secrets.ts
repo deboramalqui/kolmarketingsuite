@@ -37,3 +37,21 @@ export function useConnectionsStatus(): ConnectionsStatus {
   }, []);
   return st;
 }
+
+/**
+ * Una sola vez: borra del navegador datos de ejemplo que versiones anteriores guardaron como si fueran reales
+ * (lista de palabras clave de muestra, páginas de Clarity de muestra, estado simulado de las fuentes).
+ */
+export function purgeSampleData() {
+  try {
+    if (localStorage.getItem("kol_purged_samples_v1")) return;
+    const kw = localStorage.getItem("kol_marketing_keywords");
+    if (kw) {
+      const parsed = JSON.parse(kw);
+      if (Array.isArray(parsed)) localStorage.setItem("kol_marketing_keywords", JSON.stringify(parsed.filter((k: { id?: string }) => !String(k.id || "").startsWith("kw-"))));
+    }
+    localStorage.removeItem("kol_marketing_clarity_pages");
+    localStorage.removeItem("kol_data_status_state_v3");
+    localStorage.setItem("kol_purged_samples_v1", "1");
+  } catch {}
+}

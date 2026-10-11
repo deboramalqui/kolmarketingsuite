@@ -4,6 +4,7 @@ import fs from "fs";
 import { fileURLToPath } from "url";
 import dotenv from "dotenv";
 import { GoogleGenAI, Type, type FunctionDeclaration } from "@google/genai";
+import { getSnapshot, startSnapshotSchedule } from "./ga4Snapshot";
 import { ga4AccessTokenOrNull, ga4HasCredentials, ga4PropertyIdValue, ga4Status, ga4CampaignRows, oauthClientConfigured, oauthClientHint, oauthAuthUrl, oauthExchange, oauthFinishManual, newOauthState, consumeOauthState, MANUAL_REDIRECT_URI } from "./ga4Server";
 
 dotenv.config();
@@ -255,6 +256,15 @@ async function startServer() {
   app.get("/api/ga4/status", async (req, res) => {
     res.json(await ga4Status(req.query.test === "1"));
   });
+
+  // Resumen real del embudo (GA4), con lectura programada cada hora
+  app.get("/api/snapshot", async (_req, res) => {
+    res.json(await getSnapshot(false));
+  });
+  app.post("/api/snapshot/refresh", async (_req, res) => {
+    res.json(await getSnapshot(true));
+  });
+  startSnapshotSchedule();
 
   // Autorización de GA4 con una cuenta de Google (opción B: no requiere ser administrador de GA4)
   const redirectUriOf = (req: express.Request) => {
@@ -986,7 +996,7 @@ ${JSON.stringify(clarityMetrics || {}, null, 2)}`;
           targetAudience: brief?.targetAudience || "Inversores de 28 a 55 años en CABA, GBA, Rosario y Córdoba interesados en franquicias comerciales",
           biddingStrategy: "Menor costo por cliente potencial con evento lead_franquicia",
           designComplianceNote: "Guía de marca v3: Bloque oscuro #161418 con acento ámbar #FFBA00 en la cifra, copy rioplatense sin signos de exclamación ni emojis, número primero.",
-          clarityUxAdaptation: "Deriva directamente al formulario simplificado en /franquicias/formulario reduciendo la fricción registrada en móviles.",
+          clarityUxAdaptation: "Deriva directamente al formulario simplificado en /franquicia/#formulario reduciendo la fricción registrada en móviles.",
           creatives: [
             {
               format: "Meta Feed 1:1 (Imagen + Copy)",
@@ -1028,7 +1038,7 @@ ${JSON.stringify(clarityMetrics || {}, null, 2)}`;
         targetAudience: "Búsquedas exactas y de frase en Google Argentina con términos de franquicias e inversión",
         biddingStrategy: "Maximizar conversiones hacia evento lead_franquicia",
         designComplianceNote: "Regla editorial estricta: Español rioplatense, números directos, sin adjetivos vacíos ni urgencia artificial.",
-        clarityUxAdaptation: "Envío directo a /franquicias con salto anclado a la calculadora financiera.",
+        clarityUxAdaptation: "Envío directo a /franquicia/ con salto anclado a la calculadora financiera.",
         creatives: [
           {
             format: "Google Search RSA (Anuncio adaptable de búsqueda)",
@@ -1036,7 +1046,7 @@ ${JSON.stringify(clarityMetrics || {}, null, 2)}`;
             subheadline: "Derecho Inicial US$ 3.000 | Sin Regalías | 10 Locales",
             bodyCopy: `Invertí en una franquicia rentable de accesorios de telefonía. Formato isla o local con recupero estimado en 18 a 24 meses. Consultá zonas disponibles en todo el país.`,
             ctaLabel: "Consultá online",
-            visualCompositionRule: "URL visible: kolaccesorios.com.ar/franquicias con enlaces de sitio a Requisitos y Rentabilidad.",
+            visualCompositionRule: "URL visible: kolaccesorios.com/franquicia/ con enlaces de sitio a Requisitos y Rentabilidad.",
             predictedCtrPct: 6.8,
           },
           {

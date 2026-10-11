@@ -37,46 +37,6 @@ const SUGGESTIONS_BY_PAGE: Record<string, string[]> = {
   connections: ["¿Qué me falta conectar?"],
 };
 
-// Respuestas oficiales con cita de fuente y período según el prototipo
-const VERIFIED_ANSWERS: Record<string, { text: string; source: string }> = {
-  "¿De dónde vienen las visitas?": {
-    text: "De las 75 visitas al hub en 28 días: Instagram 40, Google 16 y directo 13. Instagram es la mayor fuente.",
-    source: "GA4 · últimos 28 días",
-  },
-  "¿Dónde se cae la gente?": {
-    text: "Todavía no hay volumen para decirlo con seguridad: con 75 visitas, cada paso del embudo tiene muy pocos casos. Conviene mirarlo de nuevo cuando haya más tráfico.",
-    source: "GA4 · embudo, muestra chica",
-  },
-  "Explicame la tarjeta 3": {
-    text: "Mide cuántas de las personas que entran al hub terminan enviando el formulario. Hoy son 2 de 75 (2,7 %). Con una muestra tan chica (<100 visitas), un solo caso cambia mucho el porcentaje.",
-    source: "GA4 · lead_franquicia",
-  },
-  "¿Qué buscan en Google antes de entrar?": {
-    text: "Las principales búsquedas auditadas son: «kol accesorios franquicia» (3 clics, 22 impresiones), «franquicias accesorios moda argentina» (2 clics) y «cuanto cuesta franquicia kol» (1 clic). Todas derivan a /franquicias.",
-    source: "Search Console · últimos 28 días",
-  },
-  "¿Qué canal conviene probar?": {
-    text: "Instagram trae la mayor parte de las visitas hoy (40 visitas). Es una pista, no una conclusión: la muestra es chica y la tasa de conversión en sesión inicial es baja.",
-    source: "GA4 · canales",
-  },
-  "¿Conviene lanzar en Instagram o en Google?": {
-    text: "Hoy no hay datos de gasto ni resultados de campañas activas, así que no se pueden comparar costos por lead. Instagram demostró volumen de visitas, mientras que Google Orgánico tuvo mejor tasa de consulta (6.25 %).",
-    source: "GA4 · canales (sin datos de pauta)",
-  },
-  "¿Qué tope de gasto me sugerís para una prueba?": {
-    text: "No hay un monto por defecto en la plataforma: lo define Kol con administración. Se sugiere una prueba corta, de 14 días, con un tope total acotado para validar costo por consulta.",
-    source: "Criterio de trabajo",
-  },
-  "Resumime la semana en 5 líneas": {
-    text: "• 75 visitas totales al hub /franquicias.\n• 2 consultas enviadas (evento lead_franquicia).\n• Tasa de conversión: 2.7 %.\n• 0 USD invertidos en pauta (campañas arrancan en noviembre).\n• Fricción normal en Clarity (3.1 % rage clicks en móviles).",
-    source: "Consolidado GA4 + Clarity · últimos 7 días",
-  },
-  "¿Qué me falta conectar?": {
-    text: "GA4, Search Console y Microsoft Clarity están activos. Meta Ads (Instagram y Facebook) está pausado hasta el lanzamiento de campañas en noviembre.",
-    source: "Centro de Conexiones",
-  },
-};
-
 export const DataAssistantDrawer: React.FC<DataAssistantDrawerProps> = ({
   isOpen,
   onClose,
@@ -191,7 +151,6 @@ export const DataAssistantDrawer: React.FC<DataAssistantDrawerProps> = ({
           {messages.map((m) => {
             const isUser = m.role === "user";
             // Extraer respuesta conocida si coincide exactamente
-            const answerMatch = !isUser ? VERIFIED_ANSWERS[m.text] : null;
 
             return (
               <div
@@ -214,14 +173,7 @@ export const DataAssistantDrawer: React.FC<DataAssistantDrawerProps> = ({
                     <div className="mt-2 pt-2 border-t border-[#46413F]/50 text-[11.5px] text-[#C9C3BE] flex items-center justify-between">
                       <span>
                         Fuente:{" "}
-                        {answerMatch?.source ||
-                          (m.text.includes("Instagram") || m.text.includes("visitas")
-                            ? "GA4 · últimos 28 días"
-                            : m.text.includes("Google") || m.text.includes("Search")
-                            ? "Search Console · últimos 28 días"
-                            : m.text.includes("rage") || m.text.includes("Clarity")
-                            ? "Microsoft Clarity · últimos 28 días"
-                            : "GA4 + Microsoft Clarity")}
+                        {m.source || "Datos de la herramienta"}
                       </span>
                       <span className="font-mono text-[#8C8580] ml-2">
                         {m.timestamp}

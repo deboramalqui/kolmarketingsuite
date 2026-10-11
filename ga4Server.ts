@@ -393,3 +393,9 @@ export function ga4HasCredentials(): boolean {
 }
 
 export const ga4PropertyIdValue = propertyId;
+
+/** Consulta libre a la API de datos de GA4 con la conexión que funcione (para el resumen del tablero) */
+export async function ga4RunReport(body: Record<string, unknown>) {
+  const { result } = await withAnyMode((token) => runReport(token, body));
+  return result;
+}

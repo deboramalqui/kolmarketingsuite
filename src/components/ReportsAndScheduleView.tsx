@@ -21,6 +21,7 @@ interface ReportsAndScheduleViewProps {
   campaigns: CampaignMetric[];
   clarityPages: ClarityPageTelemetry[];
   defaultRecipientEmail: string;
+  summaryLines: Array<{ title: string; text: string }>;
 }
 
 const AVAILABLE_REPORT_METRICS = [
@@ -48,6 +49,7 @@ export const ReportsAndScheduleView: React.FC<ReportsAndScheduleViewProps> = ({
   campaigns,
   clarityPages,
   defaultRecipientEmail,
+  summaryLines,
 }) => {
   const [newReportTitle, setNewReportTitle] = useState("");
   const [newReportPlatform, setNewReportPlatform] = useState("GMP + Clarity");
@@ -274,26 +276,12 @@ export const ReportsAndScheduleView: React.FC<ReportsAndScheduleViewProps> = ({
         </div>
 
         <div className="space-y-2.5 text-[15px] text-[#161418] leading-relaxed">
-          <div className="flex items-start gap-2.5">
-            <strong className="text-[#C51172] shrink-0 font-bold">1. Qué pasó:</strong>
-            <span>75 personas visitaron el hub de franquicias en los últimos 28 días y se generaron 2 consultas completas de interesados (<code className="bg-[#E7E3DF] px-1 rounded text-[13px]">lead_franquicia</code>).</span>
-          </div>
-          <div className="flex items-start gap-2.5">
-            <strong className="text-[#C51172] shrink-0 font-bold">2. Qué cambió:</strong>
-            <span>Instagram consolidó el 53 % de las visitas totales (40 visitas) y las búsquedas en Google Search aportaron 16 visitas con 1 consulta orgánica verificada.</span>
-          </div>
-          <div className="flex items-start gap-2.5">
-            <strong className="text-[#C51172] shrink-0 font-bold">3. Dónde se traba:</strong>
-            <span>El 94.7 % de los visitantes abandona entre entrar al hub y tocar el botón del formulario (de 75 personas solo 4 tocan el llamado a la acción).</span>
-          </div>
-          <div className="flex items-start gap-2.5">
-            <strong className="text-[#C51172] shrink-0 font-bold">4. Qué mirar en Clarity:</strong>
-            <span>En la página principal <span className="font-mono font-semibold">/franquicias</span> se detectó un 3.1 % de clics con rabia en el acordeón de requisitos y desglose del derecho inicial de US$ 3.000.</span>
-          </div>
-          <div className="flex items-start gap-2.5">
-            <strong className="text-[#C51172] shrink-0 font-bold">5. Próximo paso:</strong>
-            <span>Hacer más visible el botón del formulario en la cabecera antes de lanzar las campañas pagas en Google y Meta durante noviembre.</span>
-          </div>
+          {summaryLines.map((l, i) => (
+            <div key={l.title} className="flex items-start gap-2.5">
+              <strong className="text-[#C51172] shrink-0 font-bold">{i + 1}. {l.title}:</strong>
+              <span>{l.text}</span>
+            </div>
+          ))}
         </div>
       </div>
 
@@ -518,7 +506,7 @@ export const ReportsAndScheduleView: React.FC<ReportsAndScheduleViewProps> = ({
                   setRecipientEmail(e.target.value);
                   setEmailError(null);
                 }}
-                placeholder="nombre@kolaccesorios.com.ar"
+                placeholder="nombre@kolaccesorios.com"
                 className={`w-full h-[40px] px-3.5 text-[15px] bg-[#FFFFFF] rounded-[10px] text-[#161418] kol-focus ${
                   emailError
                     ? "border-2 border-[#A40F5F]"

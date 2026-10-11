@@ -1,0 +1,148 @@
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+import { ga4HasCredentials, ga4RunReport } from "./ga4Server";
+
+/**
+ * Resumen real del embudo de franquicia leído de GA4: se actualiza solo cada hora (mientras el servidor esté despierto),
+ * y también al pedirlo si pasó más de una hora. Nada de lo que devuelve es inventado: si GA4 no responde, no hay datos.
+ */
+
+const FILE = path.join(path.dirname(fileURLToPath(import.meta.url)), ".kol_snapshot.json");
+const MAX_AGE_MS = 60 * 60 * 1000;
+export const FUNNEL_EVENTS = ["page_view", "click_cta_formulario", "inicio_formulario", "lead_franquicia"] as const;
+
+export interface FunnelCount {
+  now: number;
+  prev: number;
+}
+
+export interface Snapshot {
+  connected: boolean;
+  fetchedAt: string | null;
+  periodDays: number;
+  funnel: Record<(typeof FUNNEL_EVENTS)[number], FunnelCount>;
+  channels: Array<{ channelGroup: string; visitors: number; leads: number }>;
+  error?: string;
+}
+
+const empty = (connected: boolean, error?: string): Snapshot => ({
+  connected,
+  fetchedAt: null,
+  periodDays: 28,
+  funnel: Object.fromEntries(FUNNEL_EVENTS.map((e) => [e, { now: 0, prev: 0 }])) as Snapshot["funnel"],
+  channels: [],
+  error,
+});
+
+type Row = { dimensionValues?: Array<{ value?: string }>; metricValues?: Array<{ value?: string }> };
+const num = (r: Row, i: number) => Number(r.metricValues?.[i]?.value ?? 0) || 0;
+
+/** Convierte las filas de GA4 al resumen. Exportado para poder probarlo sin llamar a Google. */
+export function buildSnapshot(funnelRows: Row[], channelRows: Row[], leadRows: Row[], now = new Date()): Snapshot {
+  const snap = empty(true);
+  snap.fetchedAt = now.toISOString();
+  // con dos períodos GA4 agrega una dimensión final con el nombre del rango
+  funnelRows.forEach((r) => {
+    const d = (r.dimensionValues ?? []).map((x) => x.value ?? "");
+    const ev = d[0] as (typeof FUNNEL_EVENTS)[number];
+    const range = d[1] || "actual";
+    if (!snap.funnel[ev]) return;
+    if (range === "anterior") snap.funnel[ev].prev = num(r, 0);
+    else snap.funnel[ev].now = num(r, 0);
+  });
+  const leadsByChannel = new Map<string, number>();
+  leadRows.forEach((r) => {
+    const g = r.dimensionValues?.[0]?.value || "(sin canal)";
+    leadsByChannel.set(g, (leadsByChannel.get(g) || 0) + num(r, 0));
+  });
+  snap.channels = channelRows
+    .map((r) => {
+      const g = r.dimensionValues?.[0]?.value || "(sin canal)";
+      return { channelGroup: g, visitors: num(r, 0), leads: leadsByChannel.get(g) || 0 };
+    })
+    .sort((a, b) => b.visitors - a.visitors);
+  return snap;
+}
+
+let current: Snapshot = (() => {
+  try {
+    if (fs.existsSync(FILE)) return JSON.parse(fs.readFileSync(FILE, "utf-8"));
+  } catch {}
+  return empty(false);
+})();
+let refreshing: Promise<Snapshot> | null = null;
+
+export function getCachedSnapshot(): Snapshot {
+  return { ...current, connected: ga4HasCredentials() && current.connected !== false ? true : ga4HasCredentials() };
+}
+
+const pageFilter = { filter: { fieldName: "pagePath", stringFilter: { matchType: "CONTAINS", value: "/franquicia" } } };
+
+async function fetchFromGa4(): Promise<Snapshot> {
+  const [funnelRows, channelRows, leadRows] = await Promise.all([
+    ga4RunReport({
+      dateRanges: [
+        { startDate: "28daysAgo", endDate: "today", name: "actual" },
+        { startDate: "56daysAgo", endDate: "29daysAgo", name: "anterior" },
+      ],
+      dimensions: [{ name: "eventName" }],
+      metrics: [{ name: "totalUsers" }],
+      dimensionFilter: { andGroup: { expressions: [{ filter: { fieldName: "eventName", inListFilter: { values: [...FUNNEL_EVENTS] } } }, pageFilter] } },
+      limit: 100,
+    }),
+    ga4RunReport({
+      dateRanges: [{ startDate: "28daysAgo", endDate: "today" }],
+      dimensions: [{ name: "sessionPrimaryChannelGroup" }],
+      metrics: [{ name: "totalUsers" }],
+      dimensionFilter: { filter: { fieldName: "landingPage", stringFilter: { matchType: "CONTAINS", value: "/franquicia" } } },
+      limit: 50,
+    }),
+    ga4RunReport({
+      dateRanges: [{ startDate: "28daysAgo", endDate: "today" }],
+      dimensions: [{ name: "sessionPrimaryChannelGroup" }],
+      metrics: [{ name: "totalUsers" }],
+      dimensionFilter: { andGroup: { expressions: [{ filter: { fieldName: "eventName", stringFilter: { matchType: "EXACT", value: "lead_franquicia" } } }, pageFilter] } },
+      limit: 50,
+    }),
+  ]);
+  return buildSnapshot(funnelRows, channelRows, leadRows);
+}
+
+/** Actualiza desde GA4. Si falla, se conserva lo último bueno y se informa el error. */
+export function refreshSnapshot(): Promise<Snapshot> {
+  if (!ga4HasCredentials()) {
+    current = empty(false);
+    return Promise.resolve(current);
+  }
+  if (refreshing) return refreshing;
+  refreshing = fetchFromGa4()
+    .then((s) => {
+      current = s;
+      try {
+        fs.writeFileSync(FILE, JSON.stringify(s), "utf-8");
+      } catch {}
+      return s;
+    })
+    .catch((e) => {
+      current = { ...current, connected: true, error: e instanceof Error ? e.message : "No se pudo leer GA4" };
+      return current;
+    })
+    .finally(() => {
+      refreshing = null;
+    });
+  return refreshing;
+}
+
+/** Devuelve lo último; si está viejo, lo actualiza antes de responder */
+export async function getSnapshot(force = false): Promise<Snapshot> {
+  const age = current.fetchedAt ? Date.now() - new Date(current.fetchedAt).getTime() : Infinity;
+  if (force || age > MAX_AGE_MS) await refreshSnapshot();
+  return getCachedSnapshot();
+}
+
+/** Programación: una lectura al arrancar y una por hora */
+export function startSnapshotSchedule() {
+  setTimeout(() => void refreshSnapshot(), 15_000);
+  setInterval(() => void refreshSnapshot(), MAX_AGE_MS);
+}

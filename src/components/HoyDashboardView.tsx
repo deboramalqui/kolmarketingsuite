@@ -46,10 +46,15 @@ export const HoyDashboardView: React.FC<HoyDashboardViewProps> = ({
   onGoToFuentes,
   onGoToAssistant,
 }) => {
-  const hubVisitors = funnelSteps[0]?.count || 75;
-  const ctaClicks = funnelSteps[1]?.count || 4;
-  const formStarts = funnelSteps[2]?.count || 3;
-  const franchiseLeads = funnelSteps[3]?.count || 2;
+  const hubVisitors = funnelSteps[0]?.count ?? 0;
+  const ctaClicks = funnelSteps[1]?.count ?? 0;
+  const formStarts = funnelSteps[2]?.count ?? 0;
+  const franchiseLeads = funnelSteps[3]?.count ?? 0;
+  const totalChannelVisitors = acquisitionChannels.reduce((a, c) => a + c.visitors, 0);
+  const topChannel = [...acquisitionChannels].sort((a, b) => b.visitors - a.visitors)[0];
+  const bestRate = [...acquisitionChannels].filter((c) => c.leadsFranquicia > 0).sort((a, b) => b.conversionPct - a.conversionPct)[0];
+  const aiChannel = acquisitionChannels.find((c) => c.isAiChannel);
+  const noData = funnelSteps.length === 0 || (hubVisitors === 0 && acquisitionChannels.length === 0);
 
   // Sanitizar cualquier URL inexistente que pudiera venir de datos previos
   const sanitizedKeywords = searchKeywords.map((kw) => ({
@@ -57,7 +62,7 @@ export const HoyDashboardView: React.FC<HoyDashboardViewProps> = ({
     landingPage:
       kw.landingPage && !kw.landingPage.includes("modelos-isla")
         ? kw.landingPage
-        : "/franquicias",
+        : "/franquicia/",
   }));
 
   // Top 3 búsquedas más importantes para el resumen ejecutivo
@@ -65,10 +70,16 @@ export const HoyDashboardView: React.FC<HoyDashboardViewProps> = ({
     .sort((a, b) => b.clicks - a.clicks)
     .slice(0, 3);
 
-  const clarityHub = clarityPages.find((p) => p.pageUrl === "/franquicias") || clarityPages[0];
+  const clarityHub = clarityPages.find((p) => p.pageUrl.includes("/franquicia")) || clarityPages[0];
 
   return (
     <div className="space-y-10">
+      {noData && (
+        <div role="status" className="p-4 bg-[#FAF8F6] border-2 border-[#161418] rounded-[12px] text-[14px] text-[#161418]">
+          <strong>Todavía no hay datos reales para mostrar.</strong> Este tablero se llena solo con lo que lee de Google Analytics. Si GA4 ya está conectado, tocá el botón ↻ de arriba; si no, conectalo en Campañas → Datos y archivos → Conexión con Google Analytics.
+        </div>
+      )}
+
       {/* 1. TRES ALERTAS AUTOMÁTICAS DE UNA LÍNEA */}
       <section className="space-y-2.5">
         <div className="flex items-center justify-between pb-1">
@@ -81,41 +92,48 @@ export const HoyDashboardView: React.FC<HoyDashboardViewProps> = ({
         </div>
 
         <div className="grid grid-cols-1 gap-2.5">
-          {/* Alerta 1: Fricción en Clarity */}
-          <div className="p-3.5 bg-[#FFF5F8] border border-[#FFD9E4] rounded-[10px] flex items-center justify-between gap-3 text-[14px]">
-            <div className="flex items-center gap-3">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#C51172] shrink-0" />
-              <div className="text-[#161418]">
-                <strong className="font-bold text-[#C51172]">Fricción en celulares (Clarity):</strong>{" "}
-                La página oficial <span className="font-mono font-semibold">/franquicias</span> registró{" "}
-                <strong>3.1 % de clics repetidos (rage clicks)</strong> al intentar abrir los requisitos.
+          {/* Alerta 1: Fricción en Clarity (solo si hay datos reales) */}
+          {clarityHub ? (
+            <div className="p-3.5 bg-[#F3F0ED] border border-[#C9C3BE] rounded-[10px] flex items-center justify-between gap-3 text-[14px]">
+              <div className="flex items-center gap-3">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#C51172] shrink-0" />
+                <div className="text-[#161418]">
+                  <strong className="font-bold text-[#C51172]">Fricción (Clarity):</strong>{" "}
+                  La página <span className="font-mono font-semibold">{clarityHub.pageUrl}</span> registró{" "}
+                  <strong>{clarityHub.rageClicksPct.toFixed(1)} % de clics repetidos (rage clicks)</strong> en {clarityHub.sessions} sesiones.
+                </div>
               </div>
+              <button type="button" onClick={() => onOpenClarityRecordings(clarityHub.pageUrl)} className="text-[13px] font-bold text-[#C51172] hover:text-[#A40F5F] flex items-center gap-1.5 shrink-0 underline decoration-1 underline-offset-4">
+                <PlayCircle className="w-4 h-4" />
+                <span>Ver grabaciones</span>
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={() => onOpenClarityRecordings("/franquicias")}
-              className="text-[13px] font-bold text-[#C51172] hover:text-[#A40F5F] flex items-center gap-1.5 shrink-0 underline decoration-1 underline-offset-4"
-            >
-              <PlayCircle className="w-4 h-4" />
-              <span>Ver grabaciones</span>
-            </button>
-          </div>
+          ) : (
+            <div className="p-3.5 bg-[#F3F0ED] border border-[#C9C3BE] rounded-[10px] flex items-center gap-3 text-[14px] text-[#161418]">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#8C8580] shrink-0" />
+              <div><strong>Fricción (Clarity):</strong> todavía no hay datos. Falta la clave de exportación de Clarity en el servidor (<code>CLARITY_API_TOKEN</code>).</div>
+            </div>
+          )}
 
-          {/* Alerta 2: Atribución de canales */}
+          {/* Alerta 2: Atribución de canales (de GA4) */}
           <div className="p-3.5 bg-[#F3F0ED] border border-[#C9C3BE] rounded-[12px] flex items-center justify-between gap-3 text-[14px]">
             <div className="flex items-center gap-3">
               <span className="w-2.5 h-2.5 rounded-full bg-[#161418] shrink-0" />
               <div className="text-[#161418]">
-                <strong className="font-bold text-[#161418]">Concentración en Instagram:</strong>{" "}
-                Instagram aportó <strong>40 de las 75 visitas</strong> al hub, pero los usuarios suelen mirar y no completar el formulario en la primera sesión móvil.
+                {topChannel && totalChannelVisitors > 0 ? (
+                  <>
+                    <strong className="font-bold">Canal que más trae:</strong> {topChannel.channelGroup} aportó{" "}
+                    <strong>{topChannel.visitors} de las {totalChannelVisitors} visitas</strong> al hub en los últimos 28 días.
+                  </>
+                ) : (
+                  <>
+                    <strong className="font-bold">Canales:</strong> todavía no hay datos de GA4 para mostrar de dónde vienen las visitas.
+                  </>
+                )}
               </div>
             </div>
-            <button
-              type="button"
-              onClick={onGoToAssistant}
-              className="text-[13px] font-bold text-[#C51172] hover:text-[#A40F5F] flex items-center gap-1.5 shrink-0 underline decoration-1 underline-offset-4"
-            >
-              <span>Preguntarle al Asistente IA</span>
+            <button type="button" onClick={onGoToAssistant} className="text-[13px] font-bold text-[#C51172] hover:text-[#A40F5F] flex items-center gap-1.5 shrink-0 underline decoration-1 underline-offset-4">
+              <span>Preguntar</span>
             </button>
           </div>
 
@@ -147,12 +165,12 @@ export const HoyDashboardView: React.FC<HoyDashboardViewProps> = ({
               Embudo de captación de franquicias (4 pasos)
             </h2>
             <p className="text-[14px] text-[#46413F] mt-0.5">
-              Trayecto verificado desde la primera visita a <span className="font-mono">/franquicias</span> hasta el envío de datos de contacto
+              Trayecto leído de GA4 desde la primera visita a <span className="font-mono">/franquicia/</span> hasta el envío de datos de contacto
             </p>
           </div>
 
           <div className="text-[13px] text-[#8C8580] font-medium">
-            Muestra verificada: 75 visitas al hub
+            {noData ? "Sin datos de GA4 todavía" : `Muestra: ${hubVisitors} personas que entraron al hub`}
           </div>
         </div>
 
@@ -288,15 +306,23 @@ export const HoyDashboardView: React.FC<HoyDashboardViewProps> = ({
                 <span>Hallazgos clave de adquisición</span>
               </div>
               <ul className="text-[13px] text-[#46413F] space-y-2 list-disc list-inside leading-relaxed">
-                <li>
-                  <strong>Instagram</strong> genera el mayor volumen (53 % del tráfico), ideal para conocimiento de marca.
-                </li>
-                <li>
-                  <strong>Google Orgánico</strong> tiene la tasa más alta (6.25 %), porque quienes buscan en Google tienen intención activa de invertir.
-                </li>
-                <li>
-                  <strong>Motores de IA</strong> (Perplexity, ChatGPT) empezaron a referir 7 visitas sin costo publicitario.
-                </li>
+                {topChannel && totalChannelVisitors > 0 ? (
+                  <li>
+                    <strong>{topChannel.channelGroup}</strong> genera el mayor volumen ({Math.round((topChannel.visitors / totalChannelVisitors) * 100)} % de las visitas).
+                  </li>
+                ) : (
+                  <li>Todavía no hay datos de canales para sacar conclusiones.</li>
+                )}
+                {bestRate && (
+                  <li>
+                    <strong>{bestRate.channelGroup}</strong> tiene la tasa de consulta más alta ({bestRate.conversionPct.toFixed(1)} %, con {bestRate.leadsFranquicia} consulta{bestRate.leadsFranquicia === 1 ? "" : "s"}). Con pocas consultas es una pista, no una conclusión.
+                  </li>
+                )}
+                {aiChannel && aiChannel.visitors > 0 && (
+                  <li>
+                    <strong>{aiChannel.channelGroup}</strong> trajo {aiChannel.visitors} visitas sin costo publicitario.
+                  </li>
+                )}
               </ul>
             </div>
 
@@ -319,7 +345,7 @@ export const HoyDashboardView: React.FC<HoyDashboardViewProps> = ({
               Qué buscan los inversores (Google Search Console)
             </h2>
             <p className="text-[14px] text-[#46413F] mt-0.5">
-              Términos reales que llevan tráfico al hub de franquicias (<span className="font-mono">/franquicias</span>)
+              Términos reales que llevan tráfico al hub de franquicias (<span className="font-mono">/franquicia/</span>)
             </p>
           </div>
 
@@ -340,7 +366,7 @@ export const HoyDashboardView: React.FC<HoyDashboardViewProps> = ({
             <span>¿Qué es esta información y por qué es 100 % real?</span>
           </div>
           <p className="text-[#46413F] leading-relaxed">
-            Son las <strong>frases exactas que las personas escriben en Google</strong> antes de hacer clic y entrar a la página oficial de franquicias de KOL (<code className="bg-[#E7E3DF] px-1 rounded font-semibold text-[#161418]">https://kolaccesorios.com.ar/franquicias</code>).
+            Son las <strong>frases exactas que las personas escriben en Google</strong> antes de hacer clic y entrar a la página oficial de franquicias de KOL (<code className="bg-[#E7E3DF] px-1 rounded font-semibold text-[#161418]">https://kolaccesorios.com/franquicia/</code>).
           </p>
         </div>
 
@@ -392,18 +418,18 @@ export const HoyDashboardView: React.FC<HoyDashboardViewProps> = ({
             </h3>
           </div>
           <p className="text-[14px] text-[#46413F]">
-            Podés reproducir los videos de personas reales navegando <span className="font-mono">/franquicias</span> y ver exactamente dónde dudan o hacen clics repetidos.
+            Podés reproducir los videos de personas reales navegando <span className="font-mono">/franquicia/</span> y ver exactamente dónde dudan o hacen clics repetidos.
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3 shrink-0">
           <button
             type="button"
-            onClick={() => onOpenClarityRecordings("/franquicias")}
+            onClick={() => onOpenClarityRecordings("/franquicia/")}
             className="kol-btn-normal px-4 py-2 bg-[#161418] text-[#FAF8F6] hover:bg-[#2A2629] font-bold text-[13px] flex items-center gap-2"
           >
             <PlayCircle className="w-4 h-4" />
-            <span>Ver sesiones de /franquicias</span>
+            <span>Ver sesiones de /franquicia/</span>
           </button>
 
           <button

@@ -184,12 +184,12 @@ export const ConexionesView: React.FC<ConexionesViewProps> = ({
               </h3>
             </div>
             <span className="px-2.5 py-0.5 rounded-[4px] bg-emerald-950 text-emerald-400 border border-emerald-700 text-[12px] font-bold">
-              Conectado · kolaccesorios.com.ar
+              Conectado · kolaccesorios.com
             </span>
           </div>
 
           <p className="text-[14px] text-[#C9C3BE]">
-            Mide las búsquedas orgánicas reales que llevan tráfico al hub <span className="font-mono text-[#FAF8F6]">/franquicias</span> y sus páginas hijas (<span className="font-mono text-[#FAF8F6]">/cuanto-cuesta</span>, <span className="font-mono text-[#FAF8F6]">/requisitos</span>, etc.).
+            Mide las búsquedas orgánicas reales que llevan tráfico al hub <span className="font-mono text-[#FAF8F6]">/franquicia/</span> y sus páginas hijas (<span className="font-mono text-[#FAF8F6]">/cuanto-cuesta</span>, <span className="font-mono text-[#FAF8F6]">/requisitos</span>, etc.).
           </p>
         </div>
 
