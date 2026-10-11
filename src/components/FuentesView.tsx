@@ -279,7 +279,7 @@ export const FuentesView: React.FC<FuentesViewProps> = ({
                       #{kw.avgPosition.toFixed(1)}
                     </td>
                     <td className="py-3 px-3 text-right tabular-nums font-bold">
-                      {kw.conversions}
+                      {kw.conversions ?? "—"}
                     </td>
                   </tr>
                 ))}

@@ -5,6 +5,7 @@ import { fileURLToPath } from "url";
 import dotenv from "dotenv";
 import { GoogleGenAI, Type, type FunctionDeclaration } from "@google/genai";
 import { getSnapshot, startSnapshotSchedule } from "./ga4Snapshot";
+import { gscKeywords } from "./gscServer";
 import { ga4AccessTokenOrNull, ga4HasCredentials, ga4PropertyIdValue, ga4Status, ga4CampaignRows, oauthClientConfigured, oauthClientHint, oauthAuthUrl, oauthExchange, oauthFinishManual, newOauthState, consumeOauthState, MANUAL_REDIRECT_URI } from "./ga4Server";
 
 dotenv.config();
@@ -349,7 +350,6 @@ async function startServer() {
       const fetchedCampaigns: Array<Record<string, unknown>> = [];
       const discoveredCampaigns: Array<Record<string, unknown>> = [];
       const fetchedClarityPages: Array<Record<string, unknown>> = [];
-      const fetchedKeywords: Array<Record<string, unknown>> = [];
       const errors: string[] = [];
 
       const normalizedKeywords: string[] = Array.isArray(metaAllowedCampaignKeywords)
@@ -714,11 +714,19 @@ async function startServer() {
         }
       }
 
+      // Search Console: consultas reales de /franquicia (si no está conectado, no se completa nada)
+      const gsc = await gscKeywords().catch((e: unknown) => ({
+        connected: false,
+        keywords: [],
+        message: `Search Console: ${e instanceof Error ? e.message : "error de red"}`,
+      }));
+
       res.json({
         campaigns: fetchedCampaigns,
         discoveredCampaigns,
         clarityPages: fetchedClarityPages,
-        searchKeywords: fetchedKeywords,
+        searchKeywords: gsc.keywords,
+        gsc: { connected: gsc.connected, site: (gsc as { site?: string }).site, period: (gsc as { period?: unknown }).period, message: gsc.message },
         errors,
         syncedAt: new Date().toTimeString().slice(0, 8),
       });
