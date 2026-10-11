@@ -171,7 +171,7 @@ export const FuentesView: React.FC<FuentesViewProps> = ({
               <div className="grid grid-cols-3 gap-4 p-4">
                 {[
                   { label: "Tocaron el botón de la guía", value: guide.clicks },
-                  { label: "Enviaron el formulario", value: guide.leads },
+                  { label: "Pidieron la guía (formulario de la guía)", value: guide.leads },
                   { label: "Descargaron el PDF", value: guide.downloads },
                 ].map((k) => (
                   <div key={k.label} className="bg-[#FAF8F6] border border-[#C9C3BE] rounded-[10px] p-4">
@@ -184,7 +184,7 @@ export const FuentesView: React.FC<FuentesViewProps> = ({
               <p className="px-4 py-5 text-[14px] text-[#46413F]">Sin datos: GA4 todavía no está conectado.</p>
             )}
             <p className="px-4 pb-4 text-[12px] text-[#46413F]">
-              Los administradores logueados no se miden. La guía no cuenta como consulta de franquicia (lead_franquicia).
+              Los administradores logueados no se miden. Este formulario es distinto del de consulta de franquicia (lead_franquicia), que se cuenta aparte en la tabla de abajo.
             </p>
           </div>
 
