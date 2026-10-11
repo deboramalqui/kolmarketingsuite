@@ -226,22 +226,31 @@ async function withAnyMode<T>(fn: (token: string) => Promise<T>): Promise<{ resu
 
 const propertyId = () => String(process.env.GA4_PROPERTY_ID || DEFAULT_PROPERTY).replace(/^properties\//, "").trim();
 
+/** Traduce el error de Google a algo que se pueda accionar */
+export function explainGoogleError(err: { message?: string; status?: string; details?: Array<{ reason?: string; metadata?: Record<string, string> }> } | undefined, status: number): string {
+  const disabled = err?.details?.find((d) => d.reason === "SERVICE_DISABLED");
+  if (disabled) {
+    const project = disabled.metadata?.containerInfo || disabled.metadata?.consumer || "el proyecto de Google Cloud";
+    return `la API de datos de Google Analytics no está activada en ${project}. Activala acá y esperá un par de minutos: ${disabled.metadata?.activationUrl || "https://console.cloud.google.com/apis/library/analyticsdata.googleapis.com"}`;
+  }
+  const detail = (err?.message || "").replace(/\s+/g, " ").slice(0, 220);
+  if (err?.status === "PERMISSION_DENIED") return `Google rechazó el acceso a la propiedad. Detalle de Google: ${detail || "sin detalle"}`;
+  if (err?.status === "NOT_FOUND") return "no se encontró la propiedad: revisá GA4_PROPERTY_ID";
+  return detail || `error ${status}`;
+}
+
 async function runReport(token: string, body: Record<string, unknown>) {
   const res = await fetch(`https://analyticsdata.googleapis.com/v1beta/properties/${propertyId()}:runReport`, {
     method: "POST",
     headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
-  const json = (await res.json()) as { rows?: Array<{ dimensionValues?: Array<{ value?: string }>; metricValues?: Array<{ value?: string }> }>; error?: { message?: string; status?: string } };
+  const json = (await res.json()) as {
+    rows?: Array<{ dimensionValues?: Array<{ value?: string }>; metricValues?: Array<{ value?: string }> }>;
+    error?: { message?: string; status?: string; details?: Array<{ reason?: string; metadata?: Record<string, string> }> };
+  };
   if (!res.ok) {
-    const st = json.error?.status;
-    const hint =
-      st === "PERMISSION_DENIED"
-        ? "la cuenta de servicio no tiene acceso a la propiedad de GA4 (agregala como Lector) o la API de Google Analytics Data no está activada en el proyecto"
-        : st === "NOT_FOUND"
-        ? "no se encontró la propiedad: revisá GA4_PROPERTY_ID"
-        : json.error?.message || `error ${res.status}`;
-    throw new Error(`GA4: ${hint}`);
+    throw new Error(`GA4: ${explainGoogleError(json.error, res.status)}`);
   }
   return json.rows ?? [];
 }
