@@ -68,7 +68,7 @@ export const DataStatusControl: React.FC<Props> = ({ snapshot, connections, isSy
   return (
     <div className="relative" ref={popRef}>
       <div className="inline-flex items-stretch border border-[#46413F] bg-[#2A2629] rounded-[12px] min-h-[40px]">
-        <button type="button" onClick={() => setOpen((o) => !o)} aria-haspopup="dialog" aria-expanded={open} className="inline-flex items-center gap-2.5 px-3.5 text-[13px] text-[#FAF8F6] hover:bg-[#383337] rounded-l-[12px] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FAF8F6]">
+        <button type="button" onClick={() => setOpen((o) => !o)} aria-haspopup="dialog" aria-expanded={open} className="inline-flex items-center gap-2.5 px-3.5 text-[13px] text-[#FAF8F6] hover:bg-[#46413F] rounded-l-[12px] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FAF8F6]">
           <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${dot}`} />
           <span aria-live="polite">{text}</span>
         </button>
@@ -78,7 +78,7 @@ export const DataStatusControl: React.FC<Props> = ({ snapshot, connections, isSy
           disabled={isSyncing || !canRefresh || status === "sin_conexion"}
           aria-label="Actualizar datos ahora"
           title={!canRefresh ? "Tu usuario puede ver los datos, pero no actualizarlos" : status === "sin_conexion" ? "Primero hay que conectar GA4" : "Actualizar datos ahora"}
-          className="w-[42px] border-l border-[#46413F] text-[#FAF8F6] grid place-items-center hover:bg-[#383337] rounded-r-[12px] disabled:opacity-40 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FAF8F6]"
+          className="w-[42px] border-l border-[#46413F] text-[#FAF8F6] grid place-items-center hover:bg-[#46413F] rounded-r-[12px] disabled:opacity-40 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FAF8F6]"
         >
           <RotateCcw className={`w-4 h-4 ${isSyncing ? "animate-spin" : ""}`} />
         </button>

@@ -14,7 +14,7 @@ export const KolLogo: React.FC<KolLogoProps> = ({
   className = "h-[44px] w-auto",
 }) => {
   const strokeAndTextColor = variant === "blanco" ? "#FFFFFF" : "#161418";
-  const magentaColor = "#EA1573";
+  const magentaColor = "#EC2992";
 
   return (
     <svg

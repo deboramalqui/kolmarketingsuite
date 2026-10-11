@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 
 interface HoyDashboardViewProps {
+  guide?: { clicks: number; leads: number; downloads: number };
   funnelSteps: FranchiseFunnelStep[];
   acquisitionChannels: AcquisitionChannel[];
   searchKeywords: GoogleSearchKeyword[];
@@ -35,6 +36,7 @@ interface HoyDashboardViewProps {
 
 export const HoyDashboardView: React.FC<HoyDashboardViewProps> = ({
   funnelSteps,
+  guide,
   acquisitionChannels,
   searchKeywords,
   clarityPages,
@@ -174,60 +176,47 @@ export const HoyDashboardView: React.FC<HoyDashboardViewProps> = ({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {funnelSteps.map((step) => {
-            const isFirst = step.stepNumber === 1;
-            const isLast = step.stepNumber === 4;
-
-            return (
-              <div
-                key={step.id}
-                className={`p-5 rounded-[12px] border transition-all flex flex-col justify-between space-y-4 ${
-                  isLast
-                    ? "bg-[#FFFFFF] border-2 border-[#161418] shadow-sm"
-                    : "bg-[#FFFFFF] border-[#C9C3BE]"
-                }`}
-              >
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="w-6 h-6 rounded-full bg-[#161418] text-[#FAF8F6] text-[12px] font-bold flex items-center justify-center">
-                      {step.stepNumber}
-                    </span>
-                    <span className="font-mono text-[11px] bg-[#E7E3DF] text-[#46413F] px-2 py-0.5 rounded">
-                      {step.eventName}
-                    </span>
-                  </div>
-
-                  <h3 className="font-kol-display font-bold text-[16px] text-[#161418]">
-                    {step.name}
-                  </h3>
-
-                  <p className="text-[13px] text-[#46413F] leading-snug">
-                    {step.plainLanguageExplanation}
-                  </p>
-                </div>
-
-                <div className="pt-3 border-t border-[#E7E3DF] space-y-1">
-                  <div className="flex items-baseline justify-between">
-                    <span className="font-kol-display font-extrabold text-[28px] tabular-nums text-[#161418]">
-                      {step.count}
-                    </span>
-                    <span className="text-[13px] font-bold text-[#C51172]">
-                      {step.conversionRateFromStartPct} % del total
-                    </span>
-                  </div>
-
-                  {!isFirst && (
-                    <div className="text-[12px] text-[#8C8580]">
-                      Caída respecto al paso anterior:{" "}
-                      <strong>{step.dropoffRateFromPreviousPct.toFixed(1)} %</strong>
-                    </div>
-                  )}
-                </div>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          {funnelSteps.map((step) => (
+            <div key={step.id} className="bg-[#FFFFFF] border border-[#C9C3BE] rounded-[12px] p-3.5" title={step.plainLanguageExplanation}>
+              <div className="flex items-start gap-2">
+                <span className="font-kol-display font-extrabold text-[14px] text-[#C51172] border-b-2 border-[#C51172] leading-tight">{step.stepNumber}</span>
+                <span className="text-[13px] font-bold text-[#161418] leading-snug">{step.name}</span>
               </div>
-            );
-          })}
+              <div className="font-kol-display font-extrabold text-[28px] tabular-nums text-[#C51172] mt-2">{step.count}</div>
+              <div className="text-[12px] text-[#6A6460]">
+                {step.conversionRateFromStartPct} % del total
+                {step.stepNumber > 1 && <> · caída {step.dropoffRateFromPreviousPct.toFixed(1)} %</>}
+              </div>
+              <div className="font-mono text-[11px] text-[#6A6460] mt-1 truncate">{step.eventName}</div>
+            </div>
+          ))}
         </div>
+      </section>
+
+      {/* 2b. EMBUDO DE DESCARGA DE LA GUÍA DE 9 PASOS */}
+      <section className="space-y-4">
+        <div className="border-b border-[#C9C3BE] pb-2">
+          <h2 className="font-kol-display font-extrabold text-[20px] text-[#161418]">Embudo de descarga de la guía de los 9 pasos</h2>
+          <p className="text-[14px] text-[#46413F] mt-0.5">Últimos 28 días, personas únicas. Es un formulario distinto del de consulta de franquicia.</p>
+        </div>
+        <div className="grid grid-cols-3 gap-3">
+          {[
+            { n: 1, label: "Tocaron el botón de la guía", value: guide?.clicks ?? 0, ev: "click_cta_guia" },
+            { n: 2, label: "Pidieron la guía (formulario de la guía)", value: guide?.leads ?? 0, ev: "lead_guia" },
+            { n: 3, label: "Descargaron el PDF", value: guide?.downloads ?? 0, ev: "descarga_pdf_guia" },
+          ].map((k) => (
+            <div key={k.n} className="bg-[#FFFFFF] border border-[#C9C3BE] rounded-[12px] p-3.5">
+              <div className="flex items-start gap-2">
+                <span className="font-kol-display font-extrabold text-[14px] text-[#C51172] border-b-2 border-[#C51172] leading-tight">{k.n}</span>
+                <span className="text-[13px] font-bold text-[#161418] leading-snug">{k.label}</span>
+              </div>
+              <div className="font-kol-display font-extrabold text-[28px] tabular-nums text-[#C51172] mt-2">{k.value}</div>
+              <div className="font-mono text-[11px] text-[#6A6460] truncate">{k.ev}</div>
+            </div>
+          ))}
+        </div>
+        <p className="text-[12px] text-[#46413F]">Los administradores logueados no se miden.</p>
       </section>
 
       {/* 3. CANALES DE ADQUISICIÓN (VOLUMEN VS CONVERSIÓN) */}

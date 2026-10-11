@@ -212,14 +212,14 @@ export const FuentesView: React.FC<FuentesViewProps> = ({
                 </thead>
                 <tbody className="text-[14px] text-[#161418]">
                   {pages.map((p, idx) => (
-                    <tr key={p.path} className={idx % 2 === 1 ? "bg-[#FAF8F6] border-t border-[#C9C3BE]" : "bg-[#FFFFFF] border-t border-[#C9C3BE]"}>
+                    <tr key={p.path} className={(notFound.some((n) => n.path === p.path) ? "bg-[#F3F0ED] border-l-4 border-l-[#C51172]" : idx % 2 === 1 ? "bg-[#FAF8F6]" : "bg-[#FFFFFF]") + " border-t border-[#C9C3BE]"}>
                       <td className="py-3 px-4 font-bold">
                         {p.path}{" "}
                         <span className="text-[12px] text-[#46413F] font-normal">
                           ({p.path === "/franquicia/" ? "Hub principal" : notFound.some((n) => n.path === p.path) ? "" : "Página hija"})
                         </span>
                         {notFound.some((n) => n.path === p.path) && (
-                          <span className="ml-1 text-[12px] font-bold text-[#8A1C1C]">Página no encontrada (404)</span>
+                          <span className="ml-1 text-[12px] font-bold text-[#A40F5F]"><span aria-hidden="true">! </span>Página no encontrada (404)</span>
                         )}
                       </td>
                       <td className="py-3 px-3 text-right tabular-nums font-semibold">{p.sessions}</td>
@@ -424,7 +424,7 @@ export const FuentesView: React.FC<FuentesViewProps> = ({
               <button
                 type="button"
                 onClick={() => onOpenClarityRecordings(undefined, "lead_franquicia")}
-                className="kol-btn-normal px-3 py-1.5 bg-[#FFD9E4] text-[#161418] border border-[#C51172] hover:bg-[#FFC2D4] text-[12px] font-bold"
+                className="kol-btn-normal px-3 py-1.5 bg-[#FFD9E4] text-[#161418] border border-[#C51172] hover:brightness-95 text-[12px] font-bold"
               >
                 <PlayCircle className="w-3.5 h-3.5 text-[#C51172]" />
                 <span>Grabaciones: Consulta enviada</span>

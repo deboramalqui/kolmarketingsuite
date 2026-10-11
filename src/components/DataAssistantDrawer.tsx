@@ -197,7 +197,7 @@ export const DataAssistantDrawer: React.FC<DataAssistantDrawerProps> = ({
                 key={i}
                 type="button"
                 onClick={() => handleSelectSuggestion(q)}
-                className="bg-[#2A2629] hover:bg-[#383337] border border-[#46413F] text-[#FAF8F6] rounded-full px-3 py-1.5 text-[12.5px] font-normal transition-colors text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FAF8F6]"
+                className="bg-[#2A2629] hover:bg-[#46413F] border border-[#46413F] text-[#FAF8F6] rounded-full px-3 py-1.5 text-[12.5px] font-normal transition-colors text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FAF8F6]"
               >
                 {q}
               </button>

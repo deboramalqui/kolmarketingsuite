@@ -26,7 +26,7 @@ export const KolAvatar: React.FC<{ theme: "claro" | "oscuro"; size?: number }> =
         <g transform="translate(123,224) rotate(21.5)">
           <path
             d="M 0 0 L 0 -184 A 56 56 0 0 1 56 -240 L 102 -240 A 56 56 0 0 1 158 -184 L 158 -136 L 230 -136 A 56 56 0 0 1 286 -80 L 286 -56 A 56 56 0 0 1 230 0 L 0 0 Z"
-            fill="#EA1573"
+            fill="#EC2992"
           />
         </g>
       </svg>
