@@ -1,3 +1,4 @@
+import { useConfirm } from "../ConfirmDialog";
 import React, { useMemo, useState } from "react";
 import { Plus, Search as SearchIcon, Sparkles, Trash2, Info } from "lucide-react";
 import { CampaignLifecycleStatus, CampaignPlatform, FranchiseCampaignItem } from "../../types/marketing";
@@ -31,6 +32,7 @@ const Kpi: React.FC<{ label: string; value: string; note: string }> = ({ label, 
 );
 
 export const CampaignList: React.FC<Props> = ({ campaigns, onNew, onNewSuggested, onOpen, onUpdate, onDelete, onLoadSamples, onRemoveSamples, hasSamples, onLoadDemo, onRemoveDemo, hasDemo }) => {
+  const confirm = useConfirm();
   const [view, setView] = useState<"lista" | "paraguas">("lista");
   const [query, setQuery] = useState("");
   const [type, setType] = useState<"todas" | CampaignPlatform>("todas");
@@ -193,8 +195,8 @@ export const CampaignList: React.FC<Props> = ({ campaigns, onNew, onNewSuggested
                         type="button"
                         aria-label={`Eliminar ${c.name}`}
                         title="Eliminar campaña"
-                        onClick={() => {
-                          if (window.confirm(`¿Eliminar la campaña “${c.name}”? No se puede deshacer.`)) onDelete(c.id);
+                        onClick={async () => {
+                          if (await confirm({ title: "Eliminar campaña", message: `¿Eliminar la campaña “${c.name}”? No se puede deshacer.`, confirmLabel: "Eliminar" })) onDelete(c.id);
                         }}
                         className="p-1 text-[#6A6460] hover:text-[#A40F5F] rounded kol-focus"
                       >

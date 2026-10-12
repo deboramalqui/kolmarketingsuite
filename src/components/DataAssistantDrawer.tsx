@@ -103,6 +103,7 @@ export const DataAssistantDrawer: React.FC<DataAssistantDrawerProps> = ({
         aria-modal="true"
         aria-label="Preguntale a los datos"
         aria-hidden={!isOpen}
+        inert={!isOpen}
         className={`fixed top-0 right-0 h-full w-full sm:w-[440px] max-w-full bg-[#161418] text-[#FAF8F6] border-l border-[#46413F] z-50 shadow-2xl flex flex-col transition-transform duration-200 ease-out ${
           isOpen ? "translate-x-0" : "translate-x-full"
         }`}

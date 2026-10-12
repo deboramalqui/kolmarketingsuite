@@ -1,3 +1,4 @@
+import { useConfirm } from "../ConfirmDialog";
 import React, { useState } from "react";
 import { Copy, Plus, Trash2 } from "lucide-react";
 import { CampaignAd, CampaignPlatform, GalleryAsset } from "../../types/marketing";
@@ -68,6 +69,7 @@ const MAX_ADS = 5;
 
 /** Varios anuncios (variantes A, B, C) dentro de la misma campaña. Cada uno con su propio utm_content. */
 export const AdVariantsEditor: React.FC<Props> = ({ platform, ads, onChange, assets, readOnly, actions, defaultPlacement }) => {
+  const confirm = useConfirm();
   const [activeId, setActiveId] = useState(ads[0]?.id);
   const index = Math.max(0, ads.findIndex((a) => a.id === activeId));
   const ad = ads[index];
@@ -88,9 +90,9 @@ export const AdVariantsEditor: React.FC<Props> = ({ platform, ads, onChange, ass
     setActiveId(copy.id);
   };
 
-  const removeActive = () => {
+  const removeActive = async () => {
     if (ads.length <= 1) return;
-    if (!window.confirm(`¿Quitar “${ad.label}”?`)) return;
+    if (!(await confirm({ title: "Quitar anuncio", message: `¿Quitar “${ad.label}”?`, confirmLabel: "Quitar" }))) return;
     const next = ads.filter((a) => a.id !== ad.id);
     onChange(next);
     setActiveId(next[0].id);

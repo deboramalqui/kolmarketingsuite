@@ -1,3 +1,4 @@
+import { useConfirm } from "../ConfirmDialog";
 import React, { useMemo, useState } from "react";
 import { ArrowLeft, Check, Send } from "lucide-react";
 import { FranchiseCampaignItem, GalleryAsset, CampaignApprovalRecord } from "../../types/marketing";
@@ -41,6 +42,7 @@ const Row: React.FC<{ k: string; v: React.ReactNode }> = ({ k, v }) => (
 );
 
 export const CampaignDetail: React.FC<Props> = ({ campaign: c, assets, events, initialTab = "resumen", onBack, actions, onSave }) => {
+  const confirm = useConfirm();
   const [tab, setTab] = useState<Tab>(initialTab);
   const { copiedKey, copy } = useCopy();
   const checks = useMemo(() => checkCampaign(c, assets, events), [c, assets, events]);
@@ -126,7 +128,7 @@ export const CampaignDetail: React.FC<Props> = ({ campaign: c, assets, events, i
       case "lista_para_publicar":
         return <button type="button" onClick={() => setTab("paquete")} className="kol-btn-normal px-4 py-2 bg-[#161418] text-[#FAF8F6] font-bold text-[14px]">Ir al paquete de publicación</button>;
       case "en_vivo":
-        return <button type="button" onClick={() => { if (window.confirm("¿Cerrar esta campaña? Después solo queda para consultar.")) set({ status: "cerrada" }); }} className="kol-btn-normal px-4 py-2 bg-white border border-[#161418] text-[#161418] font-bold text-[14px]">Cerrar campaña</button>;
+        return <button type="button" onClick={async () => { if (await confirm({ title: "Cerrar campaña", message: "¿Cerrar esta campaña? Después solo queda para consultar.", confirmLabel: "Cerrar campaña" })) set({ status: "cerrada" }); }} className="kol-btn-normal px-4 py-2 bg-white border border-[#161418] text-[#161418] font-bold text-[14px]">Cerrar campaña</button>;
       default:
         return null;
     }

@@ -486,8 +486,8 @@ export default function App() {
           </div>
 
           {/* 2. LAS 4 TARJETAS SUPERIORES EN MODO OSCURO (SECCIÓN 2 DEL BRIEF) */}
-          <div className="overflow-x-auto pt-1">
-            <div className="grid grid-cols-4 gap-4 min-w-[860px]">
+          <div className="pt-1">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
               {/* Tarjeta 1: Consultas de franquicia */}
               <div
                 className={`bg-[#2A2629] border border-[#46413F] kol-card-12 px-5 py-4 transition-colors ${

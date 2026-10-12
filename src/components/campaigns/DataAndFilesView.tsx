@@ -1,3 +1,4 @@
+import { useConfirm } from "../ConfirmDialog";
 import React, { useRef, useState } from "react";
 import { ShieldCheck, Upload, Trash2, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { GalleryAsset } from "../../types/marketing";
@@ -24,6 +25,7 @@ const Fit: React.FC<{ ok: boolean; label: string }> = ({ ok, label }) => (
 
 /** Datos que se toman como verdad para publicar + galería de fotos y logos */
 export const DataAndFilesView: React.FC<Props> = ({ assets, onChange, events, onEventsChange }) => {
+  const confirm = useConfirm();
   const { copiedKey, copy } = useCopy();
   const photoInput = useRef<HTMLInputElement>(null);
   const logoInput = useRef<HTMLInputElement>(null);
@@ -52,8 +54,8 @@ export const DataAndFilesView: React.FC<Props> = ({ assets, onChange, events, on
   };
 
   const update = (id: string, patch: Partial<GalleryAsset>) => onChange(assets.map((a) => (a.id === id ? { ...a, ...patch } : a)));
-  const remove = (a: GalleryAsset) => {
-    if (window.confirm(`¿Borrar “${a.name}” de la galería? Las campañas que la usen van a quedar sin imagen.`)) onChange(assets.filter((x) => x.id !== a.id));
+  const remove = async (a: GalleryAsset) => {
+    if (await confirm({ title: "Borrar imagen", message: `¿Borrar “${a.name}” de la galería? Las campañas que la usen van a quedar sin imagen.`, confirmLabel: "Borrar" })) onChange(assets.filter((x) => x.id !== a.id));
   };
 
   const extra = [

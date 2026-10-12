@@ -200,7 +200,7 @@ export const FuentesView: React.FC<FuentesViewProps> = ({
                   : "Sin datos: GA4 todavía no está conectado."}
               </p>
             ) : (
-              <table className="w-full text-left border-collapse">
+              <div className="overflow-x-auto"><table className="w-full text-left border-collapse min-w-[560px]">
                 <thead>
                   <tr className="bg-[#F3F0ED] text-[#46413F] text-[14px] font-semibold">
                     <th className="py-3 px-4">Ruta de destino</th>
@@ -229,7 +229,7 @@ export const FuentesView: React.FC<FuentesViewProps> = ({
                     </tr>
                   ))}
                 </tbody>
-              </table>
+              </table></div>
             )}
           </div>
 
@@ -239,7 +239,7 @@ export const FuentesView: React.FC<FuentesViewProps> = ({
               <div className="bg-[#E7E3DF] px-4 py-3 font-bold text-[#161418] text-[14px]">
                 Visitas a direcciones que no existen (404) y de dónde llegaron
               </div>
-              <table className="w-full text-left border-collapse">
+              <div className="overflow-x-auto"><table className="w-full text-left border-collapse min-w-[560px]">
                 <thead>
                   <tr className="bg-[#F3F0ED] text-[#46413F] text-[14px] font-semibold">
                     <th className="py-3 px-4">Dirección pedida</th>
@@ -261,7 +261,7 @@ export const FuentesView: React.FC<FuentesViewProps> = ({
                     ))
                   )}
                 </tbody>
-              </table>
+              </table></div>
               <p className="px-4 py-3 text-[14px] text-[#46413F]">
                 GA4 registra cualquier dirección que alguien pida, aunque la página no exista. La interpretación entre paréntesis es una pista según el origen, no un dato de GA4.
               </p>

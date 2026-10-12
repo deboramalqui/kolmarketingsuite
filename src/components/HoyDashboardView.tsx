@@ -242,8 +242,8 @@ export const HoyDashboardView: React.FC<HoyDashboardViewProps> = ({
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Tabla de canales */}
-          <div className="lg:col-span-2 border border-[#C9C3BE] rounded-[10px] overflow-hidden bg-[#FFFFFF]">
-            <table className="w-full text-left border-collapse">
+          <div className="lg:col-span-2 border border-[#C9C3BE] rounded-[10px] overflow-x-auto bg-[#FFFFFF]">
+            <table className="w-full text-left border-collapse min-w-[520px]">
               <thead>
                 <tr className="bg-[#E7E3DF] text-[#161418] text-[14px] font-bold">
                   <th className="py-3 px-4">Canal de llegada</th>

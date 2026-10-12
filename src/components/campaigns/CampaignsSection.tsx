@@ -1,3 +1,4 @@
+import { useConfirm } from "../ConfirmDialog";
 import React, { useCallback, useRef, useState } from "react";
 import { Plus } from "lucide-react";
 import { FranchiseCampaignItem, GalleryAsset } from "../../types/marketing";
@@ -18,6 +19,7 @@ interface Props {
 type Sub = "campanas" | "datos";
 
 export const CampaignsSection: React.FC<Props> = ({ franchiseCampaigns, onSaveCampaign, onDeleteCampaign }) => {
+  const confirm = useConfirm();
   const [sub, setSub] = useState<Sub>("campanas");
   const [creating, setCreating] = useState(false);
   const [suggested, setSuggested] = useState(false);
@@ -129,11 +131,11 @@ export const CampaignsSection: React.FC<Props> = ({ franchiseCampaigns, onSaveCa
           onLoadSamples={() => buildSampleCampaigns().filter((c) => !campaigns.some((x) => x.id === c.id)).forEach(onSaveCampaign)}
           hasDemo={campaigns.some(isDemoCampaign)}
           onLoadDemo={() => buildDemoCampaigns().filter((c) => !campaigns.some((x) => x.id === c.id)).forEach(onSaveCampaign)}
-          onRemoveDemo={() => {
-            if (window.confirm("¿Borrar la demo?")) campaigns.filter(isDemoCampaign).forEach((c) => onDeleteCampaign(c.id));
+          onRemoveDemo={async () => {
+            if (await confirm({ title: "Borrar la demo", message: "¿Borrar la demo?", confirmLabel: "Borrar" })) campaigns.filter(isDemoCampaign).forEach((c) => onDeleteCampaign(c.id));
           }}
-          onRemoveSamples={() => {
-            if (window.confirm("¿Borrar las campañas de prueba?")) campaigns.filter(isSampleCampaign).forEach((c) => onDeleteCampaign(c.id));
+          onRemoveSamples={async () => {
+            if (await confirm({ title: "Borrar campañas de prueba", message: "¿Borrar las campañas de prueba?", confirmLabel: "Borrar" })) campaigns.filter(isSampleCampaign).forEach((c) => onDeleteCampaign(c.id));
           }}
         />
       )}
