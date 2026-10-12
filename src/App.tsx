@@ -449,6 +449,7 @@ export default function App() {
             <div className="flex flex-wrap items-center gap-2.5 shrink-0">
               {/* 1. Control unificado: Estado de los datos + ↻ */}
               <DataStatusControl
+                searchCount={searchKeywords.length}
                 snapshot={snapshot}
                 connections={connections}
                 isSyncing={isSyncing}

@@ -11,12 +11,14 @@ interface Props {
   canRefresh: boolean;
   onRefresh: () => Promise<void> | void;
   onOpenConnections: () => void;
+  /** Cantidad de búsquedas de Search Console leídas (0 si todavía no hubo lectura) */
+  searchCount?: number;
 }
 
 type Status = "sin_conexion" | "actualizando" | "error" | "viejo" | "ok";
 
 /** Estado REAL de los datos: sale de la última lectura de GA4 hecha por el servidor. Nada simulado. */
-export const DataStatusControl: React.FC<Props> = ({ snapshot, connections, isSyncing, lastChanges, canRefresh, onRefresh, onOpenConnections }) => {
+export const DataStatusControl: React.FC<Props> = ({ snapshot, connections, isSyncing, lastChanges, canRefresh, onRefresh, onOpenConnections, searchCount = 0 }) => {
   const [open, setOpen] = useState(false);
   const [, tick] = useState(0);
   const popRef = useRef<HTMLDivElement>(null);
@@ -96,7 +98,7 @@ export const DataStatusControl: React.FC<Props> = ({ snapshot, connections, isSy
           <div className="space-y-0 text-[14px]">
             {[
               { name: "GA4 (visitas y consultas)", ok: snapshot.connected && !!snapshot.fetchedAt && !snapshot.error, note: snapshot.error ? snapshot.error : snapshot.fetchedAt ? agoLabel(snapshot.fetchedAt) : connections.ga4.connected ? "conectado, sin lectura todavía" : "sin conectar" },
-              { name: "Search Console", ok: false, note: "se ve en GA4 · lectura propia pendiente" },
+              { name: "Search Console", ok: searchCount > 0, note: searchCount > 0 ? `${searchCount} búsquedas leídas de Google` : "sin lectura todavía (se prueba en Configuración)" },
               { name: "Clarity (fricción)", ok: connections.clarity, note: connections.clarity ? "clave cargada" : "sin clave en el servidor" },
               { name: "Meta Ads", ok: connections.meta, note: connections.meta ? "clave cargada" : "se activa en noviembre" },
             ].map((r) => (

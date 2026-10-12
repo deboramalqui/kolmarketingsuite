@@ -38,7 +38,7 @@ export function answerQuestion(question: string, ctx: AnswerContext): Answer {
 
   if (/conect|conexion|falta/.test(q)) {
     return {
-      text: `GA4: ${connections.ga4.connected ? "conectado" : "sin conectar"}.\nClarity: ${connections.clarity ? "clave cargada" : "sin clave en el servidor"}.\nMeta Ads: ${connections.meta ? "clave cargada" : "sin clave (se activa en noviembre)"}.\nSearch Console: no hay lectura propia todavía; se ve dentro de GA4.`,
+      text: `GA4: ${connections.ga4.connected ? "conectado" : "sin conectar"}.\nClarity: ${connections.clarity ? "clave cargada" : "sin clave en el servidor"}.\nMeta Ads: ${connections.meta ? "clave cargada" : "sin clave (se activa en noviembre)"}.\nSearch Console: ${(ctx.searchKeywords?.length ?? 0) > 0 ? `${ctx.searchKeywords!.length} búsquedas leídas de Google` : "todavía sin lectura (se prueba en Configuración)"}.`,
       source: "Estado de conexiones del servidor",
     };
   }
