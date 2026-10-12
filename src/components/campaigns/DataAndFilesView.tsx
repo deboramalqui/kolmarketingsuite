@@ -18,7 +18,7 @@ interface Props {
 
 const Fit: React.FC<{ ok: boolean; label: string }> = ({ ok, label }) => (
   <span className={`inline-flex items-center gap-1 text-[14px] px-1.5 py-0.5 rounded-[4px] border ${ok ? "bg-white text-[#46413F] border-[#C9C3BE]" : "bg-[#F3F0ED] text-[#6A6460] border-[#E7E3DF] line-through"}`}>
-    {ok && <CheckCircle2 className="w-3 h-3 text-emerald-600" />}
+    {ok && <CheckCircle2 className="w-3 h-3 text-[#161418]" />}
     {label}
   </span>
 );

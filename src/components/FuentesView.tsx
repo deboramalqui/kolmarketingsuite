@@ -142,7 +142,6 @@ export const FuentesView: React.FC<FuentesViewProps> = ({
           <div className="p-4 bg-[#FAF8F6] border border-[#C9C3BE] rounded-[10px] space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-2.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-600" />
                 <span className="font-bold text-[#161418] text-[15px]">
                   Propiedad GA4: 372010641
                 </span>
@@ -276,7 +275,6 @@ export const FuentesView: React.FC<FuentesViewProps> = ({
           <div className="p-4 bg-[#FAF8F6] border border-[#C9C3BE] rounded-[10px]">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-600" />
                 <span className="font-bold text-[#161418] text-[15px]">
                   Google Search Console · Propiedad kolaccesorios.com
                 </span>
@@ -410,7 +408,6 @@ export const FuentesView: React.FC<FuentesViewProps> = ({
           <div className="p-4 bg-[#FAF8F6] border border-[#C9C3BE] rounded-[10px] flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-600" />
                 <span className="font-bold text-[#161418] text-[15px]">
                   Microsoft Clarity · Proyecto: ytmpieugg9 (Vinculado a GA4 372010641)
                 </span>

@@ -83,7 +83,7 @@ export const AssetPicker: React.FC<Props> = ({ label, hint, slot, kind, assets, 
           {err && <div role="alert" className="text-[14px] text-[#A40F5F] font-bold">{err}</div>}
           {chosen && fit && (
             <div className={`flex items-center gap-1.5 text-[14px] ${fit.ok ? "text-[#46413F]" : "text-[#A40F5F] font-bold"}`}>
-              {fit.ok ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> : <AlertTriangle className="w-3.5 h-3.5" />}
+              {fit.ok ? <CheckCircle2 className="w-3.5 h-3.5 text-[#161418]" /> : <AlertTriangle className="w-3.5 h-3.5" />}
               <span>{fit.reason}</span>
               {!chosen.permission && <span className="text-[#A40F5F] font-bold"> · sin permiso de uso</span>}
             </div>

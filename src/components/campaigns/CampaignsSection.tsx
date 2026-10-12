@@ -64,7 +64,7 @@ export const CampaignsSection: React.FC<Props> = ({ franchiseCampaigns, onSaveCa
     <div className="space-y-6 max-w-7xl mx-auto">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-[#C9C3BE] pb-4">
         <div>
-          <h1 className="font-kol-display font-extrabold text-[24px] sm:text-[28px] text-[#161418]">Campañas de franquicia</h1>
+          <h2 className="font-kol-display font-extrabold text-[24px] sm:text-[28px] text-[#161418]">Campañas de franquicia</h2>
           <p className="text-[14px] text-[#46413F] mt-1 max-w-3xl">
             Armá, revisá y dejá listas las campañas de Google (Búsqueda y Display) y de Meta (Instagram y Facebook). Todo con los datos verificados de Kol.
           </p>

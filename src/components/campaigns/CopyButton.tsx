@@ -15,8 +15,8 @@ export const CopyButton: React.FC<{ text: string; id: string; copiedKey: string 
   >
     {copiedKey === id ? (
       <>
-        <Check className="w-3.5 h-3.5 text-emerald-600" />
-        <span className="text-emerald-700">Copiado</span>
+        <Check className="w-3.5 h-3.5 text-[#161418]" />
+        <span className="text-[#161418]">Copiado</span>
       </>
     ) : (
       <>

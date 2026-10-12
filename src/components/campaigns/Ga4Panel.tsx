@@ -61,7 +61,7 @@ export const Ga4Panel: React.FC = () => {
 
       <div className={`p-4 rounded-[10px] border flex flex-col md:flex-row md:items-center gap-3 justify-between ${st?.ok ? "border-[#161418] bg-white" : "border-[#C9C3BE] bg-[#FAF8F6]"}`} aria-live="polite">
         <div className="flex items-start gap-2 text-[14px]">
-          {st?.ok ? <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" /> : <AlertTriangle className="w-5 h-5 text-[#6A6460] shrink-0" />}
+          {st?.ok ? <CheckCircle2 className="w-5 h-5 text-emerald-700 shrink-0" /> : <AlertTriangle className="w-5 h-5 text-[#6A6460] shrink-0" />}
           <div>
             <strong className="text-[#161418]">{st ? (st.configured ? (st.ok === undefined ? "Credenciales cargadas" : st.ok ? "Conectado" : "No se pudo conectar") : "Sin conectar") : "Consultando…"}</strong>
             <p className="text-[#46413F]">{st?.message}</p>

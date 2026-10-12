@@ -495,7 +495,7 @@ export default function App() {
                 }`}
               >
                 <div className="flex items-center justify-between">
-                  <div className="text-[14px] text-[#C9C3BE] truncate font-medium">
+                  <div className="text-[14px] text-[#C9C3BE] leading-snug font-medium">
                     Consultas de franquicia
                   </div>
                   {flashCards && (
@@ -504,7 +504,7 @@ export default function App() {
                     </span>
                   )}
                 </div>
-                <div className="text-[14px] text-[#C9C3BE] truncate mt-0.5">
+                <div className="text-[14px] text-[#C9C3BE] leading-snug mt-0.5">
                   ¿Cuántos dejaron sus datos?
                 </div>
                 <div className="inline-block border-b-[3px] border-[#FFBA00] pb-1 mt-2">
@@ -526,10 +526,10 @@ export default function App() {
 
               {/* Tarjeta 2: Costo por consulta */}
               <div className="bg-[#2A2629] border border-[#46413F] kol-card-12 px-5 py-4">
-                <div className="text-[14px] text-[#C9C3BE] truncate font-medium">
+                <div className="text-[14px] text-[#C9C3BE] leading-snug font-medium">
                   Costo por consulta
                 </div>
-                <div className="text-[14px] text-[#C9C3BE] truncate mt-0.5">
+                <div className="text-[14px] text-[#C9C3BE] leading-snug mt-0.5">
                   ¿Cuánto cuesta cada una?
                 </div>
                 <div className="inline-block border-b-[3px] border-[#FFBA00] pb-1 mt-2">
@@ -537,7 +537,7 @@ export default function App() {
                     Sin inversión todavía
                   </span>
                 </div>
-                <div className="text-[14px] text-[#FAF8F6] mt-2 truncate">
+                <div className="text-[14px] text-[#FAF8F6] mt-2 leading-snug">
                   Se activa con las campañas de noviembre
                 </div>
               </div>
@@ -549,7 +549,7 @@ export default function App() {
                 }`}
               >
                 <div className="flex items-center justify-between">
-                  <div className="text-[14px] text-[#C9C3BE] truncate font-medium">
+                  <div className="text-[14px] text-[#C9C3BE] leading-snug font-medium">
                     De visita a consulta
                   </div>
                   {flashCards && (
@@ -558,7 +558,7 @@ export default function App() {
                     </span>
                   )}
                 </div>
-                <div className="text-[14px] text-[#C9C3BE] truncate mt-0.5">
+                <div className="text-[14px] text-[#C9C3BE] leading-snug mt-0.5">
                   ¿Cuántos de los que entran envían?
                 </div>
                 <div className="inline-block border-b-[3px] border-[#FFBA00] pb-1 mt-2">
@@ -577,10 +577,10 @@ export default function App() {
 
               {/* Tarjeta 4: Fricción de la página */}
               <div className="bg-[#2A2629] border border-[#46413F] kol-card-12 px-5 py-4">
-                <div className="text-[14px] text-[#C9C3BE] truncate font-medium">
+                <div className="text-[14px] text-[#C9C3BE] leading-snug font-medium">
                   Fricción de la página
                 </div>
-                <div className="text-[14px] text-[#C9C3BE] truncate mt-0.5">
+                <div className="text-[14px] text-[#C9C3BE] leading-snug mt-0.5">
                   ¿La gente se traba?
                 </div>
                 <div className="inline-block border-b-[3px] border-[#FFBA00] pb-1 mt-2">
@@ -627,6 +627,7 @@ export default function App() {
                   key={item.id}
                   type="button"
                   onClick={() => setActiveTab(item.id)}
+                  aria-current={active ? "page" : undefined}
                   className={`group px-3.5 py-2 rounded-[10px] active:rounded-[4px] flex items-center gap-2.5 whitespace-nowrap transition-colors kol-focus ${
                     isDarkView
                       ? active
@@ -784,7 +785,7 @@ export default function App() {
       {/* Pie institucional en negro oficial como el header */}
       <footer className="border-t border-[#2A2629] bg-[#161418] text-[#FAF8F6] py-6 px-4 sm:px-6 lg:px-8 mt-16">
         <div className="max-w-[1440px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-[14px]">
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <KolLogo variant="blanco" className="h-[28px] w-auto shrink-0" />
             <KolLockup variant="oscuro" compact />
             <span className="text-[#46413F] font-light select-none">|</span>

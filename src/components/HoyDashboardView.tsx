@@ -176,7 +176,7 @@ export const HoyDashboardView: React.FC<HoyDashboardViewProps> = ({
           </div>
         </div>
 
-        <div className="grid grid-cols-4 gap-2 sm:gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
           {funnelSteps.map((step) => (
             <div key={step.id} className="bg-[#FFFFFF] border border-[#C9C3BE] rounded-[12px] p-2.5 sm:p-3 min-w-0" title={step.plainLanguageExplanation}>
               <div className="flex items-start gap-2">
@@ -200,7 +200,7 @@ export const HoyDashboardView: React.FC<HoyDashboardViewProps> = ({
           <h2 className="font-kol-display font-extrabold text-[20px] text-[#161418]">Embudo de descarga de la guía de los 9 pasos</h2>
           <p className="text-[14px] text-[#46413F] mt-0.5">Últimos 28 días, personas únicas. Es un formulario distinto del de consulta de franquicia.</p>
         </div>
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
           {[
             { n: 1, label: "Tocaron el botón de la guía", value: guide?.clicks ?? 0, ev: "click_cta_guia" },
             { n: 2, label: "Pidieron la guía (formulario de la guía)", value: guide?.leads ?? 0, ev: "lead_guia" },
@@ -400,7 +400,6 @@ export const HoyDashboardView: React.FC<HoyDashboardViewProps> = ({
       <section className="p-6 bg-[#FFFFFF] border border-[#C9C3BE] rounded-[12px] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-600" />
             <h3 className="font-kol-display font-bold text-[18px] text-[#161418]">
               Grabaciones de sesiones en Microsoft Clarity (Proyecto ytmpieugg9)
             </h3>
