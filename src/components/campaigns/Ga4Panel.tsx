@@ -88,10 +88,10 @@ export const Ga4Panel: React.FC = () => {
 
           <div className="p-4 bg-white border border-[#C9C3BE] rounded-[10px] space-y-2">
             <h3 className="font-bold text-[14px] text-[#161418]">Opción B · Autorizar con una cuenta de Google</h3>
-            <p className="text-[12.5px] text-[#46413F]">No hace falta ser administrador: alcanza con la cuenta que ya ve los datos de GA4 (por ejemplo, <code>redeskolaccesorios@gmail.com</code>).</p>
+            <p className="text-[12.5px] text-[#46413F]">No hace falta ser administrador: alcanza con la cuenta de Google que ya ve los datos de GA4 y Search Console de Kol.</p>
             <ol className="space-y-1.5 text-[13px] text-[#161418] list-decimal pl-5">
               <li>
-                En Google Cloud → <strong>Google Auth Platform</strong> (o “Pantalla de consentimiento de OAuth”): tipo <strong>Externo</strong>, nombre “KOL Marketing Suite”, y agregá el permiso <code>analytics.readonly</code>. Después tocá <strong>Publicar la app</strong> (si queda en “Prueba”, la autorización vence a los 7 días).
+                En Google Cloud → <strong>Google Auth Platform</strong> (o “Pantalla de consentimiento de OAuth”): tipo <strong>Externo</strong>, nombre “KOL Marketing Suite”, y agregá los permisos <code>analytics.readonly</code> y <code>webmasters.readonly</code> (Search Console). Después tocá <strong>Publicar la app</strong> (si queda en “Prueba”, la autorización vence a los 7 días).
               </li>
               <li>
                 En <strong>Clientes</strong> (o Credenciales) → Crear cliente → <strong>Aplicación web</strong>. En “URI de redireccionamiento autorizados” pegá:
@@ -146,7 +146,7 @@ export const Ga4Panel: React.FC = () => {
                 <a href={manualUrl} target="_blank" rel="noreferrer" className="ml-2 inline-block kol-btn-normal px-3 py-1.5 bg-[#161418] text-[#FAF8F6] text-[12.5px] font-bold">Abrir Google para autorizar</a>
               )}
             </li>
-            <li>Elegí <code>redeskolaccesorios@gmail.com</code> y aceptá. Al final, el navegador va a mostrar <strong>“No se puede acceder a este sitio”</strong>: es lo esperado. <strong>Copiá la dirección completa de la barra de arriba</strong> (empieza con <code>http://localhost:8080/oauth?...</code>).</li>
+            <li>Elegí la cuenta de Google que administra GA4 y Search Console de Kol, y aceptá todos los permisos (Analytics y Search Console). Al final, el navegador va a mostrar <strong>“No se puede acceder a este sitio”</strong>: es lo esperado. <strong>Copiá la dirección completa de la barra de arriba</strong> (empieza con <code>http://localhost:8080/oauth?...</code>).</li>
             <li>
               Pegala acá y tocá Terminar:
               <textarea value={pasted} onChange={(e) => setPasted(e.target.value)} rows={3} placeholder="http://localhost:8080/oauth?state=...&code=..." className="mt-1.5 w-full p-2 border border-[#8C8580] rounded-[6px] text-[12px] font-mono kol-focus" />

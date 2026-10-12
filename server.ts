@@ -75,6 +75,44 @@ async function startServer() {
     });
   });
 
+  // Prueba REAL de cada conexión (no lee un cartel: consulta a cada servicio). Nunca devuelve claves.
+  app.get("/api/connections/check", async (req, res) => {
+    type St = { state: "ok" | "error" | "sin_configurar" | "clave_cargada"; message: string };
+    const out: Record<string, St> = {};
+    try {
+      const g = await ga4Status(true);
+      out.ga4 = !g.configured ? { state: "sin_configurar", message: g.message } : g.ok ? { state: "ok", message: g.message } : { state: "error", message: g.message };
+    } catch (e) {
+      out.ga4 = { state: "error", message: e instanceof Error ? e.message : "No se pudo probar GA4" };
+    }
+    try {
+      const r = await gscKeywords();
+      out.gsc = r.connected
+        ? { state: "ok", message: `Propiedad ${r.site}: ${r.keywords.length} consultas de /franquicia en el período.` }
+        : { state: /autorizaci[oó]n con cuenta de Google/i.test(r.message || "") ? "sin_configurar" : "error", message: r.message || "No se pudo leer Search Console" };
+    } catch (e) {
+      out.gsc = { state: "error", message: e instanceof Error ? e.message : "No se pudo probar Search Console" };
+    }
+    const metaToken = metaTokenFromEnv();
+    const act = String(req.query.metaAdAccountId || "").replace(/^act_/, "").replace(/\D/g, "");
+    if (!metaToken) out.meta = { state: "sin_configurar", message: "Falta cargar META_ACCESS_TOKEN en los Secrets del servidor." };
+    else if (!act) out.meta = { state: "clave_cargada", message: "La clave está cargada, pero falta el ID de la cuenta publicitaria." };
+    else {
+      try {
+        const r = await fetch(`https://graph.facebook.com/v21.0/act_${act}?fields=name,account_status,currency`, { headers: { Authorization: `Bearer ${metaToken}` } });
+        const j = (await r.json()) as { name?: string; currency?: string; error?: { message?: string } };
+        out.meta = r.ok ? { state: "ok", message: `Cuenta publicitaria “${j.name}” (${j.currency}) leída correctamente.` } : { state: "error", message: `Meta respondió: ${(j.error?.message || String(r.status)).slice(0, 200)}` };
+      } catch (e) {
+        out.meta = { state: "error", message: e instanceof Error ? e.message : "No se pudo probar Meta" };
+      }
+    }
+    // Clarity limita las consultas por día: no se gasta cupo en una prueba, solo se informa si la clave está cargada
+    out.clarity = clarityTokenFromEnv()
+      ? { state: "clave_cargada", message: "La clave está cargada. No se prueba acá para no gastar el cupo diario de consultas de Clarity." }
+      : { state: "sin_configurar", message: "Falta cargar CLARITY_API_TOKEN en los Secrets del servidor." };
+    res.json({ checkedAt: new Date().toISOString(), ...out });
+  });
+
   // Resultados de campañas desde GA4 (las credenciales viven solo en el servidor)
   app.get("/api/ga4/status", async (req, res) => {
     res.json(await ga4Status(req.query.test === "1"));
@@ -259,7 +297,7 @@ async function startServer() {
             const conversions = Number(row.metricValues?.[1]?.value || 0);
             const cost = Number(row.metricValues?.[2]?.value || 0);
             const clicks = Number(row.metricValues?.[3]?.value || sessions);
-            const impressions = Number(row.metricValues?.[4]?.value || sessions * 10);
+            const impressions = Number(row.metricValues?.[4]?.value || 0);
             const roas = Number(row.metricValues?.[5]?.value || 0);
 
             const isMetaSource =
@@ -479,7 +517,7 @@ async function startServer() {
                     rageClicks: 0,
                     deadClicks: 0,
                     engagementSec: 0,
-                    issue: "Navegación fluida",
+                    issue: "Sin señales de fricción en los datos leídos",
                   });
                 }
                 const item = urlMap.get(rawUrl)!;
