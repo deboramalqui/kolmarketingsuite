@@ -178,12 +178,13 @@ export const HoyDashboardView: React.FC<HoyDashboardViewProps> = ({
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
           {funnelSteps.map((step) => (
-            <div key={step.id} className="bg-[#FFFFFF] border border-[#C9C3BE] rounded-[12px] p-2.5 sm:p-3 min-w-0" title={step.plainLanguageExplanation}>
+            <div key={step.id} className="bg-[#FFFFFF] border border-[#C9C3BE] rounded-[12px] p-2.5 sm:p-3 min-w-0">
               <div className="flex items-start gap-2">
                 <span className="font-kol-display font-extrabold text-[14px] text-[#C51172] border-b-2 border-[#C51172] leading-tight">{step.stepNumber}</span>
                 <span className="text-[14px] font-bold text-[#161418] leading-snug">{step.name}</span>
               </div>
               <div className="font-kol-display font-extrabold text-[24px] leading-none tabular-nums text-[#C51172] mt-1.5">{step.count}</div>
+              <p className="text-[14px] text-[#46413F] leading-snug mt-1">{step.plainLanguageExplanation}</p>
               <div className="text-[14px] text-[#6A6460] leading-snug mt-1">
                 {step.conversionRateFromStartPct} % del total
                 {step.stepNumber > 1 && (step.dropoffRateFromPreviousPct < 0 ? <><br />sin caída (llegaron por otro camino)</> : <><br />caída {step.dropoffRateFromPreviousPct.toFixed(1)} %</>)}

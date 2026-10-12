@@ -23,6 +23,8 @@ interface Props {
   onBack: () => void;
   actions: AssetActions;
   onSave: (c: FranchiseCampaignItem) => void;
+  /** Rol que solo ve: sin cambios de estado ni edición */
+  readOnly?: boolean;
 }
 
 const TABS: Array<{ id: Tab; label: string }> = [
@@ -41,7 +43,7 @@ const Row: React.FC<{ k: string; v: React.ReactNode }> = ({ k, v }) => (
   </div>
 );
 
-export const CampaignDetail: React.FC<Props> = ({ campaign: c, assets, events, initialTab = "resumen", onBack, actions, onSave }) => {
+export const CampaignDetail: React.FC<Props> = ({ campaign: c, assets, events, initialTab = "resumen", onBack, actions, onSave, readOnly = false }) => {
   const confirm = useConfirm();
   const [tab, setTab] = useState<Tab>(initialTab);
   const { copiedKey, copy } = useCopy();
@@ -150,10 +152,10 @@ export const CampaignDetail: React.FC<Props> = ({ campaign: c, assets, events, i
           </div>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          {(c.status === "en_revision" || c.status === "lista_para_publicar") && (
+          {!readOnly && (c.status === "en_revision" || c.status === "lista_para_publicar") && (
             <button type="button" onClick={() => set({ status: "borrador" })} className="kol-btn-normal px-3 py-2 bg-white border border-[#C9C3BE] text-[#161418] font-bold text-[14px]">Volver a borrador</button>
           )}
-          {headerAction()}
+          {!readOnly && headerAction()}
         </div>
       </div>
 
@@ -165,6 +167,7 @@ export const CampaignDetail: React.FC<Props> = ({ campaign: c, assets, events, i
         ))}
       </div>
 
+      <fieldset disabled={readOnly} className="m-0 p-0 border-0 min-w-0 space-y-6">
       {tab === "resumen" && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="p-4 bg-[#FAF8F6] border border-[#C9C3BE] rounded-[10px] space-y-2.5">
@@ -426,6 +429,7 @@ export const CampaignDetail: React.FC<Props> = ({ campaign: c, assets, events, i
           </div>
         </div>
       )}
+      </fieldset>
     </div>
   );
 };

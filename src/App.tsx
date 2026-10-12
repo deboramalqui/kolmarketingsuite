@@ -1,3 +1,4 @@
+import { useAuth, ROLE_LABEL } from "./lib/auth";
 import { useConnectionsStatus, purgeSampleData } from "./lib/secrets";
 import { Snapshot, EMPTY_SNAPSHOT, fetchSnapshot, funnelFromSnapshot, channelsFromSnapshot, diffSnapshots, hasData } from "./lib/liveData";
 import { answerQuestion, weeklySummaryLines } from "./lib/answers";
@@ -51,6 +52,7 @@ type ActiveTab =
 purgeSampleData();
 
 export default function App() {
+  const { user, can, authEnabled, logout } = useAuth();
   const [activeTab, setActiveTab] = useState<ActiveTab>("hoy");
   const [fuentesSubTab, setFuentesSubTab] = useState<
     "ga4" | "search" | "meta" | "clarity"
@@ -451,17 +453,18 @@ export default function App() {
                 connections={connections}
                 isSyncing={isSyncing}
                 lastChanges={lastChanges}
-                canRefresh={true}
+                canRefresh={can.sync}
                 onRefresh={handleRefreshWithFeedback}
-                onOpenConnections={() => setActiveTab("connections")}
+                onOpenConnections={() => can.sync && setActiveTab("connections")}
               />
 
               {/* 2. Conexiones: ícono de engranaje */}
+              {can.sync && (
               <button
                 type="button"
                 onClick={() => setActiveTab("connections")}
-                aria-label="Conexiones"
-                title="Conexiones (cuentas y credenciales)"
+                aria-label="Configuración"
+                title="Configuración: conexiones y usuarios"
                 className={`w-[40px] h-[40px] rounded-[12px] border flex items-center justify-center transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FAF8F6] focus-visible:ring-offset-2 focus-visible:ring-offset-[#161418] ${
                   activeTab === "connections"
                     ? "bg-[#46413F] text-[#FFBA00] border-[#FFBA00] ring-1 ring-[#FFBA00]"
@@ -470,6 +473,18 @@ export default function App() {
               >
                 <Settings className="w-4 h-4" />
               </button>
+              )}
+
+              {authEnabled && user && (
+                <div className="flex items-center gap-2 text-[14px] text-[#C9C3BE]">
+                  <span className="hidden sm:inline" title={ROLE_LABEL[user.role]}>
+                    {user.email}
+                  </span>
+                  <button type="button" onClick={logout} className="underline underline-offset-4 hover:text-[#FAF8F6] kol-focus-dark rounded">
+                    Salir
+                  </button>
+                </div>
+              )}
 
               {/* 3. Preguntar: botón ámbar #FFBA00 con texto negro */}
               <button
@@ -771,7 +786,7 @@ export default function App() {
         )}
 
         {/* PESTAÑA 6: CONEXIONES */}
-        {activeTab === "connections" && (
+        {activeTab === "connections" && can.sync && (
           <ConexionesView
             config={accountsConfig}
             onSaveConfig={setAccountsConfig}

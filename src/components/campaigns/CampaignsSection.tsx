@@ -1,3 +1,4 @@
+import { useAuth } from "../../lib/auth";
 import { useConfirm } from "../ConfirmDialog";
 import React, { useCallback, useRef, useState } from "react";
 import { Plus } from "lucide-react";
@@ -20,6 +21,8 @@ type Sub = "campanas" | "datos";
 
 export const CampaignsSection: React.FC<Props> = ({ franchiseCampaigns, onSaveCampaign, onDeleteCampaign }) => {
   const confirm = useConfirm();
+  const { can } = useAuth();
+  const readOnly = !can.edit;
   const [sub, setSub] = useState<Sub>("campanas");
   const [creating, setCreating] = useState(false);
   const [suggested, setSuggested] = useState(false);
@@ -69,12 +72,19 @@ export const CampaignsSection: React.FC<Props> = ({ franchiseCampaigns, onSaveCa
             Armá, revisá y dejá listas las campañas de Google (Búsqueda y Display) y de Meta (Instagram y Facebook). Todo con los datos verificados de Kol.
           </p>
         </div>
-        {sub === "campanas" && !creating && !selected && (
+        {sub === "campanas" && !creating && !selected && !readOnly && (
           <button type="button" onClick={() => { setSuggested(false); setCreating(true); }} className="kol-btn-normal px-5 py-2.5 bg-[#161418] text-[#FAF8F6] hover:bg-[#2A2629] font-bold text-[14px] flex items-center gap-2 self-start md:self-auto">
             <Plus className="w-4 h-4 text-[#FFBA00]" /> Nueva campaña
           </button>
         )}
       </div>
+
+      {readOnly && (
+        <div className="p-3.5 bg-[#F3F0ED] border border-[#C9C3BE] border-l-4 border-l-[#C51172] rounded-[12px] text-[14px] text-[#161418] font-semibold flex items-start gap-2" role="status">
+          <span aria-hidden="true" className="font-bold">!</span>
+          <span>Tu rol solo permite ver las campañas. Para crear o editar, pedí el rol que hace campañas.</span>
+        </div>
+      )}
 
       <div role="tablist" aria-label="Secciones de campañas" className="flex gap-2">
         {([["campanas", "Campañas"], ["datos", "Datos y archivos"]] as const).map(([id, label]) => (
@@ -116,11 +126,13 @@ export const CampaignsSection: React.FC<Props> = ({ franchiseCampaigns, onSaveCa
           onBack={() => setSelectedId(null)}
           actions={actions}
           onSave={onSaveCampaign}
+          readOnly={readOnly}
         />
       )}
 
       {sub === "campanas" && !creating && !selected && (
         <CampaignList
+          readOnly={readOnly}
           campaigns={campaigns}
           onNew={() => { setSuggested(false); setCreating(true); }}
           onNewSuggested={() => { setSuggested(true); setCreating(true); }}

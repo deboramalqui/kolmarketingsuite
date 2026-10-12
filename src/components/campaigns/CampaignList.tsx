@@ -18,6 +18,8 @@ interface Props {
   hasSamples: boolean;
   onLoadDemo: () => void;
   onRemoveDemo: () => void;
+  /** Rol que solo ve */
+  readOnly?: boolean;
   hasDemo: boolean;
 }
 
@@ -31,7 +33,7 @@ const Kpi: React.FC<{ label: string; value: string; note: string }> = ({ label, 
   </div>
 );
 
-export const CampaignList: React.FC<Props> = ({ campaigns, onNew, onNewSuggested, onOpen, onUpdate, onDelete, onLoadSamples, onRemoveSamples, hasSamples, onLoadDemo, onRemoveDemo, hasDemo }) => {
+export const CampaignList: React.FC<Props> = ({ campaigns, onNew, onNewSuggested, onOpen, onUpdate, onDelete, onLoadSamples, onRemoveSamples, hasSamples, onLoadDemo, onRemoveDemo, hasDemo, readOnly = false }) => {
   const confirm = useConfirm();
   const [view, setView] = useState<"lista" | "paraguas">("lista");
   const [query, setQuery] = useState("");
@@ -64,6 +66,9 @@ export const CampaignList: React.FC<Props> = ({ campaigns, onNew, onNewSuggested
           <p className="text-[14px] text-[#46413F] max-w-xl mx-auto">
             Las campañas de franquicia empiezan en noviembre de 2026. Podés ir dejando armadas las primeras: se guardan como borrador, se revisan y quedan listas para publicar.
           </p>
+          {readOnly ? (
+            <p className="text-[14px] text-[#46413F]">Tu rol solo permite ver: no podés crear campañas.</p>
+          ) : (
           <div className="flex flex-wrap justify-center gap-3">
             <button type="button" onClick={onNew} className="kol-btn-normal px-5 py-2.5 bg-[#161418] text-[#FAF8F6] font-bold text-[14px] flex items-center gap-2">
               <Plus className="w-4 h-4 text-[#FFBA00]" /> Crear la primera campaña
@@ -78,6 +83,7 @@ export const CampaignList: React.FC<Props> = ({ campaigns, onNew, onNewSuggested
               Ver demo con datos inventados
             </button>
           </div>
+          )}
           <p className="text-[14px] text-[#6A6460]">Las de prueba quedan en borrador y dicen [PRUEBA]. La demo muestra resultados con números inventados y dice [DEMO]. Se borran todas juntas.</p>
         </div>
         <div className="p-4 bg-white border border-[#C9C3BE] rounded-[12px] flex gap-3 text-[14px] text-[#46413F]">
@@ -191,6 +197,7 @@ export const CampaignList: React.FC<Props> = ({ campaigns, onNew, onNewSuggested
                     <div className="flex items-center justify-end gap-2">
                       <button type="button" onClick={() => onOpen(c.id, "resumen")} className="px-3 py-1 bg-[#FAF8F6] border border-[#C9C3BE] hover:bg-[#E7E3DF] text-[#161418] rounded-[6px] text-[14px] font-bold kol-focus">Ver ficha</button>
                       <button type="button" onClick={() => onOpen(c.id, "anuncios")} className="px-3 py-1 bg-white border border-[#161418] hover:bg-[#E7E3DF] text-[#161418] rounded-[6px] text-[14px] font-bold kol-focus">Anuncios</button>
+                      {!readOnly && (
                       <button
                         type="button"
                         aria-label={`Eliminar ${c.name}`}
@@ -202,6 +209,7 @@ export const CampaignList: React.FC<Props> = ({ campaigns, onNew, onNewSuggested
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -214,6 +222,7 @@ export const CampaignList: React.FC<Props> = ({ campaigns, onNew, onNewSuggested
       </>
       )}
 
+      {!readOnly && (
       <div className="flex items-center justify-end gap-4 text-[14px]">
         {hasDemo ? (
           <button type="button" onClick={onRemoveDemo} className="text-[#6A6460] hover:text-[#A40F5F] underline kol-focus rounded">Borrar la demo</button>
@@ -226,6 +235,7 @@ export const CampaignList: React.FC<Props> = ({ campaigns, onNew, onNewSuggested
           <button type="button" onClick={onLoadSamples} className="text-[#6A6460] hover:text-[#161418] underline kol-focus rounded">Cargar campañas de prueba</button>
         )}
       </div>
+      )}
     </div>
   );
 };
