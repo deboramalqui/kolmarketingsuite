@@ -9,7 +9,7 @@ interface Props {
 }
 
 const Chip: React.FC<{ label: string; onRemove?: () => void }> = ({ label, onRemove }) => (
-  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-[8px] bg-[#161418] text-[#FAF8F6] text-[12.5px] font-bold">
+  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-[8px] bg-[#161418] text-[#FAF8F6] text-[14px] font-bold">
     {label}
     {onRemove && (
       <button type="button" onClick={onRemove} aria-label={`Quitar ${label}`} className="hover:text-[#FFBA00] kol-focus rounded">
@@ -40,9 +40,9 @@ const ListInput: React.FC<{ items: string[]; onChange: (v: string[]) => void; pl
             }
           }}
           placeholder={placeholder}
-          className="flex-1 h-[38px] px-3 border border-[#8C8580] rounded-[8px] text-[13px] text-[#161418] kol-focus"
+          className="flex-1 h-[38px] px-3 border border-[#8C8580] rounded-[8px] text-[14px] text-[#161418] kol-focus"
         />
-        <button type="button" onClick={add} className="px-3 h-[38px] bg-white border border-[#161418] rounded-[8px] text-[12.5px] font-bold flex items-center gap-1 kol-focus">
+        <button type="button" onClick={add} className="px-3 h-[38px] bg-white border border-[#161418] rounded-[8px] text-[14px] font-bold flex items-center gap-1 kol-focus">
           <Plus className="w-3.5 h-3.5" /> Agregar
         </button>
       </div>
@@ -73,7 +73,7 @@ export const GeoTargeting: React.FC<Props> = ({ value, onChange, disabled }) => 
 
   return (
     <fieldset disabled={disabled} className="space-y-4">
-      <legend className="text-[13px] font-bold text-[#161418] mb-1">¿Dónde querés captar inversores?</legend>
+      <legend className="text-[14px] font-bold text-[#161418] mb-1">¿Dónde querés captar inversores?</legend>
       <div role="radiogroup" aria-label="Alcance geográfico" className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {SCOPES.map((s) => (
           <button
@@ -84,8 +84,8 @@ export const GeoTargeting: React.FC<Props> = ({ value, onChange, disabled }) => 
             onClick={() => set({ scope: s.id })}
             className={`text-left p-3 rounded-[10px] border-2 kol-focus ${value.scope === s.id ? "border-[#161418] bg-[#FAF8F6]" : "border-[#C9C3BE] bg-white hover:bg-[#FAF8F6]"}`}
           >
-            <div className="font-bold text-[13.5px] text-[#161418]">{s.title}</div>
-            <div className="text-[12px] text-[#46413F] mt-1">{s.text}</div>
+            <div className="font-bold text-[14px] text-[#161418]">{s.title}</div>
+            <div className="text-[14px] text-[#46413F] mt-1">{s.text}</div>
           </button>
         ))}
       </div>
@@ -93,20 +93,20 @@ export const GeoTargeting: React.FC<Props> = ({ value, onChange, disabled }) => 
       {value.scope === "provincias" && (
         <div className="space-y-3">
           <div>
-            <span className="text-[12px] font-bold text-[#46413F] block mb-1.5">Regiones (atajo: marca todas sus provincias)</span>
+            <span className="text-[14px] font-bold text-[#46413F] block mb-1.5">Regiones (atajo: marca todas sus provincias)</span>
             <div className="flex flex-wrap gap-2">
               {REGIONS.map((r) => (
-                <button key={r.id} type="button" aria-pressed={regionOn(r.provinces)} onClick={() => toggleRegion(r.provinces)} className={`px-3 py-1.5 rounded-[8px] text-[12.5px] font-bold border kol-focus ${regionOn(r.provinces) ? "bg-[#161418] text-[#FAF8F6] border-[#161418]" : "bg-white text-[#161418] border-[#C9C3BE]"}`}>
+                <button key={r.id} type="button" aria-pressed={regionOn(r.provinces)} onClick={() => toggleRegion(r.provinces)} className={`px-3 py-1.5 rounded-[8px] text-[14px] font-bold border kol-focus ${regionOn(r.provinces) ? "bg-[#161418] text-[#FAF8F6] border-[#161418]" : "bg-white text-[#161418] border-[#C9C3BE]"}`}>
                   {r.label}
                 </button>
               ))}
             </div>
           </div>
           <div>
-            <span className="text-[12px] font-bold text-[#46413F] block mb-1.5">Provincias</span>
+            <span className="text-[14px] font-bold text-[#46413F] block mb-1.5">Provincias</span>
             <div className="flex flex-wrap gap-1.5">
               {PROVINCES.map((p) => (
-                <button key={p} type="button" aria-pressed={value.provinces.includes(p)} onClick={() => toggleProv(p)} className={`px-2.5 py-1 rounded-[8px] text-[12.5px] border kol-focus ${value.provinces.includes(p) ? "bg-[#161418] text-[#FAF8F6] border-[#161418] font-bold" : "bg-white text-[#161418] border-[#C9C3BE]"}`}>
+                <button key={p} type="button" aria-pressed={value.provinces.includes(p)} onClick={() => toggleProv(p)} className={`px-2.5 py-1 rounded-[8px] text-[14px] border kol-focus ${value.provinces.includes(p) ? "bg-[#161418] text-[#FAF8F6] border-[#161418] font-bold" : "bg-white text-[#161418] border-[#C9C3BE]"}`}>
                   {p}
                 </button>
               ))}
@@ -118,17 +118,17 @@ export const GeoTargeting: React.FC<Props> = ({ value, onChange, disabled }) => 
       {value.scope === "ciudades" && (
         <div className="space-y-1.5">
           <ListInput items={value.cities} onChange={(cities) => set({ cities })} label="Ciudad" placeholder="Escribí una ciudad y tocá Enter (ej. Rosario, Santa Fe)" />
-          <p className="text-[11.5px] text-[#6A6460]">Escribilas como las busca la plataforma, con la provincia si hay otra ciudad con el mismo nombre.</p>
+          <p className="text-[14px] text-[#6A6460]">Escribilas como las busca la plataforma, con la provincia si hay otra ciudad con el mismo nombre.</p>
         </div>
       )}
 
       <details className="border border-[#E7E3DF] rounded-[10px] p-3 bg-[#FAF8F6]" open={value.excluded.length > 0}>
-        <summary className="cursor-pointer text-[13px] font-bold text-[#161418]">Excluir lugares (opcional)</summary>
+        <summary className="cursor-pointer text-[14px] font-bold text-[#161418]">Excluir lugares (opcional)</summary>
         <div className="mt-3 space-y-3">
-          <p className="text-[12.5px] text-[#46413F]">Para no mostrar el anuncio en lugares donde no querés captar inversores. Por ejemplo, donde Kol ya tiene locales:</p>
+          <p className="text-[14px] text-[#46413F]">Para no mostrar el anuncio en lugares donde no querés captar inversores. Por ejemplo, donde Kol ya tiene locales:</p>
           <div className="flex flex-wrap gap-2">
             {PLACES_WITH_STORES.map((p) => (
-              <button key={p} type="button" aria-pressed={value.excluded.includes(p)} onClick={() => set({ excluded: value.excluded.includes(p) ? value.excluded.filter((x) => x !== p) : [...value.excluded, p] })} className={`px-3 py-1.5 rounded-[8px] text-[12.5px] font-bold border kol-focus ${value.excluded.includes(p) ? "bg-[#161418] text-[#FAF8F6] border-[#161418]" : "bg-white text-[#161418] border-[#C9C3BE]"}`}>
+              <button key={p} type="button" aria-pressed={value.excluded.includes(p)} onClick={() => set({ excluded: value.excluded.includes(p) ? value.excluded.filter((x) => x !== p) : [...value.excluded, p] })} className={`px-3 py-1.5 rounded-[8px] text-[14px] font-bold border kol-focus ${value.excluded.includes(p) ? "bg-[#161418] text-[#FAF8F6] border-[#161418]" : "bg-white text-[#161418] border-[#C9C3BE]"}`}>
                 {value.excluded.includes(p) ? "✓ " : "+ "}
                 {p}
               </button>

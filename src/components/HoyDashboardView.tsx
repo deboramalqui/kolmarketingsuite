@@ -88,7 +88,7 @@ export const HoyDashboardView: React.FC<HoyDashboardViewProps> = ({
           <h2 className="font-kol-display font-extrabold text-[18px] text-[#161418]">
             Alertas automáticas del período (28 días)
           </h2>
-          <span className="text-[12px] font-bold text-[#8C8580]">
+          <span className="text-[14px] font-bold text-[#6A6460]">
             Leído de Google Analytics y Microsoft Clarity
           </span>
         </div>
@@ -105,7 +105,7 @@ export const HoyDashboardView: React.FC<HoyDashboardViewProps> = ({
                   <strong>{clarityHub.rageClicksPct.toFixed(1)} % de clics repetidos (rage clicks)</strong> en {clarityHub.sessions} sesiones.
                 </div>
               </div>
-              <button type="button" onClick={() => onOpenClarityRecordings(clarityHub.pageUrl)} className="text-[13px] font-bold text-[#C51172] hover:text-[#A40F5F] flex items-center gap-1.5 shrink-0 underline decoration-1 underline-offset-4">
+              <button type="button" onClick={() => onOpenClarityRecordings(clarityHub.pageUrl)} className="text-[14px] font-bold text-[#C51172] hover:text-[#A40F5F] flex items-center gap-1.5 shrink-0 underline decoration-1 underline-offset-4">
                 <PlayCircle className="w-4 h-4" />
                 <span>Ver grabaciones</span>
               </button>
@@ -134,7 +134,7 @@ export const HoyDashboardView: React.FC<HoyDashboardViewProps> = ({
                 )}
               </div>
             </div>
-            <button type="button" onClick={onGoToAssistant} className="text-[13px] font-bold text-[#C51172] hover:text-[#A40F5F] flex items-center gap-1.5 shrink-0 underline decoration-1 underline-offset-4">
+            <button type="button" onClick={onGoToAssistant} className="text-[14px] font-bold text-[#C51172] hover:text-[#A40F5F] flex items-center gap-1.5 shrink-0 underline decoration-1 underline-offset-4">
               <span>Preguntar</span>
             </button>
           </div>
@@ -151,7 +151,7 @@ export const HoyDashboardView: React.FC<HoyDashboardViewProps> = ({
             <button
               type="button"
               onClick={() => onGoToFuentes("ga4")}
-              className="text-[13px] font-bold text-[#46413F] hover:text-[#161418] shrink-0 underline decoration-1 underline-offset-4"
+              className="text-[14px] font-bold text-[#46413F] hover:text-[#161418] shrink-0 underline decoration-1 underline-offset-4"
             >
               <span>Ver detalle en Fuentes</span>
             </button>
@@ -171,7 +171,7 @@ export const HoyDashboardView: React.FC<HoyDashboardViewProps> = ({
             </p>
           </div>
 
-          <div className="text-[13px] text-[#8C8580] font-medium">
+          <div className="text-[14px] text-[#6A6460] font-medium">
             {noData ? "Sin datos de GA4 todavía" : `Muestra: ${hubVisitors} personas que entraron al hub`}
           </div>
         </div>
@@ -181,10 +181,10 @@ export const HoyDashboardView: React.FC<HoyDashboardViewProps> = ({
             <div key={step.id} className="bg-[#FFFFFF] border border-[#C9C3BE] rounded-[12px] p-2.5 sm:p-3 min-w-0" title={step.plainLanguageExplanation}>
               <div className="flex items-start gap-2">
                 <span className="font-kol-display font-extrabold text-[14px] text-[#C51172] border-b-2 border-[#C51172] leading-tight">{step.stepNumber}</span>
-                <span className="text-[13px] font-bold text-[#161418] leading-snug">{step.name}</span>
+                <span className="text-[14px] font-bold text-[#161418] leading-snug">{step.name}</span>
               </div>
               <div className="font-kol-display font-extrabold text-[24px] leading-none tabular-nums text-[#C51172] mt-1.5">{step.count}</div>
-              <div className="text-[12px] text-[#6A6460] leading-snug mt-1">
+              <div className="text-[14px] text-[#6A6460] leading-snug mt-1">
                 {step.conversionRateFromStartPct} % del total
                 {step.stepNumber > 1 && (step.dropoffRateFromPreviousPct < 0 ? <><br />sin caída (llegaron por otro camino)</> : <><br />caída {step.dropoffRateFromPreviousPct.toFixed(1)} %</>)}
               </div>
@@ -209,13 +209,13 @@ export const HoyDashboardView: React.FC<HoyDashboardViewProps> = ({
             <div key={k.n} className="bg-[#FFFFFF] border border-[#C9C3BE] rounded-[12px] p-3.5">
               <div className="flex items-start gap-2">
                 <span className="font-kol-display font-extrabold text-[14px] text-[#C51172] border-b-2 border-[#C51172] leading-tight">{k.n}</span>
-                <span className="text-[13px] font-bold text-[#161418] leading-snug">{k.label}</span>
+                <span className="text-[14px] font-bold text-[#161418] leading-snug">{k.label}</span>
               </div>
               <div className="font-kol-display font-extrabold text-[24px] leading-none tabular-nums text-[#C51172] mt-1.5">{k.value}</div>
             </div>
           ))}
         </div>
-        <p className="text-[12px] text-[#46413F]">Los administradores logueados no se miden.</p>
+        <p className="text-[14px] text-[#46413F]">Los administradores logueados no se miden.</p>
       </section>
 
       {/* 3. CANALES DE ADQUISICIÓN (VOLUMEN VS CONVERSIÓN) */}
@@ -233,7 +233,7 @@ export const HoyDashboardView: React.FC<HoyDashboardViewProps> = ({
           <button
             type="button"
             onClick={() => onGoToFuentes("ga4")}
-            className="text-[13px] font-bold text-[#C51172] hover:underline flex items-center gap-1"
+            className="text-[14px] font-bold text-[#C51172] hover:underline flex items-center gap-1"
           >
             <span>Ver detalle técnico en Fuentes</span>
             <ArrowRight className="w-3.5 h-3.5" />
@@ -245,7 +245,7 @@ export const HoyDashboardView: React.FC<HoyDashboardViewProps> = ({
           <div className="lg:col-span-2 border border-[#C9C3BE] rounded-[10px] overflow-hidden bg-[#FFFFFF]">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-[#E7E3DF] text-[#161418] text-[13px] font-bold">
+                <tr className="bg-[#E7E3DF] text-[#161418] text-[14px] font-bold">
                   <th className="py-3 px-4">Canal de llegada</th>
                   <th className="py-3 px-3 text-right">Visitas</th>
                   <th className="py-3 px-3 text-right">Consultas</th>
@@ -264,12 +264,12 @@ export const HoyDashboardView: React.FC<HoyDashboardViewProps> = ({
                       <div className="font-bold text-[#161418] flex items-center gap-2">
                         <span>{ch.channelGroup}</span>
                         {ch.isAiChannel && (
-                          <span className="px-1.5 py-0.5 rounded bg-[#FFD9E4] text-[#C51172] text-[10px] font-bold">
+                          <span className="px-1.5 py-0.5 rounded-[4px] bg-[#E7E3DF] text-[#161418] text-[14px] font-bold">
                             IA
                           </span>
                         )}
                       </div>
-                      <div className="text-[12px] text-[#8C8580]">{ch.detail}</div>
+                      <div className="text-[14px] text-[#6A6460]">{ch.detail}</div>
                     </td>
                     <td className="py-3 px-3 text-right font-extrabold tabular-nums text-[#161418]">
                       {ch.visitors}
@@ -293,7 +293,7 @@ export const HoyDashboardView: React.FC<HoyDashboardViewProps> = ({
                 <Sparkles className="w-4 h-4 text-[#C51172]" />
                 <span>Hallazgos clave de adquisición</span>
               </div>
-              <ul className="text-[13px] text-[#46413F] space-y-2 list-disc list-inside leading-relaxed">
+              <ul className="text-[14px] text-[#46413F] space-y-2 list-disc list-inside leading-relaxed">
                 {topChannel && totalChannelVisitors > 0 ? (
                   <li>
                     <strong>{topChannel.channelGroup}</strong> genera el mayor volumen ({Math.round((topChannel.visitors / totalChannelVisitors) * 100)} % de las visitas).
@@ -317,7 +317,7 @@ export const HoyDashboardView: React.FC<HoyDashboardViewProps> = ({
             <button
               type="button"
               onClick={onGoToAssistant}
-              className="kol-btn-normal w-full py-2 bg-[#161418] text-[#FAF8F6] hover:bg-[#2A2629] font-bold text-[13px] flex items-center justify-center gap-2"
+              className="kol-btn-normal w-full py-2 bg-[#161418] text-[#FAF8F6] hover:bg-[#2A2629] font-bold text-[14px] flex items-center justify-center gap-2"
             >
               <span>Analizar canales con la IA</span>
             </button>
@@ -340,7 +340,7 @@ export const HoyDashboardView: React.FC<HoyDashboardViewProps> = ({
           <button
             type="button"
             onClick={() => onGoToFuentes("search")}
-            className="kol-btn-normal px-4 py-2 bg-[#FFFFFF] border border-[#8C8580] hover:bg-[#F3F0ED] text-[13px] font-bold text-[#161418] flex items-center gap-2 self-start sm:self-auto"
+            className="kol-btn-normal px-4 py-2 bg-[#FFFFFF] border border-[#8C8580] hover:bg-[#F3F0ED] text-[14px] font-bold text-[#161418] flex items-center gap-2 self-start sm:self-auto"
           >
             <span>Explorar tabla completa y subir CSV en Fuentes</span>
             <ArrowRight className="w-3.5 h-3.5" />
@@ -366,28 +366,28 @@ export const HoyDashboardView: React.FC<HoyDashboardViewProps> = ({
               className="p-4 bg-[#FFFFFF] border border-[#C9C3BE] rounded-[10px] space-y-3 flex flex-col justify-between"
             >
               <div>
-                <span className="text-[11px] font-bold uppercase tracking-wider text-[#C51172]">
+                <span className="text-[14px] font-bold text-[#C51172]">
                   Top #{idx + 1} en Google
                 </span>
                 <h4 className="font-bold text-[16px] text-[#161418] mt-1">
                   "{kw.keyword}"
                 </h4>
-                <div className="text-[12px] text-[#8C8580] mt-1 font-mono">
+                <div className="text-[14px] text-[#6A6460] mt-1 font-mono">
                   Destino: {kw.landingPage}
                 </div>
               </div>
 
               <div className="grid grid-cols-3 gap-2 pt-2 border-t border-[#E7E3DF] text-center">
                 <div>
-                  <span className="block text-[11px] text-[#8C8580]">Clics</span>
+                  <span className="block text-[14px] text-[#6A6460]">Clics</span>
                   <span className="font-bold text-[16px] text-[#161418]">{kw.clicks}</span>
                 </div>
                 <div>
-                  <span className="block text-[11px] text-[#8C8580]">Vieron</span>
+                  <span className="block text-[14px] text-[#6A6460]">Vieron</span>
                   <span className="font-bold text-[16px] text-[#46413F]">{kw.impressions}</span>
                 </div>
                 <div>
-                  <span className="block text-[11px] text-[#8C8580]">Posición</span>
+                  <span className="block text-[14px] text-[#6A6460]">Posición</span>
                   <span className="font-bold text-[16px] text-[#C51172]">#{kw.avgPosition.toFixed(1)}</span>
                 </div>
               </div>
@@ -414,7 +414,7 @@ export const HoyDashboardView: React.FC<HoyDashboardViewProps> = ({
           <button
             type="button"
             onClick={() => onOpenClarityRecordings("/franquicia/")}
-            className="kol-btn-normal px-4 py-2 bg-[#161418] text-[#FAF8F6] hover:bg-[#2A2629] font-bold text-[13px] flex items-center gap-2"
+            className="kol-btn-normal px-4 py-2 bg-[#161418] text-[#FAF8F6] hover:bg-[#2A2629] font-bold text-[14px] flex items-center gap-2"
           >
             <PlayCircle className="w-4 h-4" />
             <span>Ver sesiones de /franquicia/</span>
@@ -423,7 +423,7 @@ export const HoyDashboardView: React.FC<HoyDashboardViewProps> = ({
           <button
             type="button"
             onClick={() => onGoToFuentes("clarity")}
-            className="kol-btn-normal px-4 py-2 bg-[#FFFFFF] text-[#161418] border border-[#8C8580] hover:bg-[#F3F0ED] font-bold text-[13px]"
+            className="kol-btn-normal px-4 py-2 bg-[#FFFFFF] text-[#161418] border border-[#8C8580] hover:bg-[#F3F0ED] font-bold text-[14px]"
           >
             <span>Ver telemetría completa</span>
           </button>

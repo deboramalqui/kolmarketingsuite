@@ -68,7 +68,7 @@ export const DataStatusControl: React.FC<Props> = ({ snapshot, connections, isSy
   return (
     <div className="relative" ref={popRef}>
       <div className="inline-flex items-stretch border border-[#46413F] bg-[#2A2629] rounded-[12px] min-h-[40px]">
-        <button type="button" onClick={() => setOpen((o) => !o)} aria-haspopup="dialog" aria-expanded={open} className="inline-flex items-center gap-2.5 px-3.5 text-[13px] text-[#FAF8F6] hover:bg-[#46413F] rounded-l-[12px] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FAF8F6]">
+        <button type="button" onClick={() => setOpen((o) => !o)} aria-haspopup="dialog" aria-expanded={open} className="inline-flex items-center gap-2.5 px-3.5 text-[14px] text-[#FAF8F6] hover:bg-[#46413F] rounded-l-[12px] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FAF8F6]">
           <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${dot}`} />
           <span aria-live="polite">{text}</span>
         </button>
@@ -89,11 +89,11 @@ export const DataStatusControl: React.FC<Props> = ({ snapshot, connections, isSy
           <h3 className="font-kol-display font-bold text-[14px]">
             {status === "ok" ? "Los datos están al día" : status === "sin_conexion" ? "GA4 todavía no está conectado" : status === "error" ? "Una fuente no respondió" : status === "actualizando" ? "Actualizando ahora" : "Los datos están viejos"}
           </h3>
-          <p className="text-[12px] text-[#C9C3BE] mt-1 mb-3">
+          <p className="text-[14px] text-[#C9C3BE] mt-1 mb-3">
             {snapshot.fetchedAt ? `Última lectura de GA4: ${agoLabel(snapshot.fetchedAt)}. Se actualiza sola cada hora.` : "Todavía no hay ninguna lectura de GA4."}
           </p>
 
-          <div className="space-y-0 text-[13px]">
+          <div className="space-y-0 text-[14px]">
             {[
               { name: "GA4 (visitas y consultas)", ok: snapshot.connected && !!snapshot.fetchedAt && !snapshot.error, note: snapshot.error ? snapshot.error : snapshot.fetchedAt ? agoLabel(snapshot.fetchedAt) : connections.ga4.connected ? "conectado, sin lectura todavía" : "sin conectar" },
               { name: "Search Console", ok: false, note: "se ve en GA4 · lectura propia pendiente" },
@@ -103,20 +103,20 @@ export const DataStatusControl: React.FC<Props> = ({ snapshot, connections, isSy
               <div key={r.name} className="flex items-center gap-2.5 py-2 border-t border-[#46413F]">
                 <span className={`w-2 h-2 rounded-full shrink-0 ${r.ok ? "bg-[#7FD6A4]" : "bg-[#8C8580]"}`} />
                 <span className="flex-1">{r.name}</span>
-                <span className="text-[11.5px] text-[#C9C3BE] text-right max-w-[55%]">{r.note}</span>
+                <span className="text-[14px] text-[#C9C3BE] text-right max-w-[55%]">{r.note}</span>
               </div>
             ))}
           </div>
 
           {lastChanges && (
-            <div className="mt-3 p-2.5 bg-[#161418] rounded-[10px] text-[12.5px] leading-relaxed">
+            <div className="mt-3 p-2.5 bg-[#161418] rounded-[10px] text-[14px] leading-relaxed">
               <strong className="text-[#FFBA00]">Qué cambió desde la lectura anterior:</strong>
               <br />
               {lastChanges.length ? lastChanges.map((c, i) => <div key={i}>• {c}</div>) : "Sin cambios."}
             </div>
           )}
 
-          <button type="button" onClick={() => { setOpen(false); onOpenConnections(); }} className="mt-3 text-[13px] underline flex items-center gap-1 hover:text-[#FFBA00]">
+          <button type="button" onClick={() => { setOpen(false); onOpenConnections(); }} className="mt-3 text-[14px] underline flex items-center gap-1 hover:text-[#FFBA00]">
             Administrar conexiones <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>

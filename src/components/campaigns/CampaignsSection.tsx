@@ -68,7 +68,7 @@ export const CampaignsSection: React.FC<Props> = ({ franchiseCampaigns, onSaveCa
           </p>
         </div>
         {sub === "campanas" && !creating && !selected && (
-          <button type="button" onClick={() => { setSuggested(false); setCreating(true); }} className="kol-btn-normal px-5 py-2.5 bg-[#161418] text-[#FAF8F6] hover:bg-[#2A2629] font-bold text-[13px] flex items-center gap-2 self-start md:self-auto">
+          <button type="button" onClick={() => { setSuggested(false); setCreating(true); }} className="kol-btn-normal px-5 py-2.5 bg-[#161418] text-[#FAF8F6] hover:bg-[#2A2629] font-bold text-[14px] flex items-center gap-2 self-start md:self-auto">
             <Plus className="w-4 h-4 text-[#FFBA00]" /> Nueva campaña
           </button>
         )}
@@ -76,9 +76,9 @@ export const CampaignsSection: React.FC<Props> = ({ franchiseCampaigns, onSaveCa
 
       <div role="tablist" aria-label="Secciones de campañas" className="flex gap-2">
         {([["campanas", "Campañas"], ["datos", "Datos y archivos"]] as const).map(([id, label]) => (
-          <button key={id} type="button" role="tab" aria-selected={sub === id} onClick={() => { setSub(id); }} className={`px-4 py-2 text-[13.5px] font-bold rounded-[8px] kol-focus ${sub === id ? "bg-[#161418] text-[#FAF8F6]" : "bg-white text-[#46413F] border border-[#C9C3BE] hover:bg-[#FAF8F6]"}`}>
+          <button key={id} type="button" role="tab" aria-selected={sub === id} onClick={() => { setSub(id); }} className={`px-4 py-2 text-[14px] font-bold rounded-[8px] kol-focus ${sub === id ? "bg-[#161418] text-[#FAF8F6]" : "bg-white text-[#46413F] border border-[#C9C3BE] hover:bg-[#FAF8F6]"}`}>
             {label}
-            {id === "datos" && <span className="ml-2 text-[11px] opacity-80">{assets.length}</span>}
+            {id === "datos" && <span className="ml-2 text-[14px] opacity-80">{assets.length}</span>}
           </button>
         ))}
       </div>

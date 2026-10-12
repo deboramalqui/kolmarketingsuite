@@ -48,11 +48,11 @@ export const Ga4SyncBar: React.FC<Props> = ({ campaigns, onUpdate, label = "Actu
 
   return (
     <div className="flex flex-wrap items-center gap-3">
-      <button type="button" onClick={run} disabled={busy || campaigns.length === 0} className="kol-btn-normal px-4 py-2 bg-[#161418] text-[#FAF8F6] text-[12.5px] font-bold flex items-center gap-2 disabled:opacity-40">
+      <button type="button" onClick={run} disabled={busy || campaigns.length === 0} className="kol-btn-normal px-4 py-2 bg-[#161418] text-[#FAF8F6] text-[14px] font-bold flex items-center gap-2 disabled:opacity-40">
         <RefreshCw className={`w-3.5 h-3.5 ${busy ? "animate-spin" : ""}`} /> {busy ? "Consultando GA4…" : label}
       </button>
       {msg && (
-        <span role="status" className={`text-[12.5px] ${msg.ok ? "text-[#161418]" : "text-[#A40F5F] font-bold"}`}>
+        <span role="status" className={`text-[14px] ${msg.ok ? "text-[#161418]" : "text-[#A40F5F] font-bold"}`}>
           {msg.text}
         </span>
       )}

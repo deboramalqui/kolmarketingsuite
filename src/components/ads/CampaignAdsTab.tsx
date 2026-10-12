@@ -36,23 +36,23 @@ export const CampaignAdsTab: React.FC<Props> = ({ campaign, assets, actions, onS
     <div className="space-y-5">
       {editable ? (
         <div className="flex flex-wrap items-center justify-between gap-3 p-3 bg-[#FAF8F6] border border-[#C9C3BE] rounded-[10px]">
-          <span className="text-[13px] text-[#46413F]" aria-live="polite">
+          <span className="text-[14px] text-[#46413F]" aria-live="polite">
             {dirty ? "Tenés cambios sin guardar." : savedMsg ? "Cambios guardados." : "Podés editar los anuncios acá: la vista previa cambia al instante."}
           </span>
           <div className="flex gap-2">
-            <button type="button" disabled={!dirty} onClick={discard} className="kol-btn-normal px-4 py-2 bg-white border border-[#C9C3BE] text-[#161418] text-[12px] font-bold disabled:opacity-40">Descartar</button>
-            <button type="button" disabled={!dirty} onClick={save} className="kol-btn-normal px-4 py-2 bg-[#161418] text-[#FAF8F6] text-[12px] font-bold disabled:opacity-40">Guardar cambios</button>
+            <button type="button" disabled={!dirty} onClick={discard} className="kol-btn-normal px-4 py-2 bg-white border border-[#C9C3BE] text-[#161418] text-[14px] font-bold disabled:opacity-40">Descartar</button>
+            <button type="button" disabled={!dirty} onClick={save} className="kol-btn-normal px-4 py-2 bg-[#161418] text-[#FAF8F6] text-[14px] font-bold disabled:opacity-40">Guardar cambios</button>
           </div>
         </div>
       ) : (
         <div className="flex flex-wrap items-center justify-between gap-3 p-3 bg-[#FAF8F6] border border-[#C9C3BE] rounded-[10px]">
-          <span className="text-[13px] text-[#46413F]">
+          <span className="text-[14px] text-[#46413F]">
             {campaign.status === "en_vivo" || campaign.status === "cerrada"
               ? "Esta campaña ya está publicada o cerrada: los cambios se hacen en la plataforma (Google Ads o Meta), no acá."
               : "Esta campaña está en revisión o aprobada. Para editarla hay que devolverla a borrador."}
           </span>
           {campaign.status !== "en_vivo" && campaign.status !== "cerrada" && (
-            <button type="button" onClick={backToDraft} className="kol-btn-normal px-4 py-2 bg-[#161418] text-[#FAF8F6] text-[12px] font-bold">Volver a borrador para editar</button>
+            <button type="button" onClick={backToDraft} className="kol-btn-normal px-4 py-2 bg-[#161418] text-[#FAF8F6] text-[14px] font-bold">Volver a borrador para editar</button>
           )}
         </div>
       )}

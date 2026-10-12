@@ -11,7 +11,7 @@ export const CopyButton: React.FC<{ text: string; id: string; copiedKey: string 
   <button
     type="button"
     onClick={() => onCopy(text, id)}
-    className="text-[12px] font-bold text-[#C51172] hover:underline flex items-center gap-1 kol-focus rounded"
+    className="text-[14px] font-bold text-[#C51172] hover:underline flex items-center gap-1 kol-focus rounded"
   >
     {copiedKey === id ? (
       <>

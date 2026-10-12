@@ -24,9 +24,9 @@ const STATUS_FILTERS: Array<"todas" | CampaignLifecycleStatus> = ["todas", "borr
 
 const Kpi: React.FC<{ label: string; value: string; note: string }> = ({ label, value, note }) => (
   <div className="p-4 bg-white border border-[#C9C3BE] rounded-[12px]">
-    <div className="text-[12px] uppercase tracking-wide font-bold text-[#8C8580]">{label}</div>
+    <div className="text-[14px] font-bold text-[#6A6460]">{label}</div>
     <div className="font-kol-display font-extrabold text-[26px] text-[#161418] mt-1 tabular-nums">{value}</div>
-    <div className="text-[12px] text-[#6A6460] mt-1">{note}</div>
+    <div className="text-[14px] text-[#6A6460] mt-1">{note}</div>
   </div>
 );
 
@@ -63,22 +63,22 @@ export const CampaignList: React.FC<Props> = ({ campaigns, onNew, onNewSuggested
             Las campañas de franquicia empiezan en noviembre de 2026. Podés ir dejando armadas las primeras: se guardan como borrador, se revisan y quedan listas para publicar.
           </p>
           <div className="flex flex-wrap justify-center gap-3">
-            <button type="button" onClick={onNew} className="kol-btn-normal px-5 py-2.5 bg-[#161418] text-[#FAF8F6] font-bold text-[13px] flex items-center gap-2">
+            <button type="button" onClick={onNew} className="kol-btn-normal px-5 py-2.5 bg-[#161418] text-[#FAF8F6] font-bold text-[14px] flex items-center gap-2">
               <Plus className="w-4 h-4 text-[#FFBA00]" /> Crear la primera campaña
             </button>
-            <button type="button" onClick={onNewSuggested} className="kol-btn-normal px-5 py-2.5 bg-white border border-[#161418] text-[#161418] font-bold text-[13px] flex items-center gap-2">
+            <button type="button" onClick={onNewSuggested} className="kol-btn-normal px-5 py-2.5 bg-white border border-[#161418] text-[#161418] font-bold text-[14px] flex items-center gap-2">
               <Sparkles className="w-4 h-4" /> Empezar con la sugerencia de arranque
             </button>
-            <button type="button" onClick={onLoadSamples} className="kol-btn-normal px-5 py-2.5 bg-[#FAF8F6] border border-[#C9C3BE] text-[#161418] font-bold text-[13px]">
+            <button type="button" onClick={onLoadSamples} className="kol-btn-normal px-5 py-2.5 bg-[#FAF8F6] border border-[#C9C3BE] text-[#161418] font-bold text-[14px]">
               Cargar campañas de prueba (borradores)
             </button>
-            <button type="button" onClick={onLoadDemo} className="kol-btn-normal px-5 py-2.5 bg-[#FAF8F6] border border-dashed border-[#A40F5F] text-[#161418] font-bold text-[13px]">
+            <button type="button" onClick={onLoadDemo} className="kol-btn-normal px-5 py-2.5 bg-[#FAF8F6] border border-dashed border-[#A40F5F] text-[#161418] font-bold text-[14px]">
               Ver demo con datos inventados
             </button>
           </div>
-          <p className="text-[12px] text-[#6A6460]">Las de prueba quedan en borrador y dicen [PRUEBA]. La demo muestra resultados con números inventados y dice [DEMO]. Se borran todas juntas.</p>
+          <p className="text-[14px] text-[#6A6460]">Las de prueba quedan en borrador y dicen [PRUEBA]. La demo muestra resultados con números inventados y dice [DEMO]. Se borran todas juntas.</p>
         </div>
-        <div className="p-4 bg-white border border-[#C9C3BE] rounded-[12px] flex gap-3 text-[13px] text-[#46413F]">
+        <div className="p-4 bg-white border border-[#C9C3BE] rounded-[12px] flex gap-3 text-[14px] text-[#46413F]">
           <Info className="w-4 h-4 mt-0.5 shrink-0" />
           <p>
             <strong>Sugerencia de arranque:</strong> una campaña de prueba en Meta de 14 días con un tope total en pesos que se define con Kol. Al 5/10/2026, Instagram es la fuente que más visitas trae al hub (dato de GA4, muestra chica).
@@ -100,7 +100,7 @@ export const CampaignList: React.FC<Props> = ({ campaigns, onNew, onNewSuggested
 
       <div role="tablist" aria-label="Vista" className="flex gap-2">
         {([["lista", "Lista de campañas"], ["paraguas", "Por campaña paraguas"]] as const).map(([id, label]) => (
-          <button key={id} type="button" role="tab" aria-selected={view === id} onClick={() => setView(id)} className={`px-3.5 py-1.5 rounded-[8px] text-[13px] font-bold border kol-focus ${view === id ? "bg-[#161418] text-[#FAF8F6] border-[#161418]" : "bg-white text-[#46413F] border-[#C9C3BE] hover:bg-[#FAF8F6]"}`}>{label}</button>
+          <button key={id} type="button" role="tab" aria-selected={view === id} onClick={() => setView(id)} className={`px-3.5 py-1.5 rounded-[8px] text-[14px] font-bold border kol-focus ${view === id ? "bg-[#161418] text-[#FAF8F6] border-[#161418]" : "bg-white text-[#46413F] border-[#C9C3BE] hover:bg-[#FAF8F6]"}`}>{label}</button>
         ))}
       </div>
 
@@ -110,14 +110,14 @@ export const CampaignList: React.FC<Props> = ({ campaigns, onNew, onNewSuggested
       <>
       <div className="flex flex-col lg:flex-row gap-3 lg:items-center justify-between">
         <div className="relative lg:w-80">
-          <SearchIcon className="w-4 h-4 text-[#8C8580] absolute left-3 top-1/2 -translate-y-1/2" aria-hidden="true" />
+          <SearchIcon className="w-4 h-4 text-[#6A6460] absolute left-3 top-1/2 -translate-y-1/2" aria-hidden="true" />
           <input
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Buscar campaña por nombre"
             aria-label="Buscar campaña por nombre"
-            className="w-full h-[40px] pl-9 pr-3 border border-[#8C8580] rounded-[8px] text-[13px] text-[#161418] kol-focus"
+            className="w-full h-[48px] pl-9 pr-3 border border-[#8C8580] rounded-[8px] text-[14px] text-[#161418] kol-focus"
           />
         </div>
         <div role="group" aria-label="Filtrar por tipo" className="flex gap-1.5 flex-wrap">
@@ -127,7 +127,7 @@ export const CampaignList: React.FC<Props> = ({ campaigns, onNew, onNewSuggested
               type="button"
               aria-pressed={type === t.id}
               onClick={() => setType(t.id)}
-              className={`px-3 py-1.5 text-[12.5px] font-bold rounded-[8px] border kol-focus ${type === t.id ? "bg-[#161418] text-[#FAF8F6] border-[#161418]" : "bg-white text-[#46413F] border-[#C9C3BE] hover:bg-[#FAF8F6]"}`}
+              className={`px-3 py-1.5 text-[14px] font-bold rounded-[8px] border kol-focus ${type === t.id ? "bg-[#161418] text-[#FAF8F6] border-[#161418]" : "bg-white text-[#46413F] border-[#C9C3BE] hover:bg-[#FAF8F6]"}`}
             >
               {t.label}
             </button>
@@ -144,10 +144,10 @@ export const CampaignList: React.FC<Props> = ({ campaigns, onNew, onNewSuggested
               type="button"
               aria-pressed={status === s}
               onClick={() => setStatus(s)}
-              className={`px-3 py-1.5 text-[13px] font-bold rounded-[8px] flex items-center gap-2 whitespace-nowrap kol-focus ${status === s ? "bg-[#161418] text-[#FAF8F6]" : "bg-white text-[#46413F] hover:bg-[#FAF8F6] border border-[#C9C3BE]"}`}
+              className={`px-3 py-1.5 text-[14px] font-bold rounded-[8px] flex items-center gap-2 whitespace-nowrap kol-focus ${status === s ? "bg-[#161418] text-[#FAF8F6]" : "bg-white text-[#46413F] hover:bg-[#FAF8F6] border border-[#C9C3BE]"}`}
             >
               {s === "todas" ? "Todas" : statusLabel[s]}
-              <span className={`px-1.5 rounded-full text-[11px] tabular-nums ${status === s ? "bg-[#2A2629]" : "bg-[#F3F0ED] text-[#161418]"}`}>{n}</span>
+              <span className={`px-1.5 rounded-[4px] text-[14px] tabular-nums ${status === s ? "bg-[#2A2629]" : "bg-[#F3F0ED] text-[#161418]"}`}>{n}</span>
             </button>
           );
         })}
@@ -156,7 +156,7 @@ export const CampaignList: React.FC<Props> = ({ campaigns, onNew, onNewSuggested
       <div className="border border-[#C9C3BE] rounded-[12px] overflow-x-auto bg-white">
         <table className="w-full text-left border-collapse min-w-[860px]">
           <thead>
-            <tr className="bg-[#E7E3DF] text-[#161418] text-[13px] font-bold">
+            <tr className="bg-[#E7E3DF] text-[#161418] text-[14px] font-bold">
               <th className="py-3 px-4">Estado</th>
               <th className="py-3 px-4">Campaña</th>
               <th className="py-3 px-3">Tipo</th>
@@ -169,7 +169,7 @@ export const CampaignList: React.FC<Props> = ({ campaigns, onNew, onNewSuggested
           <tbody className="text-[14px]">
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={7} className="py-10 text-center text-[#8C8580]">
+                <td colSpan={7} className="py-10 text-center text-[#6A6460]">
                   Ninguna campaña coincide con la búsqueda o los filtros.
                 </td>
               </tr>
@@ -179,16 +179,16 @@ export const CampaignList: React.FC<Props> = ({ campaigns, onNew, onNewSuggested
                   <td className="py-3.5 px-4"><StatusBadge status={c.status} /></td>
                   <td className="py-3.5 px-4">
                     <div className="font-bold text-[#161418]">{c.name}</div>
-                    <div className="text-[12px] text-[#46413F] mt-0.5">{c.targetLocations.join(", ") || "Sin ciudades"}</div>
+                    <div className="text-[14px] text-[#46413F] mt-0.5">{c.targetLocations.join(", ") || "Sin ciudades"}</div>
                   </td>
-                  <td className="py-3.5 px-3 whitespace-nowrap text-[13px]">{platformLabel(c)}</td>
-                  <td className="py-3.5 px-3 text-[13px] capitalize">{c.mode}</td>
-                  <td className="py-3.5 px-3 whitespace-nowrap tabular-nums text-[13px]">{formatMoney(c.budget.totalCap, c.budget.currency)}</td>
-                  <td className="py-3.5 px-3 text-right tabular-nums text-[13px]">{!!c.livePerformance?.source ? c.livePerformance.consultas : "—"}</td>
+                  <td className="py-3.5 px-3 whitespace-nowrap text-[14px]">{platformLabel(c)}</td>
+                  <td className="py-3.5 px-3 text-[14px] capitalize">{c.mode}</td>
+                  <td className="py-3.5 px-3 whitespace-nowrap tabular-nums text-[14px]">{formatMoney(c.budget.totalCap, c.budget.currency)}</td>
+                  <td className="py-3.5 px-3 text-right tabular-nums text-[14px]">{!!c.livePerformance?.source ? c.livePerformance.consultas : "—"}</td>
                   <td className="py-3.5 px-4 text-right whitespace-nowrap">
                     <div className="flex items-center justify-end gap-2">
-                      <button type="button" onClick={() => onOpen(c.id, "resumen")} className="px-3 py-1 bg-[#FAF8F6] border border-[#C9C3BE] hover:bg-[#E7E3DF] text-[#161418] rounded-[6px] text-[12px] font-bold kol-focus">Ver ficha</button>
-                      <button type="button" onClick={() => onOpen(c.id, "anuncios")} className="px-3 py-1 bg-white border border-[#161418] hover:bg-[#E7E3DF] text-[#161418] rounded-[6px] text-[12px] font-bold kol-focus">Anuncios</button>
+                      <button type="button" onClick={() => onOpen(c.id, "resumen")} className="px-3 py-1 bg-[#FAF8F6] border border-[#C9C3BE] hover:bg-[#E7E3DF] text-[#161418] rounded-[6px] text-[14px] font-bold kol-focus">Ver ficha</button>
+                      <button type="button" onClick={() => onOpen(c.id, "anuncios")} className="px-3 py-1 bg-white border border-[#161418] hover:bg-[#E7E3DF] text-[#161418] rounded-[6px] text-[14px] font-bold kol-focus">Anuncios</button>
                       <button
                         type="button"
                         aria-label={`Eliminar ${c.name}`}
@@ -196,7 +196,7 @@ export const CampaignList: React.FC<Props> = ({ campaigns, onNew, onNewSuggested
                         onClick={() => {
                           if (window.confirm(`¿Eliminar la campaña “${c.name}”? No se puede deshacer.`)) onDelete(c.id);
                         }}
-                        className="p-1 text-[#8C8580] hover:text-[#A40F5F] rounded kol-focus"
+                        className="p-1 text-[#6A6460] hover:text-[#A40F5F] rounded kol-focus"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -212,7 +212,7 @@ export const CampaignList: React.FC<Props> = ({ campaigns, onNew, onNewSuggested
       </>
       )}
 
-      <div className="flex items-center justify-end gap-4 text-[12.5px]">
+      <div className="flex items-center justify-end gap-4 text-[14px]">
         {hasDemo ? (
           <button type="button" onClick={onRemoveDemo} className="text-[#6A6460] hover:text-[#A40F5F] underline kol-focus rounded">Borrar la demo</button>
         ) : (

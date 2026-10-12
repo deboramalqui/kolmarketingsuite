@@ -328,7 +328,7 @@ export default function App() {
         setTimeout(() => setFlashCards(false), 1600);
       }
       setToastNotice({
-        html: `<strong>Datos actualizados.</strong> ${changes.length ? changes.join(", ") + "." : "No hubo cambios desde la última lectura."}<small class='block text-[#C9C3BE] text-[12px] mt-0.5'>GA4 completa los últimos 2 días en 24 a 48 h.</small>${gscMessage ? `<small class='block text-[#C9C3BE] text-[12px] mt-0.5'>Search Console: ${gscMessage.replace(/[<>&]/g, "")}</small>` : ""}`,
+        html: `<strong>Datos actualizados.</strong> ${changes.length ? changes.join(", ") + "." : "No hubo cambios desde la última lectura."}<small class='block text-[#C9C3BE] text-[14px] mt-0.5'>GA4 completa los últimos 2 días en 24 a 48 h.</small>${gscMessage ? `<small class='block text-[#C9C3BE] text-[14px] mt-0.5'>Search Console: ${gscMessage.replace(/[<>&]/g, "")}</small>` : ""}`,
       });
     }
     setTimeout(() => setToastNotice(null), 6000);
@@ -438,7 +438,7 @@ export default function App() {
               <h1 className="font-kol-display font-extrabold text-[22px] sm:text-[26px] leading-[32px] text-[#FAF8F6]">
                 KOL Marketing Suite
               </h1>
-              <p className="text-[13px] text-[#C9C3BE]">
+              <p className="text-[14px] text-[#C9C3BE]">
                 Medición del embudo de captación de franquicias con datos reales de Google Analytics y Search Console
               </p>
             </div>
@@ -477,7 +477,7 @@ export default function App() {
                 onClick={() => setIsAssistantDrawerOpen(true)}
                 aria-haspopup="dialog"
                 aria-expanded={isAssistantDrawerOpen}
-                className="kol-btn-normal px-4 bg-[#FFBA00] hover:opacity-95 text-[#161418] font-bold flex items-center gap-2 whitespace-nowrap shadow-sm text-[13px] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FAF8F6] focus-visible:ring-offset-2 focus-visible:ring-offset-[#161418]"
+                className="kol-btn-normal px-4 bg-[#FFBA00] hover:opacity-95 text-[#161418] font-bold flex items-center gap-2 whitespace-nowrap shadow-sm text-[14px] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FAF8F6] focus-visible:ring-offset-2 focus-visible:ring-offset-[#161418]"
               >
                 <MessageSquare className="w-3.5 h-3.5" />
                 <span>Preguntar</span>
@@ -495,16 +495,16 @@ export default function App() {
                 }`}
               >
                 <div className="flex items-center justify-between">
-                  <div className="text-[13px] text-[#C9C3BE] truncate font-medium">
+                  <div className="text-[14px] text-[#C9C3BE] truncate font-medium">
                     Consultas de franquicia
                   </div>
                   {flashCards && (
-                    <span className="text-[11px] bg-[#FFBA00] text-[#161418] font-bold px-2 py-0.5 rounded-full">
-                      NUEVO
+                    <span className="text-[14px] bg-[#FFBA00] text-[#161418] font-bold px-2 py-0.5 rounded-[4px]">
+                      Nuevo
                     </span>
                   )}
                 </div>
-                <div className="text-[12px] text-[#8C8580] truncate mt-0.5">
+                <div className="text-[14px] text-[#C9C3BE] truncate mt-0.5">
                   ¿Cuántos dejaron sus datos?
                 </div>
                 <div className="inline-block border-b-[3px] border-[#FFBA00] pb-1 mt-2">
@@ -515,7 +515,7 @@ export default function App() {
                     consultas
                   </span>
                 </div>
-                <div className="text-[13px] text-[#FAF8F6] mt-2">
+                <div className="text-[14px] text-[#FAF8F6] mt-2">
                   <span>
                     {live
                       ? `${consultasCount - consultasPrev >= 0 ? "+" : ""}${consultasCount - consultasPrev} vs período anterior (28d: ${consultasPrev})`
@@ -526,10 +526,10 @@ export default function App() {
 
               {/* Tarjeta 2: Costo por consulta */}
               <div className="bg-[#2A2629] border border-[#46413F] kol-card-12 px-5 py-4">
-                <div className="text-[13px] text-[#C9C3BE] truncate font-medium">
+                <div className="text-[14px] text-[#C9C3BE] truncate font-medium">
                   Costo por consulta
                 </div>
-                <div className="text-[12px] text-[#8C8580] truncate mt-0.5">
+                <div className="text-[14px] text-[#C9C3BE] truncate mt-0.5">
                   ¿Cuánto cuesta cada una?
                 </div>
                 <div className="inline-block border-b-[3px] border-[#FFBA00] pb-1 mt-2">
@@ -537,7 +537,7 @@ export default function App() {
                     Sin inversión todavía
                   </span>
                 </div>
-                <div className="text-[13px] text-[#FAF8F6] mt-2 truncate">
+                <div className="text-[14px] text-[#FAF8F6] mt-2 truncate">
                   Se activa con las campañas de noviembre
                 </div>
               </div>
@@ -549,16 +549,16 @@ export default function App() {
                 }`}
               >
                 <div className="flex items-center justify-between">
-                  <div className="text-[13px] text-[#C9C3BE] truncate font-medium">
+                  <div className="text-[14px] text-[#C9C3BE] truncate font-medium">
                     De visita a consulta
                   </div>
                   {flashCards && (
-                    <span className="text-[11px] bg-[#FFBA00] text-[#161418] font-bold px-2 py-0.5 rounded-full">
-                      ACTUALIZADO
+                    <span className="text-[14px] bg-[#FFBA00] text-[#161418] font-bold px-2 py-0.5 rounded-[4px]">
+                      Actualizado
                     </span>
                   )}
                 </div>
-                <div className="text-[12px] text-[#8C8580] truncate mt-0.5">
+                <div className="text-[14px] text-[#C9C3BE] truncate mt-0.5">
                   ¿Cuántos de los que entran envían?
                 </div>
                 <div className="inline-block border-b-[3px] border-[#FFBA00] pb-1 mt-2">
@@ -569,7 +569,7 @@ export default function App() {
                     {live ? `(${consultasCount} de ${hubVisitorsCount})` : ""}
                   </span>
                 </div>
-                <div className="text-[12px] text-[#C9C3BE] mt-2 flex items-center gap-1.5 font-medium">
+                <div className="text-[14px] text-[#C9C3BE] mt-2 flex items-center gap-1.5 font-medium">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#FFBA00] shrink-0" />
                   <span>{live ? (hubVisitorsCount < 100 ? "Muestra chica (<100 visitas al hub)" : "Muestra suficiente (100 visitas o más)") : "Sin datos todavía"}</span>
                 </div>
@@ -577,10 +577,10 @@ export default function App() {
 
               {/* Tarjeta 4: Fricción de la página */}
               <div className="bg-[#2A2629] border border-[#46413F] kol-card-12 px-5 py-4">
-                <div className="text-[13px] text-[#C9C3BE] truncate font-medium">
+                <div className="text-[14px] text-[#C9C3BE] truncate font-medium">
                   Fricción de la página
                 </div>
-                <div className="text-[12px] text-[#8C8580] truncate mt-0.5">
+                <div className="text-[14px] text-[#C9C3BE] truncate mt-0.5">
                   ¿La gente se traba?
                 </div>
                 <div className="inline-block border-b-[3px] border-[#FFBA00] pb-1 mt-2">
@@ -588,7 +588,7 @@ export default function App() {
                     {clarityHub ? (clarityHub.rageClicksPct >= 3 ? "Alerta" : "Normal") : "Sin datos"}
                   </span>
                 </div>
-                <div className="text-[13px] text-[#FAF8F6] mt-2">
+                <div className="text-[14px] text-[#FAF8F6] mt-2">
                   <span>
                     {clarityHub
                       ? `${clarityHub.rageClicksPct.toFixed(1)} % clics repetidos en ${clarityHub.pageUrl}`
@@ -644,7 +644,7 @@ export default function App() {
                           ? "text-[#FFBA00] border-[#FFBA00]"
                           : "text-[#C51172] border-[#C51172]"
                         : isDarkView
-                        ? "text-[#8C8580] border-[#46413F] group-hover:text-[#FAF8F6] group-hover:border-[#C9C3BE]"
+                        ? "text-[#C9C3BE] border-[#46413F] group-hover:text-[#FAF8F6] group-hover:border-[#C9C3BE]"
                         : "text-[#46413F] border-[#C9C3BE] group-hover:text-[#161418] group-hover:border-[#8C8580]"
                     }`}
                   >
@@ -671,7 +671,7 @@ export default function App() {
               isDarkView ? "border-[#2A2629]" : "border-[#C9C3BE]"
             }`}
           >
-            <span className="text-[13px] font-semibold text-[#8C8580]">
+            <span className="text-[14px] font-semibold text-[#C9C3BE]">
               Hub de franquicias: 10 locales en Argentina
             </span>
           </div>
@@ -689,7 +689,7 @@ export default function App() {
             <button
               type="button"
               onClick={() => setActiveTab("connections")}
-              className="text-[13px] font-bold text-[#C51172] underline decoration-2 underline-offset-4 whitespace-nowrap"
+              className="text-[14px] font-bold text-[#C51172] underline decoration-2 underline-offset-4 whitespace-nowrap"
             >
               Ver centro de conexiones
             </button>
@@ -788,11 +788,11 @@ export default function App() {
             <KolLogo variant="blanco" className="h-[28px] w-auto shrink-0" />
             <KolLockup variant="oscuro" compact />
             <span className="text-[#46413F] font-light select-none">|</span>
-            <span className="font-kol-display font-extrabold text-[#FAF8F6] text-[15px] tracking-wide">
+            <span className="font-kol-display font-extrabold text-[#FAF8F6] text-[15px] ">
               KOL Marketing Suite
             </span>
           </div>
-          <div className="text-[12px] text-[#C9C3BE]">
+          <div className="text-[14px] text-[#C9C3BE]">
             Medición del embudo de captación de franquicias con datos reales de Google Analytics y Search Console
           </div>
         </div>
@@ -816,7 +816,7 @@ export default function App() {
             toastNotice.isError
               ? "border-l-4 border-l-[#F056A9]"
               : "border-l-4 border-l-[#7FD6A4]"
-          } px-4 py-3 rounded-[12px] text-[13.5px] shadow-2xl z-50 max-w-[92vw] animate-in fade-in slide-in-from-bottom-2`}
+          } px-4 py-3 rounded-[12px] text-[14px] shadow-2xl z-50 max-w-[92vw] animate-in fade-in slide-in-from-bottom-2`}
         >
           <div dangerouslySetInnerHTML={{ __html: toastNotice.html }} />
         </div>

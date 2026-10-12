@@ -41,15 +41,15 @@ export const AssetPicker: React.FC<Props> = ({ label, hint, slot, kind, assets, 
   return (
     <div className="p-3 bg-[#FAF8F6] border border-[#E7E3DF] rounded-[10px] space-y-2">
       <div className="flex items-center justify-between gap-2">
-        <label className="text-[13px] font-bold text-[#161418]" htmlFor={`pick-${slot}`}>
+        <label className="text-[14px] font-bold text-[#161418]" htmlFor={`pick-${slot}`}>
           {label}
           {required && <span className="text-[#A40F5F]"> *</span>}
         </label>
-        <span className="text-[11.5px] text-[#6A6460]">{hint}</span>
+        <span className="text-[14px] text-[#6A6460]">{hint}</span>
       </div>
       <div className="flex gap-3 items-center">
         <div className="w-16 h-16 shrink-0 rounded-[8px] overflow-hidden bg-[#E7E3DF] border border-[#C9C3BE] grid place-items-center">
-          {chosen ? <img src={chosen.url} alt="" className="w-full h-full object-contain bg-white" /> : <span className="text-[10px] text-[#6A6460] text-center px-1">Sin imagen</span>}
+          {chosen ? <img src={chosen.url} alt="" className="w-full h-full object-contain bg-white" /> : <span className="text-[14px] text-[#6A6460] text-center px-1">Sin imagen</span>}
         </div>
         <div className="flex-1 min-w-0 space-y-1.5">
           <select
@@ -57,7 +57,7 @@ export const AssetPicker: React.FC<Props> = ({ label, hint, slot, kind, assets, 
             disabled={disabled}
             value={value || ""}
             onChange={(e) => onChange(e.target.value || undefined)}
-            className="w-full h-[36px] px-2.5 border border-[#8C8580] rounded-[6px] text-[13px] text-[#161418] bg-white kol-focus disabled:bg-[#F3F0ED]"
+            className="w-full h-[48px] px-2.5 border border-[#8C8580] rounded-[6px] text-[14px] text-[#161418] bg-white kol-focus disabled:bg-[#F3F0ED]"
           >
             <option value="">{options.length ? "Elegir de la galería…" : "No hay imágenes de este tipo en la galería"}</option>
             {options.map((a) => (
@@ -68,21 +68,21 @@ export const AssetPicker: React.FC<Props> = ({ label, hint, slot, kind, assets, 
           </select>
           {!disabled && actions && (
             <div className="flex flex-wrap items-center gap-3">
-              <label className={`inline-flex items-center gap-1.5 px-2.5 py-1 bg-white border border-[#161418] rounded-[6px] text-[12px] font-bold cursor-pointer ${busy ? "opacity-60 pointer-events-none" : ""}`}>
+              <label className={`inline-flex items-center gap-1.5 px-2.5 py-1 bg-white border border-[#161418] rounded-[6px] text-[14px] font-bold cursor-pointer ${busy ? "opacity-60 pointer-events-none" : ""}`}>
                 <Upload className="w-3.5 h-3.5" /> {busy ? "Subiendo…" : kind === "logo" ? "Subir logo" : "Subir imagen"}
                 <input type="file" accept="image/*" className="sr-only" onChange={(e) => { upload(e.target.files?.[0]); e.target.value = ""; }} />
               </label>
               {chosen && actions && (
-                <label className="inline-flex items-center gap-1.5 text-[12px] text-[#161418] cursor-pointer">
+                <label className="inline-flex items-center gap-1.5 text-[14px] text-[#161418] cursor-pointer">
                   <input type="checkbox" checked={chosen.permission} onChange={(e) => actions.update(chosen.id, { permission: e.target.checked })} />
                   Tenemos permiso para usarla en anuncios
                 </label>
               )}
             </div>
           )}
-          {err && <div role="alert" className="text-[12px] text-[#A40F5F] font-bold">{err}</div>}
+          {err && <div role="alert" className="text-[14px] text-[#A40F5F] font-bold">{err}</div>}
           {chosen && fit && (
-            <div className={`flex items-center gap-1.5 text-[12px] ${fit.ok ? "text-[#46413F]" : "text-[#A40F5F] font-bold"}`}>
+            <div className={`flex items-center gap-1.5 text-[14px] ${fit.ok ? "text-[#46413F]" : "text-[#A40F5F] font-bold"}`}>
               {fit.ok ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> : <AlertTriangle className="w-3.5 h-3.5" />}
               <span>{fit.reason}</span>
               {!chosen.permission && <span className="text-[#A40F5F] font-bold"> · sin permiso de uso</span>}

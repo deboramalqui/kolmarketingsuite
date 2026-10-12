@@ -39,8 +39,8 @@ export const KolLockup: React.FC<KolLockupProps> = ({
             : "bg-[#161418] text-[#FAF8F6]"
         } ${
           compact
-            ? "text-[11px] sm:text-[12px] px-[1.25em] py-[0.7em]"
-            : "text-[13px] sm:text-[14px] px-[1.40em] py-[0.9em]"
+            ? "text-[14px] sm:text-[14px] px-[1.25em] py-[0.7em]"
+            : "text-[14px] sm:text-[14px] px-[1.40em] py-[0.9em]"
         }`}
         style={{
           letterSpacing: "0.32em",
