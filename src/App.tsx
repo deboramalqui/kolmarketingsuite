@@ -276,7 +276,7 @@ export default function App() {
     setAssistantMessages((prev) => [...prev, userMsg]);
 
     // Respuesta armada solo con datos reales (si no hay dato, lo dice)
-    const answer = answerQuestion(text, { snapshot, campaigns: franchiseCampaigns, connections, clarityPages });
+    const answer = answerQuestion(text, { snapshot, campaigns: franchiseCampaigns, connections, clarityPages, searchKeywords });
 
     setTimeout(() => {
       setAssistantMessages((prev) => [
@@ -439,7 +439,7 @@ export default function App() {
                 KOL Marketing Suite
               </h1>
               <p className="text-[13px] text-[#C9C3BE]">
-                Medición del embudo de captación con datos reales de Google Marketing Platform, Microsoft Clarity y Meta
+                Medición del embudo de captación de franquicias con datos reales de Google Analytics y Search Console
               </p>
             </div>
 
@@ -793,7 +793,7 @@ export default function App() {
             </span>
           </div>
           <div className="text-[12px] text-[#C9C3BE]">
-            Medición del embudo de captación con datos reales de Google Marketing Platform, Microsoft Clarity y Meta
+            Medición del embudo de captación de franquicias con datos reales de Google Analytics y Search Console
           </div>
         </div>
       </footer>

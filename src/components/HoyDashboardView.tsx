@@ -85,11 +85,11 @@ export const HoyDashboardView: React.FC<HoyDashboardViewProps> = ({
       {/* 1. TRES ALERTAS AUTOMÁTICAS DE UNA LÍNEA */}
       <section className="space-y-2.5">
         <div className="flex items-center justify-between pb-1">
-          <h2 className="font-kol-display font-extrabold text-[18px] text-[#161418] uppercase tracking-wider">
+          <h2 className="font-kol-display font-extrabold text-[18px] text-[#161418]">
             Alertas automáticas del período (28 días)
           </h2>
           <span className="text-[12px] font-bold text-[#8C8580]">
-            Sincronizado con Google Marketing Platform, Microsoft Clarity y Meta
+            Leído de Google Analytics y Microsoft Clarity
           </span>
         </div>
 
@@ -351,7 +351,7 @@ export const HoyDashboardView: React.FC<HoyDashboardViewProps> = ({
         <div className="p-4 bg-[#FAF8F6] border border-[#C9C3BE] rounded-[10px] space-y-2 text-[14px]">
           <div className="font-bold text-[#161418] flex items-center gap-2">
             <Info className="w-4 h-4 text-[#C51172]" />
-            <span>¿Qué es esta información y por qué es 100 % real?</span>
+            <span>¿Qué es esta información?</span>
           </div>
           <p className="text-[#46413F] leading-relaxed">
             Son las <strong>frases exactas que las personas escriben en Google</strong> antes de hacer clic y entrar a la página oficial de franquicias de KOL (<code className="bg-[#E7E3DF] px-1 rounded font-semibold text-[#161418]">https://kolaccesorios.com/franquicia/</code>).
