@@ -5,6 +5,7 @@ import { fileURLToPath } from "url";
 import dotenv from "dotenv";
 import { getSnapshot, startSnapshotSchedule } from "./ga4Snapshot";
 import { gscKeywords } from "./gscServer";
+import { authMiddleware, registerAuthRoutes } from "./auth";
 import { ga4AccessTokenOrNull, ga4HasCredentials, ga4PropertyIdValue, ga4Status, ga4CampaignRows, oauthClientConfigured, oauthClientHint, oauthAuthUrl, oauthExchange, oauthFinishManual, newOauthState, consumeOauthState, MANUAL_REDIRECT_URI } from "./ga4Server";
 
 dotenv.config();
@@ -31,9 +32,12 @@ const __dirname = path.dirname(__filename);
 
 async function startServer() {
   const app = express();
+  app.set("trust proxy", true);
   const PORT = Number(process.env.PORT) || 3000;
 
   app.use(express.json({ limit: "10mb" }));
+  registerAuthRoutes(app);
+  app.use(authMiddleware);
 
   const CONFIG_STORE_PATH = path.join(__dirname, ".kol_accounts_config.json");
 

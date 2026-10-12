@@ -1,3 +1,4 @@
+import { useAuth } from "../../lib/auth";
 import { useConfirm } from "../ConfirmDialog";
 import React, { useRef, useState } from "react";
 import { ShieldCheck, Upload, Trash2, AlertTriangle, CheckCircle2 } from "lucide-react";
@@ -26,6 +27,7 @@ const Fit: React.FC<{ ok: boolean; label: string }> = ({ ok, label }) => (
 /** Datos que se toman como verdad para publicar + galería de fotos y logos */
 export const DataAndFilesView: React.FC<Props> = ({ assets, onChange, events, onEventsChange }) => {
   const confirm = useConfirm();
+  const { can } = useAuth();
   const { copiedKey, copy } = useCopy();
   const photoInput = useRef<HTMLInputElement>(null);
   const logoInput = useRef<HTMLInputElement>(null);
@@ -93,7 +95,7 @@ export const DataAndFilesView: React.FC<Props> = ({ assets, onChange, events, on
         </div>
       </section>
 
-      <Ga4Panel />
+      {can.sync && <Ga4Panel />}
 
       <section className="space-y-4">
         <div>

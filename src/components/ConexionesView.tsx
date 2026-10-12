@@ -2,6 +2,8 @@ import { stripSecrets } from "../lib/secrets";
 import React, { useState } from "react";
 import { ConnectedAccountsConfig } from "../types/marketing";
 import { useConnectionCheck, type ConnResult } from "../lib/connections";
+import { UsersPanel } from "./UsersPanel";
+import { useAuth } from "../lib/auth";
 import {
   Check,
   RefreshCw,
@@ -59,6 +61,8 @@ export const ConexionesView: React.FC<ConexionesViewProps> = ({
         : config.gmpAccountEmail || "",
   });
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
+  const { authEnabled } = useAuth();
+  const [section, setSection] = useState<"conexiones" | "usuarios">("conexiones");
   const { check, loading: checking, failed: checkFailed, run: runCheck } = useConnectionCheck(config.metaAdAccountId);
 
   const handleSave = async (e: React.FormEvent) => {
@@ -86,7 +90,7 @@ export const ConexionesView: React.FC<ConexionesViewProps> = ({
     <div className="space-y-8 max-w-4xl mx-auto text-[#FAF8F6]">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#46413F] pb-5">
         <div className="space-y-2">
-          <h2 className="font-kol-display font-extrabold text-[24px] leading-tight text-[#FAF8F6]">Conexiones</h2>
+          <h2 className="font-kol-display font-extrabold text-[24px] leading-tight text-[#FAF8F6]">Configuración</h2>
           <p className="text-[14px] text-[#C9C3BE]">
             Estado real de cada fuente de datos. Se prueba al abrir esta pantalla y cada vez que tocás “Probar conexiones”.
             {check.checkedAt ? ` Última prueba: ${new Date(check.checkedAt).toLocaleString("es-AR")}.` : ""}
@@ -115,6 +119,25 @@ export const ConexionesView: React.FC<ConexionesViewProps> = ({
         </div>
       </div>
 
+      <div role="tablist" aria-label="Configuración" className="flex gap-2">
+        {([["conexiones", "Conexiones"], ["usuarios", "Usuarios y roles"]] as const).map(([id, label]) => (
+          <button
+            key={id}
+            type="button"
+            role="tab"
+            aria-selected={section === id}
+            onClick={() => setSection(id)}
+            className={`kol-btn-normal px-5 font-bold kol-focus-dark ${section === id ? "bg-[#FAF8F6] text-[#161418]" : "border border-[#C9C3BE] text-[#FAF8F6] hover:bg-[#2A2629]"}`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {section === "usuarios" ? (
+        <UsersPanel />
+      ) : (
+      <>
       {checkFailed && (
         <div className="p-3.5 bg-[#2A2629] border-2 border-[#FAF8F6] rounded-[10px] text-[14px] text-[#FAF8F6] font-semibold flex items-start gap-2" role="alert">
           <span aria-hidden="true" className="font-bold">!</span>
@@ -125,7 +148,7 @@ export const ConexionesView: React.FC<ConexionesViewProps> = ({
       <div className="p-4 bg-[#2A2629] border border-[#46413F] rounded-[10px] flex items-start gap-3" role="note">
         <Info className="w-5 h-5 shrink-0 text-[#FAF8F6] mt-0.5" aria-hidden="true" />
         <p className="text-[14px] text-[#FAF8F6] leading-snug">
-          <strong>Acceso:</strong> esta app todavía no pide usuario ni contraseña. Cualquier persona que tenga el enlace puede abrirla. El inicio de sesión y los roles están pendientes.
+          {authEnabled ? <><strong>Acceso:</strong> el inicio de sesión con Google está encendido. Quién entra y con qué rol se ve en “Usuarios y roles”.</> : <><strong>Acceso:</strong> el inicio de sesión está apagado: cualquier persona que tenga el enlace puede abrir la app. Se enciende en “Usuarios y roles”.</>}
         </p>
       </div>
 
@@ -264,6 +287,8 @@ export const ConexionesView: React.FC<ConexionesViewProps> = ({
           </button>
         </div>
       </form>
+      </>
+      )}
     </div>
   );
 };
