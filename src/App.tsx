@@ -4,14 +4,7 @@ import { answerQuestion, weeklySummaryLines } from "./lib/answers";
 import { stripSecrets } from "./lib/secrets";
 import React, { useMemo, useState, useEffect } from "react";
 import {
-  CampaignMetric,
   ClarityPageTelemetry,
-  CustomReport,
-  ScheduledEmailReport,
-  DispatchedEmailLog,
-  PredictiveForecastResult,
-  PredictiveRecommendation,
-  GeneratedCampaignPackage,
   ConnectedAccountsConfig,
   AssistantChatMessage,
   GoogleSearchKeyword,
@@ -21,22 +14,15 @@ import {
 } from "./types/marketing";
 import {
   INITIAL_CONNECTED_ACCOUNTS,
-  INITIAL_CAMPAIGNS,
   INITIAL_CLARITY_PAGES,
-  INITIAL_CUSTOM_REPORTS,
-  INITIAL_SCHEDULED_EMAILS,
-  INITIAL_PREDICTIVE_FORECAST,
   KOL_V3_BRAND_GUIDELINES,
-  INITIAL_GENERATED_CAMPAIGNS,
   INITIAL_SEARCH_KEYWORDS,
   INITIAL_FRANCHISE_FUNNEL,
   INITIAL_ACQUISITION_CHANNELS,
   INITIAL_FRANCHISE_CAMPAIGNS,
 } from "./data/initialMarketingData";
-import { OnboardingModal } from "./components/OnboardingModal";
-import { DeleteConfirmationModal } from "./components/DeleteConfirmationModal";
 import { CampaignStudioView } from "./components/CampaignStudioView";
-import { ReportsAndScheduleView } from "./components/ReportsAndScheduleView";
+import { InformesView } from "./components/InformesView";
 import { HoyDashboardView } from "./components/HoyDashboardView";
 import { FuentesView } from "./components/FuentesView";
 import { ConexionesView } from "./components/ConexionesView";
@@ -114,8 +100,6 @@ export default function App() {
       .catch(() => {});
   }, []);
 
-  const [isOnboardingOpen, setIsOnboardingOpen] = useState<boolean>(false);
-  const [onboardingInitialStep, setOnboardingInitialStep] = useState<1 | 2 | 3 | 4>(1);
 
   // Datos REALES del embudo: los lee el servidor de GA4 (y se actualizan solos cada hora)
   const connections = useConnectionsStatus();
@@ -133,14 +117,6 @@ export default function App() {
   }, []);
   const funnelSteps = useMemo(() => funnelFromSnapshot(snapshot), [snapshot]);
   const acquisitionChannels = useMemo(() => channelsFromSnapshot(snapshot), [snapshot]);
-
-  const [campaigns, setCampaigns] = useState<CampaignMetric[]>(() => {
-    try {
-      const saved = localStorage.getItem("kol_marketing_campaigns");
-      if (saved) return JSON.parse(saved);
-    } catch {}
-    return INITIAL_CAMPAIGNS;
-  });
 
   const [clarityPages, setClarityPages] = useState<ClarityPageTelemetry[]>(() => {
     try {
@@ -199,17 +175,6 @@ export default function App() {
     return `${fmt(start)} – ${fmt(end)}`;
   };
 
-  const [reports, setReports] = useState<CustomReport[]>(INITIAL_CUSTOM_REPORTS);
-  const [schedules, setSchedules] = useState<ScheduledEmailReport[]>(
-    INITIAL_SCHEDULED_EMAILS
-  );
-  const [dispatchedLogs, setDispatchedLogs] = useState<DispatchedEmailLog[]>([]);
-  const [forecast, setForecast] = useState<PredictiveForecastResult>(
-    INITIAL_PREDICTIVE_FORECAST
-  );
-  const [generatedCampaigns, setGeneratedCampaigns] = useState<
-    GeneratedCampaignPackage[]
-  >(INITIAL_GENERATED_CAMPAIGNS);
 
   const [franchiseCampaigns, setFranchiseCampaigns] = useState<FranchiseCampaignItem[]>(() => {
     try {
@@ -263,12 +228,6 @@ export default function App() {
 
   useEffect(() => {
     try {
-      localStorage.setItem("kol_marketing_campaigns", JSON.stringify(campaigns));
-    } catch {}
-  }, [campaigns]);
-
-  useEffect(() => {
-    try {
       localStorage.setItem(
         "kol_marketing_clarity_pages",
         JSON.stringify(clarityPages)
@@ -285,10 +244,6 @@ export default function App() {
     } catch {}
   }, [searchKeywords]);
 
-  const [pendingDeleteReport, setPendingDeleteReport] = useState<{
-    report: CustomReport;
-    reason?: string;
-  } | null>(null);
 
   // Estados para nuevo diseño de botones y panel lateral
   const [isAssistantDrawerOpen, setIsAssistantDrawerOpen] = useState(false);
@@ -451,36 +406,6 @@ export default function App() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-  };
-
-  const handleApplyRecommendation = (rec: PredictiveRecommendation) => {
-    setForecast((prev) => ({
-      ...prev,
-      recommendations: prev.recommendations.map((r) =>
-        r.id === rec.id ? { ...r, applied: true } : r
-      ),
-    }));
-  };
-
-  const handleRequestDeleteFromAi = (reportId: string, reason?: string): string => {
-    const rep = reports.find(
-      (r) =>
-        r.id === reportId ||
-        r.title.toLowerCase().includes(reportId.toLowerCase())
-    );
-    if (rep) {
-      setPendingDeleteReport({ report: rep, reason });
-      return `Se abrió la confirmación para eliminar el reporte "${rep.title}".`;
-    }
-    return `No se encontró ningún reporte con el identificador "${reportId}".`;
-  };
-
-  const handleConfirmDeleteReport = () => {
-    if (!pendingDeleteReport) return;
-    setReports((prev) =>
-      prev.filter((r) => r.id !== pendingDeleteReport.report.id)
-    );
-    setPendingDeleteReport(null);
   };
 
   // Métricas verificadas de las 4 tarjetas superiores
@@ -837,30 +762,10 @@ export default function App() {
 
         {/* PESTAÑA 5: INFORMES */}
         {activeTab === "reports" && (
-          <ReportsAndScheduleView
-            reports={reports}
-            onCreateReport={(rep) => setReports((prev) => [rep, ...prev])}
-            onRequestDeleteReport={(rep) =>
-              setPendingDeleteReport({ report: rep })
-            }
-            schedules={schedules}
-            onAddSchedule={(sched) => setSchedules((prev) => [sched, ...prev])}
-            onToggleSchedule={(id) =>
-              setSchedules((prev) =>
-                prev.map((s) => (s.id === id ? { ...s, active: !s.active } : s))
-              )
-            }
-            onDeleteSchedule={(id) =>
-              setSchedules((prev) => prev.filter((s) => s.id !== id))
-            }
-            dispatchedLogs={dispatchedLogs}
-            onAddDispatchedLog={(log) =>
-              setDispatchedLogs((prev) => [log, ...prev])
-            }
-            campaigns={campaigns}
-            clarityPages={clarityPages}
+          <InformesView
+            snapshot={snapshot}
+            searchKeywords={searchKeywords}
             summaryLines={weeklySummaryLines({ snapshot, campaigns: franchiseCampaigns, connections, clarityPages })}
-            defaultRecipientEmail={accountsConfig.defaultReportRecipientEmail}
           />
         )}
 
@@ -917,32 +822,6 @@ export default function App() {
         </div>
       )}
 
-      {/* Modal de eliminación de reportes */}
-      <DeleteConfirmationModal
-        isOpen={Boolean(pendingDeleteReport)}
-        itemTitle={
-          pendingDeleteReport
-            ? `${pendingDeleteReport.report.title} (${pendingDeleteReport.report.id})`
-            : ""
-        }
-        itemType="Reporte personalizado"
-        reason={pendingDeleteReport?.reason}
-        onCancel={() => setPendingDeleteReport(null)}
-        onConfirm={handleConfirmDeleteReport}
-      />
-
-      {/* Modal de onboarding / credenciales opcional */}
-      <OnboardingModal
-        isOpen={isOnboardingOpen}
-        initialStep={onboardingInitialStep}
-        onClose={() => setIsOnboardingOpen(false)}
-        config={accountsConfig}
-        onSaveConfig={setAccountsConfig}
-        onSyncRealData={(newCampaigns, newClarity) => {
-          if (newCampaigns.length > 0) setCampaigns(newCampaigns);
-          if (newClarity.length > 0) setClarityPages(newClarity);
-        }}
-      />
     </div>
   );
 }
