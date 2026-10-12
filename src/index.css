@@ -88,7 +88,8 @@
   height: 40px;
   min-height: 40px;
   border-radius: 10px;
-  font-family: 'Roboto', sans-serif;
+  position: relative;
+  font-family: 'Montserrat', sans-serif;
   font-size: 14px;
   font-weight: 600;
   transition: transform 150ms cubic-bezier(0.2, 0, 0, 1), opacity 150ms cubic-bezier(0.2, 0, 0, 1), background-color 150ms cubic-bezier(0.2, 0, 0, 1);
@@ -101,9 +102,9 @@
   height: 56px;
   min-height: 56px;
   border-radius: 14px;
-  font-family: 'Roboto', sans-serif;
+  font-family: 'Montserrat', sans-serif;
   font-size: 15px;
-  font-weight: 700;
+  font-weight: 600;
   transition: transform 150ms cubic-bezier(0.2, 0, 0, 1), opacity 150ms cubic-bezier(0.2, 0, 0, 1), background-color 150ms cubic-bezier(0.2, 0, 0, 1);
 }
 .kol-btn-cta:active {
@@ -111,10 +112,11 @@
 }
 
 .kol-chip-filter {
-  height: 36px;
-  min-height: 36px;
-  border-radius: 9px;
-  font-family: 'Roboto', sans-serif;
+  height: 40px;
+  min-height: 40px;
+  border-radius: 10px;
+  position: relative;
+  font-family: 'Montserrat', sans-serif;
   font-size: 14px;
   font-weight: 600;
   transition: background-color 150ms cubic-bezier(0.2, 0, 0, 1);
@@ -123,22 +125,42 @@
   border-radius: 4px;
 }
 
-/* Foco: anillo doble neutro */
-.kol-focus:focus-visible {
-  outline: 2px solid #161418;
-  outline-offset: 2px;
+/* Foco: anillo doble neutro (2 px blanco roto + 2 px negro). Se ve sobre fondo claro y sobre oscuro. */
+:where(a, button, input, select, textarea, summary, [role="tab"], [tabindex]):focus-visible,
+.kol-focus:focus-visible,
+.kol-focus-dark:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px #FAF8F6, 0 0 0 4px #161418;
 }
 
-.kol-focus-dark:focus-visible {
-  outline: 2px solid #FAF8F6;
-  outline-offset: 2px;
-  box-shadow: 0 0 0 4px #46413F;
+/* Deshabilitado al 38 %, sin hover ni foco */
+:where(button, input, select, textarea):disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+}
+
+/* Sin animaciones para quien las pidió reducidas */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Zona táctil de 48 dp sin agrandar el botón (guía 14.3) */
+.kol-btn-normal::after,
+.kol-chip-filter::after {
+  content: "";
+  position: absolute;
+  inset: -4px 0;
 }
 
 /* Animación flash para tarjetas del encabezado al actualizar */
 @keyframes kol-card-flash {
   0%, 40% {
-    background-color: #4a3b00;
+    background-color: #46413F;
     border-color: #FFBA00;
   }
   100% {

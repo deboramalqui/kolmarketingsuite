@@ -1,11 +1,6 @@
 import {
-  CampaignMetric,
   ClarityPageTelemetry,
-  CustomReport,
-  ScheduledEmailReport,
-  PredictiveForecastResult,
   BrandDesignGuidelines,
-  GeneratedCampaignPackage,
   ConnectedAccountsConfig,
   GoogleSearchKeyword,
   FranchiseFunnelStep,
@@ -13,15 +8,7 @@ import {
   FranchiseCampaignItem,
 } from "../types/marketing";
 
-import productCreativeImg from "../assets/images/ad_creative_product_1791309919650.jpg";
-import bannerCreativeImg from "../assets/images/ad_creative_banner_1791309930945.jpg";
-import avatarMarketingLeadImg from "../assets/images/avatar_marketing_lead_1791309941471.jpg";
 
-export const STUDIO_ASSETS = {
-  productCreativeImg,
-  bannerCreativeImg,
-  avatarMarketingLeadImg,
-};
 
 // Configuración de conexiones de KOL Franquicias
 export const INITIAL_CONNECTED_ACCOUNTS: ConnectedAccountsConfig = {
@@ -72,26 +59,14 @@ export const KOL_V3_BRAND_GUIDELINES: BrandDesignGuidelines = {
 };
 
 // Campañas pagas inactivas hasta noviembre (decisión del 5/10/2026)
-export const INITIAL_CAMPAIGNS: CampaignMetric[] = [];
 
 // Páginas medidas en Clarity (proyecto ytmpieugg9) con métricas reales del hub
 // Sin datos de ejemplo: Clarity se lee con la clave CLARITY_API_TOKEN del servidor.
 export const INITIAL_CLARITY_PAGES: ClarityPageTelemetry[] = [];
 
-export const INITIAL_CUSTOM_REPORTS: CustomReport[] = [];
 
-export const INITIAL_SCHEDULED_EMAILS: ScheduledEmailReport[] = [];
 
-export const INITIAL_PREDICTIVE_FORECAST: PredictiveForecastResult = {
-  summaryForecast: "",
-  projectedRoas: 0,
-  projectedConversionsDeltaPct: 0,
-  projectedCpaReductionPct: 0,
-  confidenceScore: 0,
-  recommendations: [],
-};
 
-export const INITIAL_GENERATED_CAMPAIGNS: GeneratedCampaignPackage[] = [];
 
 // Ciudades verificadas con locales y presencia real de KOL
 export const VERIFIED_LOCATIONS: string[] = [

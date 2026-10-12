@@ -46,14 +46,14 @@ const Field: React.FC<{
   onRemove?: () => void;
 }> = ({ label, value, max, onChange, disabled, textarea, onRemove }) => {
   const over = value.length > max;
-  const cls = `w-full px-3 border rounded-[6px] text-[13px] text-[#161418] bg-white kol-focus disabled:bg-[#F3F0ED] ${
+  const cls = `w-full px-3 border rounded-[6px] text-[14px] text-[#161418] bg-white kol-focus disabled:bg-[#F3F0ED] ${
     over ? "border-[#A40F5F] ring-1 ring-[#A40F5F]" : "border-[#8C8580]"
   }`;
   return (
     <div>
-      <div className="flex justify-between text-[12px] mb-1">
+      <div className="flex justify-between text-[14px] mb-1">
         <span className="font-bold text-[#46413F]">{label}</span>
-        <span className={`tabular-nums ${over ? "text-[#A40F5F] font-bold" : "text-[#8C8580]"}`}>
+        <span className={`tabular-nums ${over ? "text-[#A40F5F] font-bold" : "text-[#6A6460]"}`}>
           {value.length} / {max}
         </span>
       </div>
@@ -94,7 +94,7 @@ export const DisplayAdEditor: React.FC<Props> = ({ value, onChange, assets, read
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
       <div className="space-y-5">
-        <div className="p-3 bg-[#FAF8F6] border border-[#C9C3BE] rounded-[10px] text-[12.5px] text-[#46413F] leading-relaxed">
+        <div className="p-3 bg-[#FAF8F6] border border-[#C9C3BE] rounded-[10px] text-[14px] text-[#46413F] leading-relaxed">
           Es el <strong>anuncio de display adaptable</strong> de Google: cargás los textos, las imágenes y los logos, y Google arma solo las versiones para cada espacio.
           Por eso no hay una única vista previa: abajo ves tres aproximaciones.
         </div>
@@ -115,7 +115,7 @@ export const DisplayAdEditor: React.FC<Props> = ({ value, onChange, assets, read
             />
           ))}
           {!readOnly && value.shortHeadlines.length < L.maxShortHeadlines && (
-            <button type="button" onClick={() => onChange({ shortHeadlines: [...value.shortHeadlines, ""] })} className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-dashed border-[#8C8580] rounded-[8px] text-[12.5px] text-[#46413F] kol-focus">
+            <button type="button" onClick={() => onChange({ shortHeadlines: [...value.shortHeadlines, ""] })} className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-dashed border-[#8C8580] rounded-[8px] text-[14px] text-[#46413F] kol-focus">
               <Plus className="w-3.5 h-3.5" /> Agregar título corto
             </button>
           )}
@@ -138,15 +138,15 @@ export const DisplayAdEditor: React.FC<Props> = ({ value, onChange, assets, read
             />
           ))}
           {!readOnly && value.descriptions.length < L.maxDescriptions && (
-            <button type="button" onClick={() => onChange({ descriptions: [...value.descriptions, ""] })} className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-dashed border-[#8C8580] rounded-[8px] text-[12.5px] text-[#46413F] kol-focus">
+            <button type="button" onClick={() => onChange({ descriptions: [...value.descriptions, ""] })} className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-dashed border-[#8C8580] rounded-[8px] text-[14px] text-[#46413F] kol-focus">
               <Plus className="w-3.5 h-3.5" /> Agregar descripción
             </button>
           )}
         </div>
 
         <div>
-          <label className="block text-[13px] font-bold text-[#161418] mb-1" htmlFor="disp-cta">Botón</label>
-          <select id="disp-cta" disabled={readOnly} value={value.callToAction} onChange={(e) => onChange({ callToAction: e.target.value })} className="w-full h-[38px] px-3 border border-[#8C8580] rounded-[6px] text-[13px] bg-white text-[#161418] kol-focus disabled:bg-[#F3F0ED]">
+          <label className="block text-[14px] font-bold text-[#161418] mb-1" htmlFor="disp-cta">Botón</label>
+          <select id="disp-cta" disabled={readOnly} value={value.callToAction} onChange={(e) => onChange({ callToAction: e.target.value })} className="w-full h-[38px] px-3 border border-[#8C8580] rounded-[6px] text-[14px] bg-white text-[#161418] kol-focus disabled:bg-[#F3F0ED]">
             <option>Automático</option>
             <option>Más información</option>
             <option>Contactar</option>
@@ -162,7 +162,7 @@ export const DisplayAdEditor: React.FC<Props> = ({ value, onChange, assets, read
           <AssetPicker label="Imagen cuadrada" hint="1:1 · mín. 300×300" slot="square" kind="foto" assets={assets} value={value.squareAssetId} onChange={(id) => onChange({ squareAssetId: id })} disabled={readOnly} actions={actions} required />
           <AssetPicker label="Logo cuadrado" hint="1:1 · mín. 128×128 · recomendado 1200×1200" slot="logoSquare" kind="logo" assets={assets} value={value.logoSquareAssetId} onChange={(id) => onChange({ logoSquareAssetId: id })} disabled={readOnly} actions={actions} />
           <AssetPicker label="Logo horizontal" hint="4:1 · mín. 512×128 · recomendado 1200×300" slot="logoWide" kind="logo" assets={assets} value={value.logoWideAssetId} onChange={(id) => onChange({ logoWideAssetId: id })} disabled={readOnly} actions={actions} />
-          <p className="text-[11.5px] text-[#6A6460]">Google acepta hasta 15 imágenes y 5 logos por anuncio. Acá se carga uno de cada tipo para empezar; las imágenes pesan hasta 5 MB.</p>
+          <p className="text-[14px] text-[#6A6460]">Google acepta hasta 15 imágenes y 5 logos por anuncio. Acá se carga uno de cada tipo para empezar; las imágenes pesan hasta 5 MB.</p>
         </div>
       </div>
 
@@ -171,7 +171,7 @@ export const DisplayAdEditor: React.FC<Props> = ({ value, onChange, assets, read
           <span className="font-bold text-[14px] text-[#161418]">Así puede verse (aproximación)</span>
           <div role="group" aria-label="Formato" className="inline-flex border border-[#8C8580] rounded-[8px] overflow-hidden">
             {([["nativo", "Tarjeta"], ["rectangulo", "300×250"], ["banner", "728×90"]] as const).map(([v, t]) => (
-              <button key={v} type="button" aria-pressed={format === v} onClick={() => setFormat(v)} className={`px-3 py-1.5 text-[12.5px] font-semibold kol-focus ${format === v ? "bg-[#161418] text-[#FAF8F6]" : "bg-white text-[#161418]"}`}>
+              <button key={v} type="button" aria-pressed={format === v} onClick={() => setFormat(v)} className={`px-3 py-1.5 text-[14px] font-semibold kol-focus ${format === v ? "bg-[#161418] text-[#FAF8F6]" : "bg-white text-[#161418]"}`}>
                 {t}
               </button>
             ))}
@@ -190,7 +190,7 @@ export const DisplayAdEditor: React.FC<Props> = ({ value, onChange, assets, read
             logoUrl={urlOf(value.logoSquareAssetId)}
           />
         </div>
-        <p className="text-[12px] text-[#6A6460]">
+        <p className="text-[14px] text-[#6A6460]">
           Google combina tus textos e imágenes y decide qué mostrar según el sitio o la app. Lo que se ve acá es un ejemplo de tres espacios típicos, no una garantía de cómo saldrá.
         </p>
         <AdChecklist checks={checks} />

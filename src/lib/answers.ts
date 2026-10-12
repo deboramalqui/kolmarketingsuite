@@ -1,4 +1,4 @@
-import { ClarityPageTelemetry, FranchiseCampaignItem } from "../types/marketing";
+import { ClarityPageTelemetry, FranchiseCampaignItem, GoogleSearchKeyword } from "../types/marketing";
 import { Snapshot, hasData, agoLabel } from "./liveData";
 import { ConnectionsStatus } from "./secrets";
 
@@ -7,6 +7,7 @@ export interface AnswerContext {
   campaigns: FranchiseCampaignItem[];
   connections: ConnectionsStatus;
   clarityPages: ClarityPageTelemetry[];
+  searchKeywords?: GoogleSearchKeyword[];
 }
 
 export interface Answer {
@@ -79,7 +80,12 @@ export function answerQuestion(question: string, ctx: AnswerContext): Answer {
   }
 
   if (/google|buscan|palabras|b[uú]squeda/.test(q)) {
-    return { text: "Todavía no hay una lectura propia de Search Console en la herramienta. Las consultas se pueden ver en GA4 (informe Consultas) o subir un CSV exportado de Search Console en la pestaña Hoy.", source: "Sin datos (lectura de Search Console pendiente)" };
+    const kws = [...(ctx.searchKeywords ?? [])].sort((x, y) => y.impressions - x.impressions);
+    if (kws.length === 0) {
+      return { text: "Todavía no hay búsquedas de Google para mostrar: Search Console no devolvió consultas para las páginas de franquicia, o no está conectado (se prueba en Conexiones).", source: "Sin datos de Search Console" };
+    }
+    const top = kws.slice(0, 3).map((k) => `“${k.keyword}” (${k.impressions} impresiones, ${k.clicks} ${k.clicks === 1 ? "clic" : "clics"}, posición ${k.avgPosition.toFixed(1).replace(".", ",")})`).join("; ");
+    return { text: `Search Console muestra ${kws.length} búsquedas que llevan a las páginas de franquicia. Las que más aparecen: ${top}.`, source: "Google Search Console · últimos 28 días" };
   }
 
   if (/fricci|clarity|rage|grabaci/.test(q)) {

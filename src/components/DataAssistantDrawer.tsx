@@ -103,6 +103,7 @@ export const DataAssistantDrawer: React.FC<DataAssistantDrawerProps> = ({
         aria-modal="true"
         aria-label="Preguntale a los datos"
         aria-hidden={!isOpen}
+        inert={!isOpen}
         className={`fixed top-0 right-0 h-full w-full sm:w-[440px] max-w-full bg-[#161418] text-[#FAF8F6] border-l border-[#46413F] z-50 shadow-2xl flex flex-col transition-transform duration-200 ease-out ${
           isOpen ? "translate-x-0" : "translate-x-full"
         }`}
@@ -126,7 +127,7 @@ export const DataAssistantDrawer: React.FC<DataAssistantDrawerProps> = ({
 
         {/* Indicador de pantalla actual: "Estás viendo: <pantalla>" */}
         <div className="px-5 pt-3.5 pb-2 shrink-0">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#2A2629] border border-[#46413F] rounded-full text-[12.5px] text-[#C9C3BE]">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#2A2629] border border-[#46413F] rounded-[10px] text-[14px] text-[#C9C3BE]">
             <span>Estás viendo:</span>
             <strong className="text-[#FAF8F6] font-semibold">
               {PAGE_NAMES[currentPage] || "Hoy"}
@@ -141,7 +142,7 @@ export const DataAssistantDrawer: React.FC<DataAssistantDrawerProps> = ({
           className="flex-1 overflow-y-auto px-5 py-3 space-y-3"
         >
           {/* Mensaje de bienvenida inicial */}
-          <div className="max-w-[92%] bg-[#2A2629] border border-[#46413F] rounded-[12px] p-3.5 text-[13.5px] text-[#FAF8F6] leading-relaxed self-start">
+          <div className="max-w-[92%] bg-[#2A2629] border border-[#46413F] rounded-[12px] p-3.5 text-[14px] text-[#FAF8F6] leading-relaxed self-start">
             <p className="m-0">
               Preguntame lo que quieras sobre lo que ves en pantalla. Respondo
               solo con los datos sincronizados y te digo de dónde salen.
@@ -160,7 +161,7 @@ export const DataAssistantDrawer: React.FC<DataAssistantDrawerProps> = ({
                 }`}
               >
                 <div
-                  className={`max-w-[92%] rounded-[12px] p-3 text-[13.5px] leading-relaxed whitespace-pre-line ${
+                  className={`max-w-[92%] rounded-[12px] p-3 text-[14px] leading-relaxed whitespace-pre-line ${
                     isUser
                       ? "bg-[#FFBA00] text-[#161418] font-medium"
                       : "bg-[#2A2629] text-[#FAF8F6] border border-[#46413F]"
@@ -170,12 +171,12 @@ export const DataAssistantDrawer: React.FC<DataAssistantDrawerProps> = ({
 
                   {/* Cita explícita de fuente y período en cada respuesta */}
                   {!isUser && (
-                    <div className="mt-2 pt-2 border-t border-[#46413F]/50 text-[11.5px] text-[#C9C3BE] flex items-center justify-between">
+                    <div className="mt-2 pt-2 border-t border-[#46413F]/50 text-[14px] text-[#C9C3BE] flex items-center justify-between">
                       <span>
                         Fuente:{" "}
                         {m.source || "Datos de la herramienta"}
                       </span>
-                      <span className="font-mono text-[#8C8580] ml-2">
+                      <span className="font-mono text-[#C9C3BE] ml-2">
                         {m.timestamp}
                       </span>
                     </div>
@@ -188,7 +189,7 @@ export const DataAssistantDrawer: React.FC<DataAssistantDrawerProps> = ({
 
         {/* Preguntas sugeridas según la pantalla actual */}
         <div className="px-5 pt-2 pb-1 shrink-0">
-          <div className="text-[11.5px] text-[#8C8580] mb-1.5 font-medium">
+          <div className="text-[14px] text-[#C9C3BE] mb-1.5 font-medium">
             Preguntas sugeridas para esta pantalla:
           </div>
           <div className="flex flex-wrap gap-1.5">
@@ -197,7 +198,7 @@ export const DataAssistantDrawer: React.FC<DataAssistantDrawerProps> = ({
                 key={i}
                 type="button"
                 onClick={() => handleSelectSuggestion(q)}
-                className="bg-[#2A2629] hover:bg-[#46413F] border border-[#46413F] text-[#FAF8F6] rounded-full px-3 py-1.5 text-[12.5px] font-normal transition-colors text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FAF8F6]"
+                className="bg-[#2A2629] hover:bg-[#46413F] border border-[#46413F] text-[#FAF8F6] rounded-[10px] px-3 py-2 text-[14px] font-normal transition-colors text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FAF8F6]"
               >
                 {q}
               </button>
@@ -217,18 +218,18 @@ export const DataAssistantDrawer: React.FC<DataAssistantDrawerProps> = ({
             onChange={(e) => setInputText(e.target.value)}
             placeholder="Escribí tu pregunta"
             aria-label="Pregunta sobre los datos"
-            className="flex-1 bg-[#2A2629] border border-[#46413F] text-[#FAF8F6] placeholder-[#8C8580] rounded-[10px] px-3.5 py-2.5 text-[14px] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FAF8F6] focus-visible:ring-offset-2 focus-visible:ring-offset-[#161418]"
+            className="flex-1 bg-[#2A2629] border border-[#46413F] text-[#FAF8F6] placeholder-[#C9C3BE] rounded-[10px] px-3.5 py-2.5 text-[14px] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FAF8F6] focus-visible:ring-offset-2 focus-visible:ring-offset-[#161418]"
           />
           <button
             type="submit"
             disabled={!inputText.trim()}
-            className="px-4 py-2 bg-[#FFBA00] hover:opacity-95 disabled:opacity-40 text-[#161418] font-bold rounded-[10px] text-[13.5px] flex items-center justify-center shrink-0 transition-opacity focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FAF8F6] focus-visible:ring-offset-2 focus-visible:ring-offset-[#161418]"
+            className="px-4 py-2 bg-[#FFBA00] hover:opacity-95 disabled:opacity-40 text-[#161418] font-bold rounded-[10px] text-[14px] flex items-center justify-center shrink-0 transition-opacity focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FAF8F6] focus-visible:ring-offset-2 focus-visible:ring-offset-[#161418]"
           >
             Enviar
           </button>
         </form>
 
-        <div className="px-5 pb-3 text-[11px] text-[#8C8580] leading-normal shrink-0">
+        <div className="px-5 pb-3 text-[14px] text-[#C9C3BE] leading-normal shrink-0">
           * Responde solo con datos reales verificados. Sin datos inventados.
         </div>
       </aside>

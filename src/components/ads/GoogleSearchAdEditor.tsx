@@ -36,14 +36,14 @@ const Field: React.FC<{
   onRemove?: () => void;
 }> = ({ label, value, max, onChange, disabled, textarea, placeholder, onRemove }) => {
   const over = value.length > max;
-  const cls = `w-full px-3 border rounded-[6px] text-[13px] text-[#161418] bg-white kol-focus disabled:bg-[#F3F0ED] ${
+  const cls = `w-full px-3 border rounded-[6px] text-[14px] text-[#161418] bg-white kol-focus disabled:bg-[#F3F0ED] ${
     over ? "border-[#A40F5F] ring-1 ring-[#A40F5F]" : "border-[#8C8580]"
   }`;
   return (
     <div>
-      <div className="flex justify-between items-center text-[12px] mb-1">
+      <div className="flex justify-between items-center text-[14px] mb-1">
         {label ? <span className="font-bold text-[#46413F]">{label}</span> : <span />}
-        <span className={`tabular-nums ${over ? "text-[#A40F5F] font-bold" : "text-[#8C8580]"}`}>
+        <span className={`tabular-nums ${over ? "text-[#A40F5F] font-bold" : "text-[#6A6460]"}`}>
           {value.length} / {max}
         </span>
       </div>
@@ -94,7 +94,7 @@ export const GoogleSearchAdEditor: React.FC<Props> = ({ value, onChange, readOnl
             />
           ))}
           {!readOnly && value.headlines.length < L.maxHeadlines && (
-            <button type="button" onClick={() => onChange({ headlines: [...value.headlines, ""] })} className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-dashed border-[#8C8580] rounded-[8px] text-[12.5px] text-[#46413F] kol-focus">
+            <button type="button" onClick={() => onChange({ headlines: [...value.headlines, ""] })} className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-dashed border-[#8C8580] rounded-[8px] text-[14px] text-[#46413F] kol-focus">
               <Plus className="w-3.5 h-3.5" /> Agregar título
             </button>
           )}
@@ -115,7 +115,7 @@ export const GoogleSearchAdEditor: React.FC<Props> = ({ value, onChange, readOnl
             />
           ))}
           {!readOnly && value.descriptions.length < L.maxDescriptions && (
-            <button type="button" onClick={() => onChange({ descriptions: [...value.descriptions, ""] })} className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-dashed border-[#8C8580] rounded-[8px] text-[12.5px] text-[#46413F] kol-focus">
+            <button type="button" onClick={() => onChange({ descriptions: [...value.descriptions, ""] })} className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-dashed border-[#8C8580] rounded-[8px] text-[14px] text-[#46413F] kol-focus">
               <Plus className="w-3.5 h-3.5" /> Agregar descripción
             </button>
           )}
@@ -127,7 +127,7 @@ export const GoogleSearchAdEditor: React.FC<Props> = ({ value, onChange, readOnl
             <Field label="Ruta 1" value={value.displayPath[0]} max={L.path} disabled={readOnly} onChange={(v) => onChange({ displayPath: [v, value.displayPath[1]] })} />
             <Field label="Ruta 2 (opcional)" value={value.displayPath[1]} max={L.path} disabled={readOnly} onChange={(v) => onChange({ displayPath: [value.displayPath[0], v] })} />
           </div>
-          <p className="text-[11.5px] text-[#6A6460] mt-1">Es solo lo que se ve. La página real es la dirección final con UTM.</p>
+          <p className="text-[14px] text-[#6A6460] mt-1">Es solo lo que se ve. La página real es la dirección final con UTM.</p>
         </div>
 
         <div className="space-y-3">
@@ -154,7 +154,7 @@ export const GoogleSearchAdEditor: React.FC<Props> = ({ value, onChange, readOnl
 
         {showKeywords ? (
         <div>
-          <label className="block text-[13px] font-bold text-[#161418] mb-1" htmlFor="g-kw">
+          <label className="block text-[14px] font-bold text-[#161418] mb-1" htmlFor="g-kw">
             Palabras clave (una por línea: "frase", [exacta], amplia)
           </label>
           <textarea
@@ -163,13 +163,13 @@ export const GoogleSearchAdEditor: React.FC<Props> = ({ value, onChange, readOnl
             disabled={readOnly}
             value={value.keywordsText}
             onChange={(e) => onChange({ keywordsText: e.target.value })}
-            className="w-full p-2.5 border border-[#8C8580] rounded-[6px] text-[13px] font-mono kol-focus disabled:bg-[#F3F0ED]"
+            className="w-full p-2.5 border border-[#8C8580] rounded-[6px] text-[14px] font-mono kol-focus disabled:bg-[#F3F0ED]"
           />
-          <p className="text-[11.5px] text-[#6A6460] mt-1 leading-relaxed">
+          <p className="text-[14px] text-[#6A6460] mt-1 leading-relaxed">
             {kws.length} palabras clave: {nF} de frase, {nE} exactas, {kws.length - nF - nE} amplias. Frase: la búsqueda tiene que incluirla. Exacta: solo esa búsqueda o muy parecida.
             Amplia (sin símbolos): Google la muestra en búsquedas relacionadas y suele gastar más.
           </p>
-          <label className="block text-[13px] font-bold text-[#161418] mt-3 mb-1" htmlFor="g-neg">Palabras que NO queremos (negativas, una por línea)</label>
+          <label className="block text-[14px] font-bold text-[#161418] mt-3 mb-1" htmlFor="g-neg">Palabras que NO queremos (negativas, una por línea)</label>
           <textarea
             id="g-neg"
             rows={3}
@@ -177,11 +177,11 @@ export const GoogleSearchAdEditor: React.FC<Props> = ({ value, onChange, readOnl
             value={value.negativeKeywordsText}
             onChange={(e) => onChange({ negativeKeywordsText: e.target.value })}
             placeholder="ej. gratis"
-            className="w-full p-2.5 border border-[#8C8580] rounded-[6px] text-[13px] font-mono kol-focus disabled:bg-[#F3F0ED]"
+            className="w-full p-2.5 border border-[#8C8580] rounded-[6px] text-[14px] font-mono kol-focus disabled:bg-[#F3F0ED]"
           />
         </div>
         ) : (
-          <p className="text-[12.5px] text-[#46413F] p-3 bg-[#FAF8F6] border border-[#E7E3DF] rounded-[8px]">Las palabras clave y las negativas son las mismas para todos los anuncios de la campaña. Se editan en el Anuncio A.</p>
+          <p className="text-[14px] text-[#46413F] p-3 bg-[#FAF8F6] border border-[#E7E3DF] rounded-[8px]">Las palabras clave y las negativas son las mismas para todos los anuncios de la campaña. Se editan en el Anuncio A.</p>
         )}
       </div>
 
@@ -191,12 +191,12 @@ export const GoogleSearchAdEditor: React.FC<Props> = ({ value, onChange, readOnl
           <div className="flex gap-2">
             <div role="group" aria-label="Dispositivo" className="inline-flex border border-[#8C8580] rounded-[8px] overflow-hidden">
               {([["desktop", "Computadora"], ["mobile", "Celular"]] as const).map(([v, t]) => (
-                <button key={v} type="button" aria-pressed={device === v} onClick={() => setDevice(v)} className={`px-3 py-1.5 text-[12.5px] font-semibold kol-focus ${device === v ? "bg-[#161418] text-[#FAF8F6]" : "bg-white text-[#161418]"}`}>
+                <button key={v} type="button" aria-pressed={device === v} onClick={() => setDevice(v)} className={`px-3 py-1.5 text-[14px] font-semibold kol-focus ${device === v ? "bg-[#161418] text-[#FAF8F6]" : "bg-white text-[#161418]"}`}>
                   {t}
                 </button>
               ))}
             </div>
-            <button type="button" onClick={() => setSeed((s) => s + 1 + Math.floor(Math.random() * 5))} className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-[#8C8580] rounded-[8px] text-[12.5px] font-semibold bg-white kol-focus">
+            <button type="button" onClick={() => setSeed((s) => s + 1 + Math.floor(Math.random() * 5))} className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-[#8C8580] rounded-[8px] text-[14px] font-semibold bg-white kol-focus">
               <RefreshCw className="w-3.5 h-3.5" /> Otra combinación
             </button>
           </div>
@@ -212,7 +212,7 @@ export const GoogleSearchAdEditor: React.FC<Props> = ({ value, onChange, readOnl
           device={device}
           seed={seed}
         />
-        <p className="text-[12px] text-[#6A6460]">
+        <p className="text-[14px] text-[#6A6460]">
           Google nunca muestra más de 3 títulos y 2 descripciones a la vez, y los combina distinto en cada búsqueda. Cuantas más opciones cargues, más puede probar.
         </p>
         <AdChecklist checks={checks} />

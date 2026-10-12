@@ -1,3 +1,4 @@
+import { useConfirm } from "../ConfirmDialog";
 import React, { useState } from "react";
 import { Copy, Plus, Trash2 } from "lucide-react";
 import { CampaignAd, CampaignPlatform, GalleryAsset } from "../../types/marketing";
@@ -68,6 +69,7 @@ const MAX_ADS = 5;
 
 /** Varios anuncios (variantes A, B, C) dentro de la misma campaña. Cada uno con su propio utm_content. */
 export const AdVariantsEditor: React.FC<Props> = ({ platform, ads, onChange, assets, readOnly, actions, defaultPlacement }) => {
+  const confirm = useConfirm();
   const [activeId, setActiveId] = useState(ads[0]?.id);
   const index = Math.max(0, ads.findIndex((a) => a.id === activeId));
   const ad = ads[index];
@@ -88,9 +90,9 @@ export const AdVariantsEditor: React.FC<Props> = ({ platform, ads, onChange, ass
     setActiveId(copy.id);
   };
 
-  const removeActive = () => {
+  const removeActive = async () => {
     if (ads.length <= 1) return;
-    if (!window.confirm(`¿Quitar “${ad.label}”?`)) return;
+    if (!(await confirm({ title: "Quitar anuncio", message: `¿Quitar “${ad.label}”?`, confirmLabel: "Quitar" }))) return;
     const next = ads.filter((a) => a.id !== ad.id);
     onChange(next);
     setActiveId(next[0].id);
@@ -105,17 +107,17 @@ export const AdVariantsEditor: React.FC<Props> = ({ platform, ads, onChange, ass
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <div>
             <span className="font-bold text-[14px] text-[#161418]">Anuncios de esta campaña</span>
-            <p className="text-[12.5px] text-[#46413F] mt-0.5">Cargá 2 o 3 versiones del mismo anuncio y dejalas correr unos días: después cortás la que menos consultas trae.</p>
+            <p className="text-[14px] text-[#46413F] mt-0.5">Cargá 2 o 3 versiones del mismo anuncio y dejalas correr unos días: después cortás la que menos consultas trae.</p>
           </div>
           {!readOnly && ads.length < MAX_ADS && (
-            <button type="button" onClick={addVariant} className="kol-btn-normal px-3.5 py-2 bg-white border border-[#161418] text-[#161418] text-[12.5px] font-bold flex items-center gap-1.5">
+            <button type="button" onClick={addVariant} className="kol-btn-normal px-3.5 py-2 bg-white border border-[#161418] text-[#161418] text-[14px] font-bold flex items-center gap-1.5">
               <Copy className="w-3.5 h-3.5" /> Agregar otra versión (copia de {ad.label})
             </button>
           )}
         </div>
         <div role="tablist" aria-label="Anuncios" className="flex flex-wrap gap-2">
           {ads.map((a) => (
-            <button key={a.id} type="button" role="tab" aria-selected={a.id === ad.id} onClick={() => setActiveId(a.id)} className={`px-3.5 py-1.5 rounded-[8px] text-[13px] font-bold border kol-focus ${a.id === ad.id ? "bg-[#161418] text-[#FAF8F6] border-[#161418]" : "bg-white text-[#161418] border-[#C9C3BE] hover:bg-[#F3F0ED]"}`}>
+            <button key={a.id} type="button" role="tab" aria-selected={a.id === ad.id} onClick={() => setActiveId(a.id)} className={`px-3.5 py-1.5 rounded-[8px] text-[14px] font-bold border kol-focus ${a.id === ad.id ? "bg-[#161418] text-[#FAF8F6] border-[#161418]" : "bg-white text-[#161418] border-[#C9C3BE] hover:bg-[#F3F0ED]"}`}>
               {a.label}
             </button>
           ))}
@@ -127,14 +129,14 @@ export const AdVariantsEditor: React.FC<Props> = ({ platform, ads, onChange, ass
         </div>
         <div className="flex items-end gap-3 flex-wrap">
           <div>
-            <label className="block text-[12px] font-bold text-[#46413F] mb-1" htmlFor="ad-label">Nombre del anuncio</label>
-            <input id="ad-label" disabled={readOnly} value={ad.label} onChange={(e) => rename(e.target.value)} className="h-[34px] px-2.5 border border-[#8C8580] rounded-[6px] text-[13px] bg-white kol-focus disabled:bg-[#F3F0ED]" />
+            <label className="block text-[14px] font-bold text-[#46413F] mb-1" htmlFor="ad-label">Nombre del anuncio</label>
+            <input id="ad-label" disabled={readOnly} value={ad.label} onChange={(e) => rename(e.target.value)} className="h-[34px] px-2.5 border border-[#8C8580] rounded-[6px] text-[14px] bg-white kol-focus disabled:bg-[#F3F0ED]" />
           </div>
-          <div className="text-[12px] text-[#46413F] pb-1.5">
+          <div className="text-[14px] text-[#46413F] pb-1.5">
             En GA4 aparece como <code className="bg-white border border-[#E7E3DF] px-1.5 py-0.5 rounded">utm_content={ad.utmContent}</code>
           </div>
           {!readOnly && ads.length > 1 && (
-            <button type="button" onClick={removeActive} className="ml-auto text-[12px] text-[#6A6460] hover:text-[#A40F5F] flex items-center gap-1 pb-1.5 kol-focus rounded">
+            <button type="button" onClick={removeActive} className="ml-auto text-[14px] text-[#6A6460] hover:text-[#A40F5F] flex items-center gap-1 pb-1.5 kol-focus rounded">
               <Trash2 className="w-3.5 h-3.5" /> Quitar este anuncio
             </button>
           )}

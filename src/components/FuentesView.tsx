@@ -92,7 +92,7 @@ export const FuentesView: React.FC<FuentesViewProps> = ({
           type="button"
           onClick={onManualSync}
           disabled={isSyncing}
-          className="kol-btn-normal px-4 py-2 bg-[#E7E3DF] text-[#161418] border border-[#8C8580] hover:bg-[#C9C3BE] flex items-center gap-2 whitespace-nowrap text-[13px] font-bold self-start sm:self-auto"
+          className="kol-btn-normal px-4 py-2 bg-[#E7E3DF] text-[#161418] border border-[#8C8580] hover:bg-[#C9C3BE] flex items-center gap-2 whitespace-nowrap text-[14px] font-bold self-start sm:self-auto"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? "animate-spin" : ""}`} />
           <span>{isSyncing ? "Actualizando fuentes..." : "Actualizar datos"}</span>
@@ -123,7 +123,7 @@ export const FuentesView: React.FC<FuentesViewProps> = ({
             >
               <span className="text-[14px]">{item.label}</span>
               <span
-                className={`text-[11px] px-2 py-0.5 rounded-[4px] font-semibold ${
+                className={`text-[14px] px-2 py-0.5 rounded-[4px] font-semibold ${
                   active
                     ? "bg-[#2A2629] text-[#FFBA00]"
                     : "bg-[#E7E3DF] text-[#161418]"
@@ -142,19 +142,18 @@ export const FuentesView: React.FC<FuentesViewProps> = ({
           <div className="p-4 bg-[#FAF8F6] border border-[#C9C3BE] rounded-[10px] space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-2.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-600" />
                 <span className="font-bold text-[#161418] text-[15px]">
                   Propiedad GA4: 372010641
                 </span>
               </div>
-              <span className="text-[13px] bg-[#E7E3DF] text-[#161418] font-semibold px-2.5 py-1 rounded-[6px]">
+              <span className="text-[14px] bg-[#E7E3DF] text-[#161418] font-semibold px-2.5 py-1 rounded-[6px]">
                 Evento único de conversión: <strong className="text-[#C51172]">lead_franquicia</strong>
               </span>
             </div>
             <p className="text-[14px] text-[#46413F] leading-relaxed">
               <strong>Regla fija del protocolo:</strong> No se mide <code className="bg-[#E7E3DF] px-1 rounded">generate_lead</code> (porque mezcla el botón de WhatsApp de retail de todo el sitio comercial) ni <code className="bg-[#E7E3DF] px-1 rounded">purchase</code> (una franquicia no tiene ingreso inmediato de carrito).
             </p>
-            <div className="flex items-center gap-2 text-[13px] text-[#8C8580] pt-1">
+            <div className="flex items-center gap-2 text-[14px] text-[#6A6460] pt-1">
               <Info className="w-3.5 h-3.5 shrink-0" />
               <span>
                 Recordatorio técnico: GA4 tarda 24 a 48 hs en procesar eventos nuevos. Los administradores logueados no se miden; probar siempre formularios en ventana de incógnito.
@@ -175,7 +174,7 @@ export const FuentesView: React.FC<FuentesViewProps> = ({
                   { label: "Descargaron el PDF", value: guide.downloads },
                 ].map((k) => (
                   <div key={k.label} className="bg-[#FAF8F6] border border-[#C9C3BE] rounded-[10px] p-4">
-                    <div className="text-[12px] text-[#46413F] font-semibold">{k.label}</div>
+                    <div className="text-[14px] text-[#46413F] font-semibold">{k.label}</div>
                     <div className="text-[28px] font-extrabold text-[#161418] tabular-nums">{k.value}</div>
                   </div>
                 ))}
@@ -183,7 +182,7 @@ export const FuentesView: React.FC<FuentesViewProps> = ({
             ) : (
               <p className="px-4 py-5 text-[14px] text-[#46413F]">Sin datos: GA4 todavía no está conectado.</p>
             )}
-            <p className="px-4 pb-4 text-[12px] text-[#46413F]">
+            <p className="px-4 pb-4 text-[14px] text-[#46413F]">
               Los administradores logueados no se miden. Este formulario es distinto del de consulta de franquicia (lead_franquicia), que se cuenta aparte en la tabla de abajo.
             </p>
           </div>
@@ -200,9 +199,9 @@ export const FuentesView: React.FC<FuentesViewProps> = ({
                   : "Sin datos: GA4 todavía no está conectado."}
               </p>
             ) : (
-              <table className="w-full text-left border-collapse">
+              <div className="overflow-x-auto"><table className="w-full text-left border-collapse min-w-[560px]">
                 <thead>
-                  <tr className="bg-[#F3F0ED] text-[#46413F] text-[13px] font-semibold">
+                  <tr className="bg-[#F3F0ED] text-[#46413F] text-[14px] font-semibold">
                     <th className="py-3 px-4">Ruta de destino</th>
                     <th className="py-3 px-3 text-right">Sesiones</th>
                     <th className="py-3 px-3 text-right">Usuarios únicos</th>
@@ -215,11 +214,11 @@ export const FuentesView: React.FC<FuentesViewProps> = ({
                     <tr key={p.path} className={(notFound.some((n) => n.path === p.path) ? "bg-[#F3F0ED] border-l-4 border-l-[#C51172]" : idx % 2 === 1 ? "bg-[#FAF8F6]" : "bg-[#FFFFFF]") + " border-t border-[#C9C3BE]"}>
                       <td className="py-3 px-4 font-bold">
                         {p.path}{" "}
-                        <span className="text-[12px] text-[#46413F] font-normal">
+                        <span className="text-[14px] text-[#46413F] font-normal">
                           ({p.path === "/franquicia/" ? "Hub principal" : notFound.some((n) => n.path === p.path) ? "" : "Página hija"})
                         </span>
                         {notFound.some((n) => n.path === p.path) && (
-                          <span className="ml-1 text-[12px] font-bold text-[#A40F5F]"><span aria-hidden="true">! </span>Página no encontrada (404)</span>
+                          <span className="ml-1 text-[14px] font-bold text-[#A40F5F]"><span aria-hidden="true">! </span>Página no encontrada (404)</span>
                         )}
                       </td>
                       <td className="py-3 px-3 text-right tabular-nums font-semibold">{p.sessions}</td>
@@ -229,7 +228,7 @@ export const FuentesView: React.FC<FuentesViewProps> = ({
                     </tr>
                   ))}
                 </tbody>
-              </table>
+              </table></div>
             )}
           </div>
 
@@ -239,9 +238,9 @@ export const FuentesView: React.FC<FuentesViewProps> = ({
               <div className="bg-[#E7E3DF] px-4 py-3 font-bold text-[#161418] text-[14px]">
                 Visitas a direcciones que no existen (404) y de dónde llegaron
               </div>
-              <table className="w-full text-left border-collapse">
+              <div className="overflow-x-auto"><table className="w-full text-left border-collapse min-w-[560px]">
                 <thead>
-                  <tr className="bg-[#F3F0ED] text-[#46413F] text-[13px] font-semibold">
+                  <tr className="bg-[#F3F0ED] text-[#46413F] text-[14px] font-semibold">
                     <th className="py-3 px-4">Dirección pedida</th>
                     <th className="py-3 px-3">Origen de la visita</th>
                     <th className="py-3 px-3 text-right">Sesiones</th>
@@ -251,18 +250,18 @@ export const FuentesView: React.FC<FuentesViewProps> = ({
                   {notFound.flatMap((n) =>
                     n.sources.map((s, i) => (
                       <tr key={`${n.path}-${s.source}-${s.medium}-${i}`} className="border-t border-[#C9C3BE] bg-[#FFFFFF]">
-                        <td className="py-3 px-4 font-mono text-[13px]">{i === 0 ? n.path : ""}</td>
+                        <td className="py-3 px-4 font-mono text-[14px]">{i === 0 ? n.path : ""}</td>
                         <td className="py-3 px-3">
                           {s.source} / {s.medium}{" "}
-                          <span className="text-[12px] text-[#46413F]">({originHint(s.source, s.medium)})</span>
+                          <span className="text-[14px] text-[#46413F]">({originHint(s.source, s.medium)})</span>
                         </td>
                         <td className="py-3 px-3 text-right tabular-nums font-semibold">{s.sessions}</td>
                       </tr>
                     ))
                   )}
                 </tbody>
-              </table>
-              <p className="px-4 py-3 text-[12px] text-[#46413F]">
+              </table></div>
+              <p className="px-4 py-3 text-[14px] text-[#46413F]">
                 GA4 registra cualquier dirección que alguien pida, aunque la página no exista. La interpretación entre paréntesis es una pista según el origen, no un dato de GA4.
               </p>
             </div>
@@ -276,12 +275,11 @@ export const FuentesView: React.FC<FuentesViewProps> = ({
           <div className="p-4 bg-[#FAF8F6] border border-[#C9C3BE] rounded-[10px]">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-600" />
                 <span className="font-bold text-[#161418] text-[15px]">
                   Google Search Console · Propiedad kolaccesorios.com
                 </span>
               </div>
-              <p className="text-[13px] text-[#46413F]">
+              <p className="text-[14px] text-[#46413F]">
                 Todas las consultas orgánicas que registraron impresiones hacia el hub de franquicias
               </p>
             </div>
@@ -290,25 +288,25 @@ export const FuentesView: React.FC<FuentesViewProps> = ({
           {/* Tarjetas resumen de métricas Search Console */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <div className="p-3.5 bg-[#FAF8F6] border border-[#C9C3BE] rounded-[8px]">
-              <span className="text-[12px] text-[#8C8580] uppercase font-bold block">Consultas con impresiones</span>
+              <span className="text-[14px] text-[#6A6460] font-bold block">Consultas con impresiones</span>
               <span className="font-kol-display font-extrabold text-[22px] text-[#161418] tabular-nums">
                 {searchKeywords.length}
               </span>
             </div>
             <div className="p-3.5 bg-[#FAF8F6] border border-[#C9C3BE] rounded-[8px]">
-              <span className="text-[12px] text-[#8C8580] uppercase font-bold block">Clics orgánicos</span>
+              <span className="text-[14px] text-[#6A6460] font-bold block">Clics orgánicos</span>
               <span className="font-kol-display font-extrabold text-[22px] text-[#161418] tabular-nums">
                 {searchKeywords.reduce((acc, kw) => acc + kw.clicks, 0)}
               </span>
             </div>
             <div className="p-3.5 bg-[#FAF8F6] border border-[#C9C3BE] rounded-[8px]">
-              <span className="text-[12px] text-[#8C8580] uppercase font-bold block">Impresiones totales</span>
+              <span className="text-[14px] text-[#6A6460] font-bold block">Impresiones totales</span>
               <span className="font-kol-display font-extrabold text-[22px] text-[#161418] tabular-nums">
                 {searchKeywords.reduce((acc, kw) => acc + kw.impressions, 0).toLocaleString("es-AR")}
               </span>
             </div>
             <div className="p-3.5 bg-[#FAF8F6] border border-[#C9C3BE] rounded-[8px]">
-              <span className="text-[12px] text-[#8C8580] uppercase font-bold block">CTR Promedio ponderado</span>
+              <span className="text-[14px] text-[#6A6460] font-bold block">CTR Promedio ponderado</span>
               <span className="font-kol-display font-extrabold text-[22px] text-[#C51172] tabular-nums">
                 {(
                   (searchKeywords.reduce((acc, kw) => acc + kw.clicks, 0) /
@@ -324,7 +322,7 @@ export const FuentesView: React.FC<FuentesViewProps> = ({
           <div className="border border-[#C9C3BE] rounded-[10px] overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-[#E7E3DF] text-[#2A2629] text-[13px] font-bold">
+                <tr className="bg-[#E7E3DF] text-[#2A2629] text-[14px] font-bold">
                   <th className="py-3 px-4">Término de búsqueda (Keyword)</th>
                   <th className="py-3 px-3">Página destino</th>
                   <th className="py-3 px-3 text-right">Clics</th>
@@ -347,7 +345,7 @@ export const FuentesView: React.FC<FuentesViewProps> = ({
                     <td className="py-3 px-4 font-bold text-[#161418]">
                       {kw.keyword}
                     </td>
-                    <td className="py-3 px-3 font-mono text-[13px] text-[#46413F]">
+                    <td className="py-3 px-3 font-mono text-[14px] text-[#46413F]">
                       {kw.landingPage || "/franquicia/"}
                     </td>
                     <td className="py-3 px-3 text-right tabular-nums font-extrabold text-[#161418]">
@@ -378,7 +376,7 @@ export const FuentesView: React.FC<FuentesViewProps> = ({
         <div className="space-y-6">
           <div className="p-6 bg-[#FAF8F6] border-2 border-[#161418] rounded-[10px] space-y-4">
             <div className="flex items-center gap-2.5">
-              <span className="px-2.5 py-0.5 rounded-[6px] bg-[#161418] text-[#FAF8F6] text-[12px] font-bold uppercase tracking-wider">
+              <span className="px-2.5 py-0.5 rounded-[6px] bg-[#161418] text-[#FAF8F6] text-[14px] font-bold ">
                 Decisión del 5/10/2026
               </span>
               <h3 className="font-kol-display font-bold text-[20px] text-[#161418]">
@@ -410,12 +408,11 @@ export const FuentesView: React.FC<FuentesViewProps> = ({
           <div className="p-4 bg-[#FAF8F6] border border-[#C9C3BE] rounded-[10px] flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-600" />
                 <span className="font-bold text-[#161418] text-[15px]">
                   Microsoft Clarity · Proyecto: ytmpieugg9 (Vinculado a GA4 372010641)
                 </span>
               </div>
-              <p className="text-[13px] text-[#46413F]">
+              <p className="text-[14px] text-[#46413F]">
                 Etiquetas configuradas: <code className="bg-[#E7E3DF] px-1 rounded">seccion</code>, <code className="bg-[#E7E3DF] px-1 rounded">pagina_franquicia</code> y evento <code className="bg-[#E7E3DF] px-1 rounded">lead_franquicia</code>
               </p>
             </div>
@@ -424,16 +421,16 @@ export const FuentesView: React.FC<FuentesViewProps> = ({
               <button
                 type="button"
                 onClick={() => onOpenClarityRecordings(undefined, "lead_franquicia")}
-                className="kol-btn-normal px-3 py-1.5 bg-[#FFD9E4] text-[#161418] border border-[#C51172] hover:brightness-95 text-[12px] font-bold"
+                className="kol-btn-normal px-3 bg-[#E7E3DF] text-[#161418] border border-[#8C8580] hover:bg-[#C9C3BE]/50 text-[14px] font-bold"
               >
-                <PlayCircle className="w-3.5 h-3.5 text-[#C51172]" />
+                <PlayCircle className="w-4 h-4 text-[#161418]" />
                 <span>Grabaciones: Consulta enviada</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => onOpenClarityRecordings(undefined, "inicio_formulario")}
-                className="kol-btn-normal px-3 py-1.5 bg-[#FFFFFF] text-[#161418] border border-[#8C8580] hover:bg-[#FAF8F6] text-[12px] font-semibold"
+                className="kol-btn-normal px-3 py-1.5 bg-[#FFFFFF] text-[#161418] border border-[#8C8580] hover:bg-[#FAF8F6] text-[14px] font-semibold"
               >
                 <span>Grabaciones: Formulario abandonado</span>
               </button>
@@ -444,7 +441,7 @@ export const FuentesView: React.FC<FuentesViewProps> = ({
           <div className="border border-[#C9C3BE] rounded-[10px] overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-[#E7E3DF] text-[#2A2629] text-[13px] font-bold">
+                <tr className="bg-[#E7E3DF] text-[#2A2629] text-[14px] font-bold">
                   <th className="py-3 px-4">Página analizada</th>
                   <th className="py-3 px-3 text-right">Sesiones</th>
                   <th className="py-3 px-3 text-right">Clics con rabia (Rage)</th>
@@ -474,13 +471,13 @@ export const FuentesView: React.FC<FuentesViewProps> = ({
                       </td>
                       <td className="py-3 px-3 text-right tabular-nums">
                         <span
-                          className={`font-bold px-2 py-0.5 rounded-[4px] text-[12px] ${
+                          className={`font-bold px-2 py-0.5 rounded-[4px] text-[14px] ${
                             isHighRage
-                              ? "bg-[#FFD9E4] text-[#A40F5F]"
+                              ? "bg-[#F3F0ED] text-[#A40F5F] border-2 border-[#A40F5F]"
                               : "bg-[#E7E3DF] text-[#161418]"
                           }`}
                         >
-                          {page.rageClicksPct.toFixed(1)} %
+                          {isHighRage ? "! " : ""}{page.rageClicksPct.toFixed(1)} %
                         </span>
                       </td>
                       <td className="py-3 px-3 text-right tabular-nums text-[#46413F]">
@@ -489,14 +486,14 @@ export const FuentesView: React.FC<FuentesViewProps> = ({
                       <td className="py-3 px-3 text-right tabular-nums font-semibold">
                         {page.avgScrollDepthPct} %
                       </td>
-                      <td className="py-3 px-4 text-[13px] text-[#46413F] max-w-xs">
+                      <td className="py-3 px-4 text-[14px] text-[#46413F] max-w-xs">
                         {page.dominantFrictionIssue}
                       </td>
                       <td className="py-3 px-3 text-center">
                         <button
                           type="button"
                           onClick={() => onOpenClarityRecordings(page.pageUrl)}
-                          className="kol-btn-normal px-3 py-1 bg-[#161418] text-[#FAF8F6] hover:bg-[#2A2629] text-[12px] font-bold flex items-center gap-1.5 mx-auto whitespace-nowrap"
+                          className="kol-btn-normal px-3 py-1 bg-[#161418] text-[#FAF8F6] hover:bg-[#2A2629] text-[14px] font-bold flex items-center gap-1.5 mx-auto whitespace-nowrap"
                         >
                           <PlayCircle className="w-3.5 h-3.5 text-[#FFBA00]" />
                           <span>Ver grabaciones</span>

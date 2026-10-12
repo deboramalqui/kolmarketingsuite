@@ -4,14 +4,7 @@ import { answerQuestion, weeklySummaryLines } from "./lib/answers";
 import { stripSecrets } from "./lib/secrets";
 import React, { useMemo, useState, useEffect } from "react";
 import {
-  CampaignMetric,
   ClarityPageTelemetry,
-  CustomReport,
-  ScheduledEmailReport,
-  DispatchedEmailLog,
-  PredictiveForecastResult,
-  PredictiveRecommendation,
-  GeneratedCampaignPackage,
   ConnectedAccountsConfig,
   AssistantChatMessage,
   GoogleSearchKeyword,
@@ -21,22 +14,15 @@ import {
 } from "./types/marketing";
 import {
   INITIAL_CONNECTED_ACCOUNTS,
-  INITIAL_CAMPAIGNS,
   INITIAL_CLARITY_PAGES,
-  INITIAL_CUSTOM_REPORTS,
-  INITIAL_SCHEDULED_EMAILS,
-  INITIAL_PREDICTIVE_FORECAST,
   KOL_V3_BRAND_GUIDELINES,
-  INITIAL_GENERATED_CAMPAIGNS,
   INITIAL_SEARCH_KEYWORDS,
   INITIAL_FRANCHISE_FUNNEL,
   INITIAL_ACQUISITION_CHANNELS,
   INITIAL_FRANCHISE_CAMPAIGNS,
 } from "./data/initialMarketingData";
-import { OnboardingModal } from "./components/OnboardingModal";
-import { DeleteConfirmationModal } from "./components/DeleteConfirmationModal";
 import { CampaignStudioView } from "./components/CampaignStudioView";
-import { ReportsAndScheduleView } from "./components/ReportsAndScheduleView";
+import { InformesView } from "./components/InformesView";
 import { HoyDashboardView } from "./components/HoyDashboardView";
 import { FuentesView } from "./components/FuentesView";
 import { ConexionesView } from "./components/ConexionesView";
@@ -114,8 +100,6 @@ export default function App() {
       .catch(() => {});
   }, []);
 
-  const [isOnboardingOpen, setIsOnboardingOpen] = useState<boolean>(false);
-  const [onboardingInitialStep, setOnboardingInitialStep] = useState<1 | 2 | 3 | 4>(1);
 
   // Datos REALES del embudo: los lee el servidor de GA4 (y se actualizan solos cada hora)
   const connections = useConnectionsStatus();
@@ -133,14 +117,6 @@ export default function App() {
   }, []);
   const funnelSteps = useMemo(() => funnelFromSnapshot(snapshot), [snapshot]);
   const acquisitionChannels = useMemo(() => channelsFromSnapshot(snapshot), [snapshot]);
-
-  const [campaigns, setCampaigns] = useState<CampaignMetric[]>(() => {
-    try {
-      const saved = localStorage.getItem("kol_marketing_campaigns");
-      if (saved) return JSON.parse(saved);
-    } catch {}
-    return INITIAL_CAMPAIGNS;
-  });
 
   const [clarityPages, setClarityPages] = useState<ClarityPageTelemetry[]>(() => {
     try {
@@ -199,17 +175,6 @@ export default function App() {
     return `${fmt(start)} – ${fmt(end)}`;
   };
 
-  const [reports, setReports] = useState<CustomReport[]>(INITIAL_CUSTOM_REPORTS);
-  const [schedules, setSchedules] = useState<ScheduledEmailReport[]>(
-    INITIAL_SCHEDULED_EMAILS
-  );
-  const [dispatchedLogs, setDispatchedLogs] = useState<DispatchedEmailLog[]>([]);
-  const [forecast, setForecast] = useState<PredictiveForecastResult>(
-    INITIAL_PREDICTIVE_FORECAST
-  );
-  const [generatedCampaigns, setGeneratedCampaigns] = useState<
-    GeneratedCampaignPackage[]
-  >(INITIAL_GENERATED_CAMPAIGNS);
 
   const [franchiseCampaigns, setFranchiseCampaigns] = useState<FranchiseCampaignItem[]>(() => {
     try {
@@ -263,12 +228,6 @@ export default function App() {
 
   useEffect(() => {
     try {
-      localStorage.setItem("kol_marketing_campaigns", JSON.stringify(campaigns));
-    } catch {}
-  }, [campaigns]);
-
-  useEffect(() => {
-    try {
       localStorage.setItem(
         "kol_marketing_clarity_pages",
         JSON.stringify(clarityPages)
@@ -285,10 +244,6 @@ export default function App() {
     } catch {}
   }, [searchKeywords]);
 
-  const [pendingDeleteReport, setPendingDeleteReport] = useState<{
-    report: CustomReport;
-    reason?: string;
-  } | null>(null);
 
   // Estados para nuevo diseño de botones y panel lateral
   const [isAssistantDrawerOpen, setIsAssistantDrawerOpen] = useState(false);
@@ -321,7 +276,7 @@ export default function App() {
     setAssistantMessages((prev) => [...prev, userMsg]);
 
     // Respuesta armada solo con datos reales (si no hay dato, lo dice)
-    const answer = answerQuestion(text, { snapshot, campaigns: franchiseCampaigns, connections, clarityPages });
+    const answer = answerQuestion(text, { snapshot, campaigns: franchiseCampaigns, connections, clarityPages, searchKeywords });
 
     setTimeout(() => {
       setAssistantMessages((prev) => [
@@ -373,7 +328,7 @@ export default function App() {
         setTimeout(() => setFlashCards(false), 1600);
       }
       setToastNotice({
-        html: `<strong>Datos actualizados.</strong> ${changes.length ? changes.join(", ") + "." : "No hubo cambios desde la última lectura."}<small class='block text-[#C9C3BE] text-[12px] mt-0.5'>GA4 completa los últimos 2 días en 24 a 48 h.</small>${gscMessage ? `<small class='block text-[#C9C3BE] text-[12px] mt-0.5'>Search Console: ${gscMessage.replace(/[<>&]/g, "")}</small>` : ""}`,
+        html: `<strong>Datos actualizados.</strong> ${changes.length ? changes.join(", ") + "." : "No hubo cambios desde la última lectura."}<small class='block text-[#C9C3BE] text-[14px] mt-0.5'>GA4 completa los últimos 2 días en 24 a 48 h.</small>${gscMessage ? `<small class='block text-[#C9C3BE] text-[14px] mt-0.5'>Search Console: ${gscMessage.replace(/[<>&]/g, "")}</small>` : ""}`,
       });
     }
     setTimeout(() => setToastNotice(null), 6000);
@@ -453,36 +408,6 @@ export default function App() {
     document.body.removeChild(link);
   };
 
-  const handleApplyRecommendation = (rec: PredictiveRecommendation) => {
-    setForecast((prev) => ({
-      ...prev,
-      recommendations: prev.recommendations.map((r) =>
-        r.id === rec.id ? { ...r, applied: true } : r
-      ),
-    }));
-  };
-
-  const handleRequestDeleteFromAi = (reportId: string, reason?: string): string => {
-    const rep = reports.find(
-      (r) =>
-        r.id === reportId ||
-        r.title.toLowerCase().includes(reportId.toLowerCase())
-    );
-    if (rep) {
-      setPendingDeleteReport({ report: rep, reason });
-      return `Se abrió la confirmación para eliminar el reporte "${rep.title}".`;
-    }
-    return `No se encontró ningún reporte con el identificador "${reportId}".`;
-  };
-
-  const handleConfirmDeleteReport = () => {
-    if (!pendingDeleteReport) return;
-    setReports((prev) =>
-      prev.filter((r) => r.id !== pendingDeleteReport.report.id)
-    );
-    setPendingDeleteReport(null);
-  };
-
   // Métricas verificadas de las 4 tarjetas superiores
   const live = hasData(snapshot);
   const consultasCount = snapshot.funnel.lead_franquicia.now;
@@ -513,8 +438,8 @@ export default function App() {
               <h1 className="font-kol-display font-extrabold text-[22px] sm:text-[26px] leading-[32px] text-[#FAF8F6]">
                 KOL Marketing Suite
               </h1>
-              <p className="text-[13px] text-[#C9C3BE]">
-                Medición del embudo de captación con datos reales de Google Marketing Platform, Microsoft Clarity y Meta
+              <p className="text-[14px] text-[#C9C3BE]">
+                Medición del embudo de captación de franquicias con datos reales de Google Analytics y Search Console
               </p>
             </div>
 
@@ -552,7 +477,7 @@ export default function App() {
                 onClick={() => setIsAssistantDrawerOpen(true)}
                 aria-haspopup="dialog"
                 aria-expanded={isAssistantDrawerOpen}
-                className="kol-btn-normal px-4 bg-[#FFBA00] hover:opacity-95 text-[#161418] font-bold flex items-center gap-2 whitespace-nowrap shadow-sm text-[13px] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FAF8F6] focus-visible:ring-offset-2 focus-visible:ring-offset-[#161418]"
+                className="kol-btn-normal px-4 bg-[#FFBA00] hover:opacity-95 text-[#161418] font-bold flex items-center gap-2 whitespace-nowrap shadow-sm text-[14px] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FAF8F6] focus-visible:ring-offset-2 focus-visible:ring-offset-[#161418]"
               >
                 <MessageSquare className="w-3.5 h-3.5" />
                 <span>Preguntar</span>
@@ -561,8 +486,8 @@ export default function App() {
           </div>
 
           {/* 2. LAS 4 TARJETAS SUPERIORES EN MODO OSCURO (SECCIÓN 2 DEL BRIEF) */}
-          <div className="overflow-x-auto pt-1">
-            <div className="grid grid-cols-4 gap-4 min-w-[860px]">
+          <div className="pt-1">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
               {/* Tarjeta 1: Consultas de franquicia */}
               <div
                 className={`bg-[#2A2629] border border-[#46413F] kol-card-12 px-5 py-4 transition-colors ${
@@ -570,16 +495,16 @@ export default function App() {
                 }`}
               >
                 <div className="flex items-center justify-between">
-                  <div className="text-[13px] text-[#C9C3BE] truncate font-medium">
+                  <div className="text-[14px] text-[#C9C3BE] leading-snug font-medium">
                     Consultas de franquicia
                   </div>
                   {flashCards && (
-                    <span className="text-[11px] bg-[#FFBA00] text-[#161418] font-bold px-2 py-0.5 rounded-full">
-                      NUEVO
+                    <span className="text-[14px] bg-[#FFBA00] text-[#161418] font-bold px-2 py-0.5 rounded-[4px]">
+                      Nuevo
                     </span>
                   )}
                 </div>
-                <div className="text-[12px] text-[#8C8580] truncate mt-0.5">
+                <div className="text-[14px] text-[#C9C3BE] leading-snug mt-0.5">
                   ¿Cuántos dejaron sus datos?
                 </div>
                 <div className="inline-block border-b-[3px] border-[#FFBA00] pb-1 mt-2">
@@ -590,7 +515,7 @@ export default function App() {
                     consultas
                   </span>
                 </div>
-                <div className="text-[13px] text-[#FAF8F6] mt-2">
+                <div className="text-[14px] text-[#FAF8F6] mt-2">
                   <span>
                     {live
                       ? `${consultasCount - consultasPrev >= 0 ? "+" : ""}${consultasCount - consultasPrev} vs período anterior (28d: ${consultasPrev})`
@@ -601,10 +526,10 @@ export default function App() {
 
               {/* Tarjeta 2: Costo por consulta */}
               <div className="bg-[#2A2629] border border-[#46413F] kol-card-12 px-5 py-4">
-                <div className="text-[13px] text-[#C9C3BE] truncate font-medium">
+                <div className="text-[14px] text-[#C9C3BE] leading-snug font-medium">
                   Costo por consulta
                 </div>
-                <div className="text-[12px] text-[#8C8580] truncate mt-0.5">
+                <div className="text-[14px] text-[#C9C3BE] leading-snug mt-0.5">
                   ¿Cuánto cuesta cada una?
                 </div>
                 <div className="inline-block border-b-[3px] border-[#FFBA00] pb-1 mt-2">
@@ -612,7 +537,7 @@ export default function App() {
                     Sin inversión todavía
                   </span>
                 </div>
-                <div className="text-[13px] text-[#FAF8F6] mt-2 truncate">
+                <div className="text-[14px] text-[#FAF8F6] mt-2 leading-snug">
                   Se activa con las campañas de noviembre
                 </div>
               </div>
@@ -624,16 +549,16 @@ export default function App() {
                 }`}
               >
                 <div className="flex items-center justify-between">
-                  <div className="text-[13px] text-[#C9C3BE] truncate font-medium">
+                  <div className="text-[14px] text-[#C9C3BE] leading-snug font-medium">
                     De visita a consulta
                   </div>
                   {flashCards && (
-                    <span className="text-[11px] bg-[#FFBA00] text-[#161418] font-bold px-2 py-0.5 rounded-full">
-                      ACTUALIZADO
+                    <span className="text-[14px] bg-[#FFBA00] text-[#161418] font-bold px-2 py-0.5 rounded-[4px]">
+                      Actualizado
                     </span>
                   )}
                 </div>
-                <div className="text-[12px] text-[#8C8580] truncate mt-0.5">
+                <div className="text-[14px] text-[#C9C3BE] leading-snug mt-0.5">
                   ¿Cuántos de los que entran envían?
                 </div>
                 <div className="inline-block border-b-[3px] border-[#FFBA00] pb-1 mt-2">
@@ -644,7 +569,7 @@ export default function App() {
                     {live ? `(${consultasCount} de ${hubVisitorsCount})` : ""}
                   </span>
                 </div>
-                <div className="text-[12px] text-[#C9C3BE] mt-2 flex items-center gap-1.5 font-medium">
+                <div className="text-[14px] text-[#C9C3BE] mt-2 flex items-center gap-1.5 font-medium">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#FFBA00] shrink-0" />
                   <span>{live ? (hubVisitorsCount < 100 ? "Muestra chica (<100 visitas al hub)" : "Muestra suficiente (100 visitas o más)") : "Sin datos todavía"}</span>
                 </div>
@@ -652,10 +577,10 @@ export default function App() {
 
               {/* Tarjeta 4: Fricción de la página */}
               <div className="bg-[#2A2629] border border-[#46413F] kol-card-12 px-5 py-4">
-                <div className="text-[13px] text-[#C9C3BE] truncate font-medium">
+                <div className="text-[14px] text-[#C9C3BE] leading-snug font-medium">
                   Fricción de la página
                 </div>
-                <div className="text-[12px] text-[#8C8580] truncate mt-0.5">
+                <div className="text-[14px] text-[#C9C3BE] leading-snug mt-0.5">
                   ¿La gente se traba?
                 </div>
                 <div className="inline-block border-b-[3px] border-[#FFBA00] pb-1 mt-2">
@@ -663,7 +588,7 @@ export default function App() {
                     {clarityHub ? (clarityHub.rageClicksPct >= 3 ? "Alerta" : "Normal") : "Sin datos"}
                   </span>
                 </div>
-                <div className="text-[13px] text-[#FAF8F6] mt-2">
+                <div className="text-[14px] text-[#FAF8F6] mt-2">
                   <span>
                     {clarityHub
                       ? `${clarityHub.rageClicksPct.toFixed(1)} % clics repetidos en ${clarityHub.pageUrl}`
@@ -702,6 +627,7 @@ export default function App() {
                   key={item.id}
                   type="button"
                   onClick={() => setActiveTab(item.id)}
+                  aria-current={active ? "page" : undefined}
                   className={`group px-3.5 py-2 rounded-[10px] active:rounded-[4px] flex items-center gap-2.5 whitespace-nowrap transition-colors kol-focus ${
                     isDarkView
                       ? active
@@ -719,7 +645,7 @@ export default function App() {
                           ? "text-[#FFBA00] border-[#FFBA00]"
                           : "text-[#C51172] border-[#C51172]"
                         : isDarkView
-                        ? "text-[#8C8580] border-[#46413F] group-hover:text-[#FAF8F6] group-hover:border-[#C9C3BE]"
+                        ? "text-[#C9C3BE] border-[#46413F] group-hover:text-[#FAF8F6] group-hover:border-[#C9C3BE]"
                         : "text-[#46413F] border-[#C9C3BE] group-hover:text-[#161418] group-hover:border-[#8C8580]"
                     }`}
                   >
@@ -746,7 +672,7 @@ export default function App() {
               isDarkView ? "border-[#2A2629]" : "border-[#C9C3BE]"
             }`}
           >
-            <span className="text-[13px] font-semibold text-[#8C8580]">
+            <span className="text-[14px] font-semibold text-[#C9C3BE]">
               Hub de franquicias: 10 locales en Argentina
             </span>
           </div>
@@ -764,7 +690,7 @@ export default function App() {
             <button
               type="button"
               onClick={() => setActiveTab("connections")}
-              className="text-[13px] font-bold text-[#C51172] underline decoration-2 underline-offset-4 whitespace-nowrap"
+              className="text-[14px] font-bold text-[#C51172] underline decoration-2 underline-offset-4 whitespace-nowrap"
             >
               Ver centro de conexiones
             </button>
@@ -837,30 +763,10 @@ export default function App() {
 
         {/* PESTAÑA 5: INFORMES */}
         {activeTab === "reports" && (
-          <ReportsAndScheduleView
-            reports={reports}
-            onCreateReport={(rep) => setReports((prev) => [rep, ...prev])}
-            onRequestDeleteReport={(rep) =>
-              setPendingDeleteReport({ report: rep })
-            }
-            schedules={schedules}
-            onAddSchedule={(sched) => setSchedules((prev) => [sched, ...prev])}
-            onToggleSchedule={(id) =>
-              setSchedules((prev) =>
-                prev.map((s) => (s.id === id ? { ...s, active: !s.active } : s))
-              )
-            }
-            onDeleteSchedule={(id) =>
-              setSchedules((prev) => prev.filter((s) => s.id !== id))
-            }
-            dispatchedLogs={dispatchedLogs}
-            onAddDispatchedLog={(log) =>
-              setDispatchedLogs((prev) => [log, ...prev])
-            }
-            campaigns={campaigns}
-            clarityPages={clarityPages}
+          <InformesView
+            snapshot={snapshot}
+            searchKeywords={searchKeywords}
             summaryLines={weeklySummaryLines({ snapshot, campaigns: franchiseCampaigns, connections, clarityPages })}
-            defaultRecipientEmail={accountsConfig.defaultReportRecipientEmail}
           />
         )}
 
@@ -879,16 +785,16 @@ export default function App() {
       {/* Pie institucional en negro oficial como el header */}
       <footer className="border-t border-[#2A2629] bg-[#161418] text-[#FAF8F6] py-6 px-4 sm:px-6 lg:px-8 mt-16">
         <div className="max-w-[1440px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-[14px]">
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <KolLogo variant="blanco" className="h-[28px] w-auto shrink-0" />
             <KolLockup variant="oscuro" compact />
             <span className="text-[#46413F] font-light select-none">|</span>
-            <span className="font-kol-display font-extrabold text-[#FAF8F6] text-[15px] tracking-wide">
+            <span className="font-kol-display font-extrabold text-[#FAF8F6] text-[15px] ">
               KOL Marketing Suite
             </span>
           </div>
-          <div className="text-[12px] text-[#C9C3BE]">
-            Medición del embudo de captación con datos reales de Google Marketing Platform, Microsoft Clarity y Meta
+          <div className="text-[14px] text-[#C9C3BE]">
+            Medición del embudo de captación de franquicias con datos reales de Google Analytics y Search Console
           </div>
         </div>
       </footer>
@@ -911,38 +817,12 @@ export default function App() {
             toastNotice.isError
               ? "border-l-4 border-l-[#F056A9]"
               : "border-l-4 border-l-[#7FD6A4]"
-          } px-4 py-3 rounded-[12px] text-[13.5px] shadow-2xl z-50 max-w-[92vw] animate-in fade-in slide-in-from-bottom-2`}
+          } px-4 py-3 rounded-[12px] text-[14px] shadow-2xl z-50 max-w-[92vw] animate-in fade-in slide-in-from-bottom-2`}
         >
           <div dangerouslySetInnerHTML={{ __html: toastNotice.html }} />
         </div>
       )}
 
-      {/* Modal de eliminación de reportes */}
-      <DeleteConfirmationModal
-        isOpen={Boolean(pendingDeleteReport)}
-        itemTitle={
-          pendingDeleteReport
-            ? `${pendingDeleteReport.report.title} (${pendingDeleteReport.report.id})`
-            : ""
-        }
-        itemType="Reporte personalizado"
-        reason={pendingDeleteReport?.reason}
-        onCancel={() => setPendingDeleteReport(null)}
-        onConfirm={handleConfirmDeleteReport}
-      />
-
-      {/* Modal de onboarding / credenciales opcional */}
-      <OnboardingModal
-        isOpen={isOnboardingOpen}
-        initialStep={onboardingInitialStep}
-        onClose={() => setIsOnboardingOpen(false)}
-        config={accountsConfig}
-        onSaveConfig={setAccountsConfig}
-        onSyncRealData={(newCampaigns, newClarity) => {
-          if (newCampaigns.length > 0) setCampaigns(newCampaigns);
-          if (newClarity.length > 0) setClarityPages(newClarity);
-        }}
-      />
     </div>
   );
 }

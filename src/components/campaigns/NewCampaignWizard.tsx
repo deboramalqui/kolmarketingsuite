@@ -91,8 +91,8 @@ export const NewCampaignWizard: React.FC<Props> = ({ assets, events, initiatives
   const step1Ok = !!chosen && name.trim().length > 0 && Number(cap) > 0 && hasGeoTarget(geo) && (!rmk || segments.length > 0);
   const info = PLATFORM_INFO.find((p) => p.id === platform)!;
 
-  const inputCls = "w-full h-[40px] px-3 border border-[#8C8580] rounded-[8px] text-[14px] text-[#161418] bg-white kol-focus";
-  const labelCls = "block text-[13px] font-bold text-[#161418] mb-1";
+  const inputCls = "w-full h-[48px] px-3 border border-[#8C8580] rounded-[8px] text-[14px] text-[#161418] bg-white kol-focus";
+  const labelCls = "block text-[14px] font-bold text-[#161418] mb-1";
 
   const icon = (id: CampaignPlatform) => (id === "google_search" ? <Search className="w-5 h-5" /> : id === "google_display" ? <ImageIcon className="w-5 h-5" /> : <Instagram className="w-5 h-5" />);
 
@@ -105,19 +105,21 @@ export const NewCampaignWizard: React.FC<Props> = ({ assets, events, initiatives
           </button>
           <div>
             <h2 className="font-kol-display font-extrabold text-[22px] text-[#161418]">Nueva campaña de franquicia</h2>
-            <p className="text-[13px] text-[#46413F]">Paso {step} de 4 · Sin valores inventados: lo que no cargues queda vacío</p>
+            <p className="text-[14px] text-[#46413F]">Paso {step} de 4 · Sin valores inventados: lo que no cargues queda vacío</p>
           </div>
         </div>
-        <ol className="flex items-center gap-3 text-[12.5px]" aria-label="Pasos">
+        <ol className="flex items-center gap-3 text-[14px]" aria-label="Pasos">
           {STEPS.map((s, i) => {
             const n = i + 1;
             const done = step > n;
             const on = step === n;
             return (
-              <li key={s} className={`flex items-center gap-1.5 ${on ? "font-bold text-[#161418]" : "text-[#8C8580]"}`} aria-current={on ? "step" : undefined}>
-                <span className={`w-6 h-6 rounded-full grid place-items-center text-[12px] ${on ? "bg-[#161418] text-[#FAF8F6]" : done ? "bg-[#161418] text-[#FAF8F6]" : "bg-[#E7E3DF]"}`}>
-                  {done ? <Check className="w-3.5 h-3.5" /> : n}
-                </span>
+              <li key={s} className={`flex items-center gap-1.5 ${on ? "font-bold text-[#161418]" : "text-[#6A6460]"}`} aria-current={on ? "step" : undefined}>
+                {done ? (
+                  <Check className="w-4 h-4 text-[#161418]" aria-label="completado" />
+                ) : (
+                  <span className={`font-kol-display font-extrabold text-[16px] leading-tight border-b-2 ${on ? "text-[#C51172] border-[#C51172] border-b-[3px]" : "text-[#6A6460] border-[#C9C3BE]"}`}>{n}</span>
+                )}
                 <span className="hidden md:inline">{s}</span>
               </li>
             );
@@ -143,16 +145,16 @@ export const NewCampaignWizard: React.FC<Props> = ({ assets, events, initiatives
                     {icon(p.id)} {p.label}
                     {platform === p.id && <Check className="w-4 h-4 ml-auto" />}
                   </div>
-                  <p className="text-[12.5px] text-[#46413F] mt-2 leading-relaxed">{p.description}</p>
+                  <p className="text-[14px] text-[#46413F] mt-2 leading-relaxed">{p.description}</p>
                 </button>
               ))}
             </div>
             {platform === "meta_instagram" && (
               <div className="mt-3 flex items-center gap-3 flex-wrap">
-                <span className="text-[13px] text-[#46413F]">Empezar con la vista previa de:</span>
+                <span className="text-[14px] text-[#46413F]">Empezar con la vista previa de:</span>
                 <div role="group" aria-label="Ubicación" className="inline-flex border border-[#8C8580] rounded-[8px] overflow-hidden">
                   {(["instagram", "facebook"] as const).map((pl) => (
-                    <button key={pl} type="button" aria-pressed={placement === pl} onClick={() => setPlacement(pl)} className={`px-3 py-1.5 text-[12.5px] font-semibold kol-focus ${placement === pl ? "bg-[#161418] text-[#FAF8F6]" : "bg-white text-[#161418]"}`}>
+                    <button key={pl} type="button" aria-pressed={placement === pl} onClick={() => setPlacement(pl)} className={`px-3 py-1.5 text-[14px] font-semibold kol-focus ${placement === pl ? "bg-[#161418] text-[#FAF8F6]" : "bg-white text-[#161418]"}`}>
                       {pl === "instagram" ? "Instagram" : "Facebook"}
                     </button>
                   ))}
@@ -162,7 +164,7 @@ export const NewCampaignWizard: React.FC<Props> = ({ assets, events, initiatives
           </div>
 
           {!chosen && (
-            <p className="text-[13px] text-[#6A6460] border border-dashed border-[#C9C3BE] rounded-[10px] p-4 bg-[#FAF8F6]">
+            <p className="text-[14px] text-[#6A6460] border border-dashed border-[#C9C3BE] rounded-[10px] p-4 bg-[#FAF8F6]">
               Elegí un tipo de campaña para seguir: después te pedimos el nombre, el presupuesto y dónde querés llegar.
             </p>
           )}
@@ -173,14 +175,14 @@ export const NewCampaignWizard: React.FC<Props> = ({ assets, events, initiatives
               <div>
                 <label className={labelCls} htmlFor="c-name">Nombre de la campaña</label>
                 <input id="c-name" className={inputCls} value={name} onChange={(e) => setName(e.target.value)} placeholder="ej. Franquicia Nov · Búsqueda Google (Santa Fe y Córdoba)" />
-                <p className="text-[11.5px] text-[#6A6460] mt-1">Es el nombre que va a llevar en Google o Meta.</p>
+                <p className="text-[14px] text-[#6A6460] mt-1">Es el nombre que va a llevar en Google o Meta.</p>
               </div>
 
               <div>
                 <label className={labelCls} htmlFor="c-init">Campaña paraguas (opcional)</label>
                 <input id="c-init" list="initiatives" className={inputCls} value={initiative} onChange={(e) => setInitiative(e.target.value)} placeholder="ej. Franquicia Nov 2026" />
                 <datalist id="initiatives">{initiatives.map((i) => <option key={i} value={i} />)}</datalist>
-                <p className="text-[11.5px] text-[#6A6460] mt-1">
+                <p className="text-[14px] text-[#6A6460] mt-1">
                   Agrupa las campañas de Google y Meta que persiguen lo mismo. Todas comparten el mismo <code>utm_campaign</code> ({utm.campaign}), así en GA4 ves el total y también cuánto trajo cada plataforma y cada anuncio.
                 </p>
               </div>
@@ -191,21 +193,21 @@ export const NewCampaignWizard: React.FC<Props> = ({ assets, events, initiatives
                   <div role="radiogroup" aria-label="Público" className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {([["nuevos", "Gente nueva", "Personas que todavía no conocen a Kol. Es lo normal para empezar."], ["remarketing", "Remarketing", "Personas que ya visitaron el sitio y no terminaron. Se usa cuando ya hay visitas juntadas."]] as const).map(([id, t, d]) => (
                       <button key={id} type="button" role="radio" aria-checked={audienceType === id} onClick={() => setAudienceType(id)} className={`text-left p-3 rounded-[10px] border-2 kol-focus ${audienceType === id ? "border-[#161418] bg-[#FAF8F6]" : "border-[#C9C3BE] bg-white hover:bg-[#FAF8F6]"}`}>
-                        <div className="font-bold text-[13.5px] text-[#161418]">{t}</div>
-                        <div className="text-[12px] text-[#46413F] mt-1">{d}</div>
+                        <div className="font-bold text-[14px] text-[#161418]">{t}</div>
+                        <div className="text-[14px] text-[#46413F] mt-1">{d}</div>
                       </button>
                     ))}
                   </div>
                   {rmk && (
                     <div className="p-3.5 bg-[#FAF8F6] border border-[#C9C3BE] rounded-[10px] space-y-3">
-                      <span className="text-[13px] font-bold text-[#161418] block">¿A qué personas?</span>
+                      <span className="text-[14px] font-bold text-[#161418] block">¿A qué personas?</span>
                       {REMARKETING_SEGMENTS.map((sg) => (
-                        <label key={sg.id} className="flex items-start gap-2 text-[13px] cursor-pointer">
+                        <label key={sg.id} className="flex items-start gap-2 text-[14px] cursor-pointer">
                           <input type="checkbox" checked={segments.includes(sg.id)} onChange={(e) => setSegments(e.target.checked ? [...segments, sg.id] : segments.filter((x) => x !== sg.id))} className="mt-0.5" />
                           <span>{sg.label}</span>
                         </label>
                       ))}
-                      <div className="text-[12.5px] text-[#46413F] border-t border-[#E7E3DF] pt-3 space-y-1.5">
+                      <div className="text-[14px] text-[#46413F] border-t border-[#E7E3DF] pt-3 space-y-1.5">
                         <strong className="text-[#161418] block">Antes de que funcione hace falta:</strong>
                         <p>• Una lista de al menos <strong>100 personas activas en 30 días</strong> (hoy el hub recibe unas 75 visitas por mes, dato de GA4 al 5/10/2026).</p>
                         <p>• GA4 vinculado a la cuenta de Google Ads de franquicia (la cuenta todavía no está creada).</p>
@@ -259,15 +261,15 @@ export const NewCampaignWizard: React.FC<Props> = ({ assets, events, initiatives
             </div>
 
             <aside className="p-4 bg-[#FAF8F6] border border-[#C9C3BE] rounded-[12px] space-y-3 h-fit">
-              <span className="text-[12px] font-bold uppercase tracking-wide text-[#8C8580]">Resumen</span>
-              <div className="text-[13px] space-y-2">
+              <span className="text-[14px] font-bold text-[#6A6460]">Resumen</span>
+              <div className="text-[14px] space-y-2">
                 <div className="flex justify-between gap-3"><span className="text-[#46413F]">Objetivo único</span><strong className="font-mono">lead_franquicia</strong></div>
                 <div className="flex justify-between gap-3"><span className="text-[#46413F]">Tipo</span><strong>{info.label}</strong></div>
                 <div className="flex justify-between gap-3"><span className="text-[#46413F]">Moneda</span><strong>Pesos argentinos</strong></div>
                 <div className="flex justify-between gap-3"><span className="text-[#46413F]">Tope total</span><strong className="tabular-nums">{cap ? `$ ${Number(cap).toLocaleString("es-AR")}` : "—"}</strong></div>
                 <div className="flex justify-between gap-3"><span className="text-[#46413F]">Dónde</span><strong className="text-right">{hasGeoTarget(geo) ? locations.join(", ") : "—"}</strong></div>
               </div>
-              <div className="text-[12px] text-[#46413F] bg-white border border-[#E7E3DF] rounded-[8px] p-2.5 leading-relaxed space-y-2">
+              <div className="text-[14px] text-[#46413F] bg-white border border-[#E7E3DF] rounded-[8px] p-2.5 leading-relaxed space-y-2">
                 <div>
                   <strong className="text-[#161418] block">Conversión principal (la que se optimiza)</strong>
                   {conversions.primary.map((e) => (<div key={e}>• {eventLabel(e)} <code>{e}</code></div>))}
@@ -281,7 +283,7 @@ export const NewCampaignWizard: React.FC<Props> = ({ assets, events, initiatives
                     </label>
                   ))}
                 </div>
-                <p className="text-[11.5px]"><Target className="inline w-3 h-3 mr-1" />Nunca <code>generate_lead</code> ni <code>purchase</code>: mezclan la tienda.</p>
+                <p className="text-[14px]"><Target className="inline w-3 h-3 mr-1" />Nunca <code>generate_lead</code> ni <code>purchase</code>: mezclan la tienda.</p>
               </div>
             </aside>
           </div>
@@ -289,22 +291,22 @@ export const NewCampaignWizard: React.FC<Props> = ({ assets, events, initiatives
 
           {chosen && (
           <div className="flex justify-end pt-2">
-            <button type="button" disabled={!step1Ok} onClick={() => setStep(2)} className="kol-btn-normal px-6 py-2.5 bg-[#161418] text-[#FAF8F6] font-bold text-[13px] disabled:opacity-40 flex items-center gap-2">
+            <button type="button" disabled={!step1Ok} onClick={() => setStep(2)} className="kol-btn-normal px-6 py-2.5 bg-[#161418] text-[#FAF8F6] font-bold text-[14px] disabled:opacity-40 flex items-center gap-2">
               Siguiente: Mensaje y anuncios <ChevronRight className="w-4 h-4" />
             </button>
           </div>
           )}
-          {chosen && !step1Ok && <p className="text-[12px] text-[#6A6460] text-right">Faltan: {[!name.trim() && "el nombre", !(Number(cap) > 0) && "el tope total", !hasGeoTarget(geo) && "dónde querés llegar"].filter(Boolean).join(", ")}.</p>}
+          {chosen && !step1Ok && <p className="text-[14px] text-[#6A6460] text-right">Faltan: {[!name.trim() && "el nombre", !(Number(cap) > 0) && "el tope total", !hasGeoTarget(geo) && "dónde querés llegar"].filter(Boolean).join(", ")}.</p>}
         </div>
       )}
 
       {step === 2 && (
         <div className="space-y-6">
           <div className="p-3.5 bg-[#FAF8F6] border border-[#C9C3BE] rounded-[10px] space-y-2">
-            <span className="text-[12px] font-bold text-[#161418] block">Datos verificados para copiar (la fuente de verdad)</span>
+            <span className="text-[14px] font-bold text-[#161418] block">Datos verificados para copiar (la fuente de verdad)</span>
             <div className="flex flex-wrap gap-2">
               {VERIFIED_BRAND_FACTS.map((f) => (
-                <button key={f.id} type="button" title={f.rule} onClick={() => copy(f.text, `w-${f.id}`)} className="px-2.5 py-1 bg-white border border-[#C9C3BE] hover:border-[#161418] rounded-[6px] text-[12px] text-[#161418] font-bold kol-focus">
+                <button key={f.id} type="button" title={f.rule} onClick={() => copy(f.text, `w-${f.id}`)} className="px-2.5 py-1 bg-white border border-[#C9C3BE] hover:border-[#161418] rounded-[6px] text-[14px] text-[#161418] font-bold kol-focus">
                   {copiedKey === `w-${f.id}` ? "Copiado" : `Copiar: ${f.label}`}
                 </button>
               ))}
@@ -312,8 +314,8 @@ export const NewCampaignWizard: React.FC<Props> = ({ assets, events, initiatives
           </div>
           <AdVariantsEditor platform={platform} ads={ads} assets={assets} actions={actions} defaultPlacement={placement} onChange={setAds} />
           <div className="flex justify-between border-t border-[#C9C3BE] pt-4">
-            <button type="button" onClick={() => setStep(1)} className="kol-btn-normal px-5 py-2 bg-[#FAF8F6] border border-[#C9C3BE] text-[#161418] font-bold text-[13px]">← Volver al paso 1</button>
-            <button type="button" onClick={() => setStep(3)} className="kol-btn-normal px-6 py-2 bg-[#161418] text-[#FAF8F6] font-bold text-[13px] flex items-center gap-2">Siguiente: Medición <ChevronRight className="w-4 h-4" /></button>
+            <button type="button" onClick={() => setStep(1)} className="kol-btn-normal px-5 py-2 bg-[#FAF8F6] border border-[#C9C3BE] text-[#161418] font-bold text-[14px]">← Volver al paso 1</button>
+            <button type="button" onClick={() => setStep(3)} className="kol-btn-normal px-6 py-2 bg-[#161418] text-[#FAF8F6] font-bold text-[14px] flex items-center gap-2">Siguiente: Medición <ChevronRight className="w-4 h-4" /></button>
           </div>
         </div>
       )}
@@ -322,38 +324,38 @@ export const NewCampaignWizard: React.FC<Props> = ({ assets, events, initiatives
         <div className="space-y-6">
           <div className="p-4 bg-[#FAF8F6] border border-[#C9C3BE] rounded-[10px]">
             <div className="flex items-center gap-2 font-bold text-[14px] text-[#161418]"><Target className="w-4 h-4" /> Los UTM se arman solos, según la guía de etiquetado</div>
-            <p className="text-[13px] text-[#46413F] mt-1">En minúsculas, sin tildes ni espacios. Así cada consulta llega al mail y a GA4 con su campaña, y después se sabe qué anuncio la trajo.</p>
+            <p className="text-[14px] text-[#46413F] mt-1">En minúsculas, sin tildes ni espacios. Así cada consulta llega al mail y a GA4 con su campaña, y después se sabe qué anuncio la trajo.</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2 text-[13px]">
+            <div className="space-y-2 text-[14px]">
               {[["utm_source", utm.source], ["utm_medium", utm.medium], ["utm_campaign", utm.campaign], ...(utm.term ? [["utm_term", utm.term]] : []), ["utm_content", utm.content]].map(([k, v]) => (
                 <div key={k} className="p-2.5 bg-white border border-[#C9C3BE] rounded-[6px] flex justify-between gap-3">
-                  <span className="text-[#8C8580]">{k}</span>
+                  <span className="text-[#6A6460]">{k}</span>
                   <strong className="font-mono text-[#161418] break-all text-right">{v}</strong>
                 </div>
               ))}
-              <p className="text-[11.5px] text-[#6A6460]">Lo que está entre llaves ({"{ }"}) lo reemplaza la plataforma al publicar el anuncio.</p>
+              <p className="text-[14px] text-[#6A6460]">Lo que está entre llaves ({"{ }"}) lo reemplaza la plataforma al publicar el anuncio.</p>
             </div>
             <div className="space-y-3">
               <div className="space-y-2.5">
-                <span className="text-[12px] font-bold text-[#46413F] block">Enlace de cada anuncio</span>
+                <span className="text-[14px] font-bold text-[#46413F] block">Enlace de cada anuncio</span>
                 {ads.map((ad) => {
                   const u = buildUtm(platform, utmName, ad.utmContent);
                   return (
                     <div key={ad.id}>
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-[12px] text-[#161418] font-bold">{ad.label}</span>
+                        <span className="text-[14px] text-[#161418] font-bold">{ad.label}</span>
                         <CopyButton text={u.finalUrl} id={`w-url-${ad.id}`} copiedKey={copiedKey} onCopy={copy} />
                       </div>
-                      <div className="p-2.5 bg-[#F3F0ED] border border-[#C9C3BE] rounded-[6px] text-[12px] font-mono break-all text-[#161418]">{u.finalUrl}</div>
+                      <div className="p-2.5 bg-[#F3F0ED] border border-[#C9C3BE] rounded-[6px] text-[14px] font-mono break-all text-[#161418]">{u.finalUrl}</div>
                     </div>
                   );
                 })}
               </div>
-              <div className="p-4 bg-[#2A2629] text-[#FAF8F6] rounded-[10px] space-y-2 font-mono text-[12px]">
+              <div className="p-4 bg-[#2A2629] text-[#FAF8F6] rounded-[10px] space-y-2 font-mono text-[14px]">
                 <div className="font-bold">Así llega el origen en el mail de cada consulta (ejemplo)</div>
                 <div className="border-t border-[#46413F] pt-2 text-[#C9C3BE]">
-                  <div>ORIGEN DEL CONTACTO</div>
+                  <div>Origen del contacto</div>
                   <div>Campaña: {utm.campaign}</div>
                   <div>Fuente: {utm.source} · {utm.medium}</div>
                   <div>Página de entrada: /franquicia/</div>
@@ -362,26 +364,26 @@ export const NewCampaignWizard: React.FC<Props> = ({ assets, events, initiatives
             </div>
           </div>
           <div className="flex justify-between border-t border-[#C9C3BE] pt-4">
-            <button type="button" onClick={() => setStep(2)} className="kol-btn-normal px-5 py-2 bg-[#FAF8F6] border border-[#C9C3BE] text-[#161418] font-bold text-[13px]">← Volver al paso 2</button>
-            <button type="button" onClick={() => setStep(4)} className="kol-btn-normal px-6 py-2 bg-[#161418] text-[#FAF8F6] font-bold text-[13px] flex items-center gap-2">Siguiente: Revisión <ChevronRight className="w-4 h-4" /></button>
+            <button type="button" onClick={() => setStep(2)} className="kol-btn-normal px-5 py-2 bg-[#FAF8F6] border border-[#C9C3BE] text-[#161418] font-bold text-[14px]">← Volver al paso 2</button>
+            <button type="button" onClick={() => setStep(4)} className="kol-btn-normal px-6 py-2 bg-[#161418] text-[#FAF8F6] font-bold text-[14px] flex items-center gap-2">Siguiente: Revisión <ChevronRight className="w-4 h-4" /></button>
           </div>
         </div>
       )}
 
       {step === 4 && (
         <div className="space-y-6 max-w-3xl">
-          <div className="space-y-2 p-4 bg-[#FAF8F6] border border-[#C9C3BE] rounded-[10px] text-[13px]">
+          <div className="space-y-2 p-4 bg-[#FAF8F6] border border-[#C9C3BE] rounded-[10px] text-[14px]">
             {[["Nombre", draft.name], ["Tipo", platformLabel(draft)], ["Anuncios", ads.map((a) => a.label).join(", ")], ["Modo", draft.mode], ["Fechas", `${draft.dates.startDate} al ${draft.dates.endDate || "sin corte"}`], ["Tope total", `$ ${draft.budget.totalCap.toLocaleString("es-AR")} (ARS)`], ["Dónde", draft.targetLocations.join(", ")], ["Excluye", (draft.geo?.excluded ?? []).join(", ") || "Nada"]].map(([k, v]) => (
               <div key={k} className="flex justify-between gap-4 border-b border-[#E7E3DF] pb-1.5 last:border-0"><span className="text-[#46413F]">{k}</span><strong className="text-right capitalize-first">{v}</strong></div>
             ))}
           </div>
           <AdChecklist checks={checks} />
-          <p className="text-[12.5px] text-[#46413F]">
+          <p className="text-[14px] text-[#46413F]">
             Se guarda como <strong>borrador</strong>. {hasErrors(checks) ? "Hay puntos para corregir: podés guardar igual y arreglarlos después, pero no se puede pedir la revisión hasta que estén resueltos." : "Está todo en orden para pedir la revisión."} Publicar en Google o Meta se hace a mano con el paquete de publicación; esta herramienta no publica sola.
           </p>
           <div className="flex justify-between border-t border-[#C9C3BE] pt-4">
-            <button type="button" onClick={() => setStep(3)} className="kol-btn-normal px-5 py-2 bg-[#FAF8F6] border border-[#C9C3BE] text-[#161418] font-bold text-[13px]">← Volver al paso 3</button>
-            <button type="button" onClick={() => onSave(draft)} className="kol-btn-normal px-6 py-2.5 bg-[#161418] text-[#FAF8F6] font-bold text-[13px] flex items-center gap-2">
+            <button type="button" onClick={() => setStep(3)} className="kol-btn-normal px-5 py-2 bg-[#FAF8F6] border border-[#C9C3BE] text-[#161418] font-bold text-[14px]">← Volver al paso 3</button>
+            <button type="button" onClick={() => onSave(draft)} className="kol-btn-normal px-6 py-2.5 bg-[#161418] text-[#FAF8F6] font-bold text-[14px] flex items-center gap-2">
               <Check className="w-4 h-4 text-[#FFBA00]" /> Guardar como borrador
             </button>
           </div>
