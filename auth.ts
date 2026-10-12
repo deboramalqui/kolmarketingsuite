@@ -91,7 +91,13 @@ function setCookie(req: Request, res: Response, name: string, value: string, max
   res.setHeader("Set-Cookie", [...(Array.isArray(prev) ? prev : prev ? [String(prev)] : []), parts.join("; ")]);
 }
 
-const origin = (req: Request) => `${(req.headers["x-forwarded-proto"] as string) || req.protocol}://${(req.headers["x-forwarded-host"] as string) || req.headers.host}`;
+/** Dirección pública de la app. Fuera de localhost siempre es https (Google no acepta http para apps en producción). */
+const origin = (req: Request) => {
+  const host = (req.headers["x-forwarded-host"] as string) || req.headers.host || "";
+  const local = /^(localhost|127\.0\.0\.1)(:|$)/.test(host);
+  const proto = local ? (req.headers["x-forwarded-proto"] as string) || req.protocol : "https";
+  return `${proto}://${host}`;
+};
 export const callbackUrl = (req: Request) => `${origin(req)}/auth/callback`;
 
 /** Usuario de la sesión actual (el rol se vuelve a leer de APP_USERS en cada pedido: si se saca a alguien, pierde el acceso) */
