@@ -113,6 +113,7 @@ export const UsersPanel: React.FC = () => {
             </div>
           </li>
           <li>Los roles son <code className={code}>admin</code>, <code className={code}>editor</code> y <code className={code}>viewer</code>. Incluí <strong>tu propia cuenta como admin</strong> antes de guardar, o te vas a quedar afuera.</li>
+          <li>Creá el secret <code className={code}>AUTH_ENABLED</code> con el valor <code className={code}>true</code>: es el interruptor que enciende el inicio de sesión. Para apagarlo, borralo o ponele otro valor.</li>
           <li>Creá también el secret <code className={code}>SESSION_SECRET</code> con un texto largo al azar (16 caracteres o más), para que las sesiones no se cierren cada vez que la app se reinicia.</li>
           <li>Guardá y esperá a que la app se reinicie. Para sacar a alguien, borrala de la lista y reiniciá.</li>
         </ol>

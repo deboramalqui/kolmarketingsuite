@@ -4,7 +4,7 @@ import type { Request, Response, NextFunction } from "express";
 /**
  * Inicio de sesión con Google y roles.
  * - Quién puede entrar y con qué rol se define en el secret APP_USERS (formato: "persona@gmail.com:admin, otra@gmail.com:editor").
- * - Si APP_USERS está vacío, el inicio de sesión está APAGADO (la app queda abierta, como hasta ahora).
+ * - El inicio de sesión se enciende SOLO con AUTH_ENABLED=true y APP_USERS cargado. Sin eso, la app queda abierta.
  * - No se guardan contraseñas: cada persona entra con su cuenta de Google (y la verificación en dos pasos de Google).
  */
 
@@ -43,6 +43,8 @@ const oauthSecret = () => clean(process.env.GOOGLE_OAUTH_CLIENT_SECRET).replace(
 
 export function authStatus(): { enabled: boolean; reason?: string; userCount: number } {
   const n = Object.keys(users()).length;
+  // Interruptor explícito: sin AUTH_ENABLED=true el inicio de sesión queda apagado aunque haya usuarios cargados
+  if (clean(process.env.AUTH_ENABLED).toLowerCase() !== "true") return { enabled: false, reason: "El interruptor AUTH_ENABLED no está en true: la app está abierta.", userCount: n };
   if (n === 0) return { enabled: false, reason: "No hay usuarios cargados en APP_USERS: la app está abierta.", userCount: 0 };
   if (!oauthId() || !oauthSecret()) return { enabled: false, reason: "Hay usuarios cargados pero falta el cliente de Google (GOOGLE_OAUTH_CLIENT_ID y GOOGLE_OAUTH_CLIENT_SECRET): el inicio de sesión no se enciende para no dejarte afuera.", userCount: n };
   return { enabled: true, userCount: n };
