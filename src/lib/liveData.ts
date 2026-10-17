@@ -10,6 +10,7 @@ export interface Snapshot {
   pages?: Array<{ path: string; sessions: number; users: number; bounceRatePct: number; leads: number }>;
   guide?: { clicks: number; leads: number; downloads: number };
   notFound?: Array<{ path: string; sessions: number; sources: Array<{ source: string; medium: string; sessions: number }> }>;
+  aiTraffic?: Array<{ source: string; landingPage: string; sessions: number; users: number }>;
   error?: string;
 }
 
