@@ -1,4 +1,4 @@
-import { oauthAccessTokenOrNull } from "./ga4Server";
+import { oauthAccessTokenOrNull, serviceAccessTokenForScope, serviceAccountEmail } from "./ga4Server";
 
 /**
  * Google Search Console (solo lectura). Usa la misma autorización de Google que GA4:
@@ -74,11 +74,7 @@ async function pickSite(token: string): Promise<{ site?: string; message?: strin
 }
 
 /** Consultas de búsqueda de las páginas /franquicia de los últimos 28 días (Google entrega con 2 a 3 días de demora) */
-export async function gscKeywords(): Promise<GscResult> {
-  const token = await oauthAccessTokenOrNull();
-  if (!token) {
-    return { connected: false, keywords: [], message: "Search Console necesita la autorización con cuenta de Google (la misma de GA4)." };
-  }
+async function gscWithToken(token: string): Promise<GscResult> {
   const picked = await pickSite(token);
   if (!picked.site) return { connected: false, keywords: [], message: picked.message };
 
@@ -124,5 +120,35 @@ export async function gscKeywords(): Promise<GscResult> {
     period: { start: fmt(start), end: fmt(end) },
     keywords,
     message: keywords.length ? undefined : "Search Console está conectado pero todavía no hay consultas para las páginas /franquicia en este período.",
+  };
+}
+
+const GSC_SCOPE = "https://www.googleapis.com/auth/webmasters.readonly";
+
+/**
+ * Prueba primero con la cuenta de servicio (no vence nunca; hay que agregarla como usuaria en Search Console)
+ * y después con la autorización de una persona de Google (puede vencer).
+ */
+export async function gscKeywords(): Promise<GscResult> {
+  const tries: Array<{ label: string; token: string }> = [];
+  const notes: string[] = [];
+  const svc = await serviceAccessTokenForScope(GSC_SCOPE);
+  if (svc.token) tries.push({ label: "cuenta de servicio", token: svc.token });
+  else if (svc.error && !/no hay cuenta de servicio/.test(svc.error)) notes.push(`Cuenta de servicio: ${svc.error}`);
+  const oauth = await oauthAccessTokenOrNull();
+  if (oauth) tries.push({ label: "autorización de Google", token: oauth });
+  if (tries.length === 0) {
+    return { connected: false, keywords: [], message: "Search Console necesita la cuenta de servicio (recomendado) o la autorización con cuenta de Google. Ver Configuración." };
+  }
+  for (const t of tries) {
+    const r = await gscWithToken(t.token);
+    if (r.connected) return r;
+    notes.push(`${t.label[0].toUpperCase()}${t.label.slice(1)}: ${r.message ?? "no respondió"}`);
+  }
+  const email = serviceAccountEmail();
+  return {
+    connected: false,
+    keywords: [],
+    message: notes.join(" · ") + (email ? ` — Para que no se desconecte: agregá ${email} como usuaria en Search Console.` : ""),
   };
 }

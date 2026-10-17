@@ -6,7 +6,7 @@ import dotenv from "dotenv";
 import { getSnapshot, startSnapshotSchedule } from "./ga4Snapshot";
 import { gscKeywords } from "./gscServer";
 import { authMiddleware, registerAuthRoutes } from "./auth";
-import { ga4AccessTokenOrNull, ga4HasCredentials, ga4PropertyIdValue, ga4Status, ga4CampaignRows, oauthClientConfigured, oauthClientHint, oauthAuthUrl, oauthExchange, oauthFinishManual, newOauthState, consumeOauthState, MANUAL_REDIRECT_URI } from "./ga4Server";
+import { serviceAccountEmail, ga4AccessTokenOrNull, ga4HasCredentials, ga4PropertyIdValue, ga4Status, ga4CampaignRows, oauthClientConfigured, oauthClientHint, oauthAuthUrl, oauthExchange, oauthFinishManual, newOauthState, consumeOauthState, MANUAL_REDIRECT_URI } from "./ga4Server";
 
 dotenv.config();
 
@@ -114,7 +114,7 @@ async function startServer() {
     out.clarity = clarityTokenFromEnv()
       ? { state: "clave_cargada", message: "La clave está cargada. No se prueba acá para no gastar el cupo diario de consultas de Clarity." }
       : { state: "sin_configurar", message: "Falta cargar CLARITY_API_TOKEN en los Secrets del servidor." };
-    res.json({ checkedAt: new Date().toISOString(), ...out });
+    res.json({ checkedAt: new Date().toISOString(), serviceAccount: serviceAccountEmail(), ...out });
   });
 
   // Resultados de campañas desde GA4 (las credenciales viven solo en el servidor)

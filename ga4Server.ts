@@ -39,12 +39,12 @@ function readCredentials(): Credentials | null {
 const b64url = (b: Buffer | string) => Buffer.from(b).toString("base64").replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
 
 /** Arma el JWT firmado que Google pide para canjearlo por un token de acceso. Exportado para poder probarlo. */
-export function buildJwt(cred: Credentials, nowSec = Math.floor(Date.now() / 1000)): string {
+export function buildJwt(cred: Credentials, nowSec = Math.floor(Date.now() / 1000), scope = "https://www.googleapis.com/auth/analytics.readonly"): string {
   const header = b64url(JSON.stringify({ alg: "RS256", typ: "JWT" }));
   const claims = b64url(
     JSON.stringify({
       iss: cred.clientEmail,
-      scope: "https://www.googleapis.com/auth/analytics.readonly",
+      scope,
       aud: "https://oauth2.googleapis.com/token",
       iat: nowSec,
       exp: nowSec + 3600,
@@ -398,6 +398,33 @@ export async function oauthAccessTokenOrNull(): Promise<string | null> {
     return await accessTokenFromRefresh(saved);
   } catch {
     return null;
+  }
+}
+
+/** Correo de la cuenta de servicio (no es secreto): es el que hay que agregar como lector en GA4 y Search Console */
+export function serviceAccountEmail(): string | null {
+  return readCredentials()?.clientEmail ?? null;
+}
+
+const scopedTokens = new Map<string, { token: string; exp: number }>();
+/** Token de la cuenta de servicio para un permiso dado (ej. Search Console). No vence ni depende de una persona. */
+export async function serviceAccessTokenForScope(scope: string): Promise<{ token: string | null; error?: string }> {
+  const cred = readCredentials();
+  if (!cred) return { token: null, error: "no hay cuenta de servicio cargada" };
+  const hit = scopedTokens.get(scope);
+  if (hit && hit.exp > Date.now() + 60_000) return { token: hit.token };
+  try {
+    const res = await fetch("https://oauth2.googleapis.com/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({ grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer", assertion: buildJwt(cred, Math.floor(Date.now() / 1000), scope) }),
+    });
+    const body = (await res.json()) as { access_token?: string; expires_in?: number; error_description?: string };
+    if (!res.ok || !body.access_token) return { token: null, error: body.error_description || `Google respondió ${res.status}` };
+    scopedTokens.set(scope, { token: body.access_token, exp: Date.now() + (body.expires_in ?? 3600) * 1000 });
+    return { token: body.access_token };
+  } catch (e) {
+    return { token: null, error: e instanceof Error ? e.message : "error de red" };
   }
 }
 
