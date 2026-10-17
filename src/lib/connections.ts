@@ -8,13 +8,15 @@ export interface ConnResult {
 }
 export interface ConnectionCheck {
   checkedAt: string | null;
+  /** Correo de la cuenta de servicio (no es secreto) o null si no hay una cargada */
+  serviceAccount: string | null;
   ga4: ConnResult | null;
   gsc: ConnResult | null;
   meta: ConnResult | null;
   clarity: ConnResult | null;
 }
 
-const EMPTY: ConnectionCheck = { checkedAt: null, ga4: null, gsc: null, meta: null, clarity: null };
+const EMPTY: ConnectionCheck = { checkedAt: null, serviceAccount: null, ga4: null, gsc: null, meta: null, clarity: null };
 
 export function useConnectionCheck(metaAdAccountId: string) {
   const [check, setCheck] = useState<ConnectionCheck>(EMPTY);

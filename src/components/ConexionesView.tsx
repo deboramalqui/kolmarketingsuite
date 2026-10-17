@@ -166,6 +166,36 @@ export const ConexionesView: React.FC<ConexionesViewProps> = ({
         </div>
       )}
 
+      {check.serviceAccount ? (
+        <section className="p-6 bg-[#2A2629] border border-[#46413F] rounded-[12px] space-y-3">
+          <h3 className="font-kol-display font-bold text-[18px] text-[#FAF8F6]">Para que GA4 y Search Console no se desconecten más</h3>
+          <p className="text-[14px] text-[#C9C3BE] leading-snug">
+            La autorización personal de Google se vence o se pierde cuando la app se reinicia. La cuenta de servicio no: es un “usuario robot” fijo. Solo hay que darle permiso de lectura en los dos lugares, una sola vez.
+          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <code className="p-2.5 bg-[#161418] border border-[#46413F] rounded-[8px] font-mono text-[14px] text-[#FAF8F6] break-all">{check.serviceAccount}</code>
+            <button
+              type="button"
+              onClick={() => navigator.clipboard?.writeText(check.serviceAccount || "")}
+              className="kol-btn-normal px-4 border border-[#C9C3BE] text-[#FAF8F6] hover:bg-[#161418] kol-focus-dark"
+            >
+              Copiar correo
+            </button>
+          </div>
+          <ol className="list-decimal pl-5 space-y-1.5 text-[14px] text-[#FAF8F6] leading-snug">
+            <li><strong>GA4:</strong> Administrar → Acceso a la propiedad → agregar usuario con ese correo y rol <strong>Lector</strong>. Lo hace quien administra GA4 de Kol.</li>
+            <li><strong>Search Console:</strong> Configuración → Usuarios y permisos → Añadir usuario con ese correo y permiso <strong>Restringido</strong> (alcanza para leer).</li>
+            <li>En Google Cloud, activá la <strong>API de Search Console</strong> en el proyecto de esa cuenta de servicio.</li>
+            <li>Volvé acá y tocá <strong>Probar conexiones</strong>.</li>
+          </ol>
+        </section>
+      ) : (
+        <div className="p-4 border-2 border-[#FAF8F6] rounded-[10px] text-[14px] font-semibold flex items-start gap-2" role="status">
+          <span aria-hidden="true" className="font-bold">!</span>
+          <span>No hay una cuenta de servicio cargada (secret GA4_SERVICE_ACCOUNT_JSON): GA4 y Search Console dependen de una autorización personal que se vence.</span>
+        </div>
+      )}
+
       <form onSubmit={handleSave} className="space-y-6">
         {/* 1. Google Analytics 4 */}
         <div className={card}>
