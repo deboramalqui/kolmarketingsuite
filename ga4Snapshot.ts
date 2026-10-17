@@ -29,6 +29,8 @@ export interface Snapshot {
   guide?: { clicks: number; leads: number; downloads: number };
   /** Direcciones de /franquicia* que devuelven "Página no encontrada" (404) y de dónde llegaron las visitas */
   notFound?: Array<{ path: string; sessions: number; sources: Array<{ source: string; medium: string; sessions: number }> }>;
+  /** Visitas que llegaron desde asistentes de IA (ChatGPT, Perplexity, Gemini…) a las páginas de franquicia */
+  aiTraffic?: Array<{ source: string; landingPage: string; sessions: number; users: number }>;
   error?: string;
 }
 
@@ -41,6 +43,7 @@ const empty = (connected: boolean, error?: string): Snapshot => ({
   pages: [],
   guide: { clicks: 0, leads: 0, downloads: 0 },
   notFound: [],
+  aiTraffic: [],
   error,
 });
 
@@ -48,7 +51,7 @@ type Row = { dimensionValues?: Array<{ value?: string }>; metricValues?: Array<{
 const num = (r: Row, i: number) => Number(r.metricValues?.[i]?.value ?? 0) || 0;
 
 /** Convierte las filas de GA4 al resumen. Exportado para poder probarlo sin llamar a Google. */
-export function buildSnapshot(funnelRows: Row[], channelRows: Row[], leadRows: Row[], now = new Date(), pageRows: Row[] = [], pageLeadRows: Row[] = [], guideRows: Row[] = [], notFoundRows: Row[] = []): Snapshot {
+export function buildSnapshot(funnelRows: Row[], channelRows: Row[], leadRows: Row[], now = new Date(), pageRows: Row[] = [], pageLeadRows: Row[] = [], guideRows: Row[] = [], notFoundRows: Row[] = [], aiRows: Row[] = []): Snapshot {
   const snap = empty(true);
   snap.fetchedAt = now.toISOString();
   // con dos períodos GA4 agrega una dimensión final con el nombre del rango
@@ -95,6 +98,13 @@ export function buildSnapshot(funnelRows: Row[], channelRows: Row[], leadRows: R
     item.sources.push({ source: d[1] || "(not set)", medium: d[2] || "(not set)", sessions: n });
     nf.set(path, item);
   });
+  snap.aiTraffic = aiRows
+    .map((r) => {
+      const d = (r.dimensionValues ?? []).map((x) => x.value ?? "");
+      return { source: d[0] || "(not set)", landingPage: d[1] || "", sessions: num(r, 0), users: num(r, 1) };
+    })
+    .filter((a) => a.sessions > 0)
+    .sort((a, b) => b.sessions - a.sessions);
   snap.notFound = Array.from(nf.values()).sort((a, b) => b.sessions - a.sessions);
   snap.pages = pageRows
     .map((r) => {
@@ -108,7 +118,7 @@ export function buildSnapshot(funnelRows: Row[], channelRows: Row[], leadRows: R
 
 let current: Snapshot = (() => {
   try {
-    if (fs.existsSync(FILE)) return { pages: [], notFound: [], guide: { clicks: 0, leads: 0, downloads: 0 }, ...JSON.parse(fs.readFileSync(FILE, "utf-8")) };
+    if (fs.existsSync(FILE)) return { pages: [], notFound: [], aiTraffic: [], guide: { clicks: 0, leads: 0, downloads: 0 }, ...JSON.parse(fs.readFileSync(FILE, "utf-8")) };
   } catch {}
   return empty(false);
 })();
@@ -121,7 +131,7 @@ export function getCachedSnapshot(): Snapshot {
 const pageFilter = { filter: { fieldName: "pagePath", stringFilter: { matchType: "CONTAINS", value: "/franquicia" } } };
 
 async function fetchFromGa4(): Promise<Snapshot> {
-  const [funnelRows, channelRows, leadRows, pageRows, pageLeadRows, guideRows, notFoundRows] = await Promise.all([
+  const [funnelRows, channelRows, leadRows, pageRows, pageLeadRows, guideRows, notFoundRows, aiRows] = await Promise.all([
     ga4RunReport({
       dateRanges: [
         { startDate: "28daysAgo", endDate: "today", name: "actual" },
@@ -168,15 +178,39 @@ async function fetchFromGa4(): Promise<Snapshot> {
       limit: 10,
     }),
     // El sitio titula sus 404 "Página no encontrada · KOL": así se distinguen de las páginas reales
-    ga4RunReport({
+    (ga4RunReport({
       dateRanges: [{ startDate: "28daysAgo", endDate: "today" }],
       dimensions: [{ name: "pagePath" }, { name: "sessionSource" }, { name: "sessionMedium" }],
       metrics: [{ name: "sessions" }],
       dimensionFilter: { andGroup: { expressions: [pageFilter, { filter: { fieldName: "pageTitle", stringFilter: { matchType: "CONTAINS", value: "Página no encontrada", caseSensitive: false } } }] } },
       limit: 100,
-    }),
+    })
+    ).catch(() => [] as Row[]),
+    // Asistentes de IA: la campaña "(ai-assistant)" que arma GA4, o una fuente conocida de IA
+    (ga4RunReport({
+      dateRanges: [{ startDate: "28daysAgo", endDate: "today" }],
+      dimensions: [{ name: "sessionSource" }, { name: "landingPage" }],
+      metrics: [{ name: "sessions" }, { name: "totalUsers" }],
+      dimensionFilter: {
+        andGroup: {
+          expressions: [
+            { filter: { fieldName: "landingPage", stringFilter: { matchType: "CONTAINS", value: "/franquicia" } } },
+            {
+              orGroup: {
+                expressions: [
+                  { filter: { fieldName: "sessionCampaignName", stringFilter: { matchType: "EXACT", value: "(ai-assistant)" } } },
+                  { filter: { fieldName: "sessionSource", stringFilter: { matchType: "PARTIAL_REGEXP", value: "chatgpt|openai|perplexity|gemini|claude|copilot|deepseek|grok|you\\.com|meta\\.ai" } } },
+                ],
+              },
+            },
+          ],
+        },
+      },
+      limit: 100,
+    })
+    ).catch(() => [] as Row[]),
   ]);
-  return buildSnapshot(funnelRows, channelRows, leadRows, new Date(), pageRows, pageLeadRows, guideRows, notFoundRows);
+  return buildSnapshot(funnelRows, channelRows, leadRows, new Date(), pageRows, pageLeadRows, guideRows, notFoundRows, aiRows);
 }
 
 /** Actualiza desde GA4. Si falla, se conserva lo último bueno y se informa el error. */

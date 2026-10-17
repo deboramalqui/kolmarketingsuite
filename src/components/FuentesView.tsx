@@ -36,6 +36,7 @@ interface FuentesViewProps {
   pages: Array<{ path: string; sessions: number; users: number; bounceRatePct: number; leads: number }>;
   ga4Connected: boolean;
   guide?: { clicks: number; leads: number; downloads: number };
+  aiTraffic?: Array<{ source: string; landingPage: string; sessions: number; users: number }>;
   notFound?: Array<{ path: string; sessions: number; sources: Array<{ source: string; medium: string; sessions: number }> }>;
   accountsConfig: ConnectedAccountsConfig;
   clarityPages: ClarityPageTelemetry[];
@@ -56,6 +57,7 @@ export const FuentesView: React.FC<FuentesViewProps> = ({
   ga4Connected,
   guide,
   notFound = [],
+  aiTraffic = [],
   accountsConfig,
   clarityPages,
   searchKeywords,
@@ -230,6 +232,44 @@ export const FuentesView: React.FC<FuentesViewProps> = ({
                 </tbody>
               </table></div>
             )}
+          </div>
+
+          {/* Tráfico que llega desde asistentes de IA (ChatGPT, Perplexity, Gemini…) */}
+          <div className="border border-[#C9C3BE] rounded-[10px] overflow-hidden">
+            <div className="bg-[#E7E3DF] px-4 py-3 font-bold text-[#161418] text-[14px]">
+              Visitas desde asistentes de IA a las páginas de franquicia (últimos 28 días)
+            </div>
+            {aiTraffic.length === 0 ? (
+              <p className="px-4 py-5 text-[14px] text-[#46413F]">
+                {ga4Connected ? "GA4 no registró visitas desde asistentes de IA a /franquicia en este período." : "Sin datos: GA4 todavía no está conectado."}
+              </p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse min-w-[520px]">
+                  <thead>
+                    <tr className="bg-[#F3F0ED] text-[#46413F] text-[14px] font-semibold">
+                      <th className="py-3 px-4">Fuente</th>
+                      <th className="py-3 px-3">Página a la que llegaron</th>
+                      <th className="py-3 px-3 text-right">Sesiones</th>
+                      <th className="py-3 px-3 text-right">Personas</th>
+                    </tr>
+                  </thead>
+                  <tbody className="text-[14px] text-[#161418]">
+                    {aiTraffic.map((a, i) => (
+                      <tr key={`${a.source}-${a.landingPage}-${i}`} className="border-t border-[#C9C3BE] bg-[#FFFFFF]">
+                        <td className="py-3 px-4 font-bold">{a.source}</td>
+                        <td className="py-3 px-3 font-mono text-[14px]">{a.landingPage}</td>
+                        <td className="py-3 px-3 text-right tabular-nums font-semibold">{a.sessions}</td>
+                        <td className="py-3 px-3 text-right tabular-nums">{a.users}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            <p className="px-4 py-3 text-[14px] text-[#46413F]">
+              Son personas (o programas) que llegaron haciendo clic en un enlace dentro de un asistente de IA. Si la IA nombra una dirección que no existe, aparece como 404 en la tabla de arriba.
+            </p>
           </div>
 
           {/* Direcciones que no existen (404) y de dónde llegaron: ¿una IA, un enlace mal armado? */}

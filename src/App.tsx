@@ -740,6 +740,7 @@ export default function App() {
             pages={snapshot.pages ?? []}
             guide={snapshot.guide}
             notFound={snapshot.notFound ?? []}
+            aiTraffic={snapshot.aiTraffic ?? []}
             ga4Connected={hasData(snapshot)}
             accountsConfig={accountsConfig}
             clarityPages={clarityPages}
